@@ -23,6 +23,6 @@ Open [precision.html](precision.html) in a browser to explore the approved desig
 
 ## Reference scope
 
-This is an interactive visual reference with sample data, not a live device connection. The production Vue interface has not yet been restyled to match it. The preview's lightweight search demonstrates the interaction; retain the application's Fuse.js implementation. Clipboard and downloads may be restricted by the exported preview's sandbox; Copy provides a manual-text fallback.
+This is an interactive visual reference with sample data, not a live device connection. The production Vue interface now implements this design; it uses locally bundled platform icons, compatible light/dark color rules, and a viewport-sized scrolling log area instead of the preview’s fixed minimum heights. The preview's lightweight search demonstrates the interaction; retain the application's Fuse.js implementation. Clipboard and downloads may be restricted by the exported preview's sandbox; Copy provides a manual-text fallback.
 
 Use **Precision** as the design name in project documentation and implementation notes. This reference supersedes the earlier design explorations.

@@ -2,6 +2,8 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { Device, DeviceList, LogMessage } from '../shared/types';
 import { createLogSearch } from '../shared/search';
+import { filterLogLevels, formatLogMessages, logLevel, logLevels, type LogLevel } from '../shared/log-view';
+import PrecisionMenu from './components/PrecisionMenu.vue';
 
 const devices = ref<Device[]>([]);
 const warnings = ref<string[]>([]);
@@ -14,7 +16,13 @@ const paused = computed(() => pausedMessages.value !== undefined);
 const visibleMessages = computed(() => pausedMessages.value ?? messages.value);
 const filter = ref('');
 const search = computed(() => createLogSearch(visibleMessages.value));
-const filteredMessages = computed(() => filter.value.trim() ? search.value(filter.value) : visibleMessages.value);
+const selectedLevels = ref<LogLevel[]>([...logLevels]);
+const filteredMessages = computed(() => filterLogLevels(filter.value.trim() ? search.value(filter.value) : visibleMessages.value, currentDevice.value?.platform, selectedLevels.value));
+const capturing = ref(false);
+const exportStatus = ref('');
+const copyFallback = ref<string>();
+const copyText = ref<HTMLTextAreaElement>();
+const copyButton = ref<HTMLButtonElement>();
 const status = ref('Select a device to start reading logs.');
 const loading = ref(false);
 const following = ref(true);
@@ -55,12 +63,15 @@ async function refresh() {
 }
 
 function stop() {
+  capturing.value = false;
   source?.close();
   source = undefined;
 }
 
 function start() {
   stop();
+  exportStatus.value = '';
+  copyFallback.value = undefined;
   const device = currentDevice.value;
   if (!device) return;
   messages.value = [];
@@ -89,7 +100,10 @@ function start() {
     }
   });
   stream.addEventListener('status', event => {
-    if (source === stream) status.value = JSON.parse(event.data).message;
+    if (source === stream) {
+      status.value = JSON.parse(event.data).message;
+      capturing.value = true;
+    }
   });
   stream.addEventListener('stopped', event => {
     if (source !== stream) return;
@@ -131,6 +145,8 @@ async function togglePause() {
 }
 
 function clearView() {
+  exportStatus.value = '';
+  copyFallback.value = undefined;
   messages.value = [];
   if (paused.value) pausedMessages.value = [];
 }
@@ -146,16 +162,49 @@ watch(bufferSize, async () => {
   if (following.value) scrollToLatest();
 });
 
+watch(status, () => { exportStatus.value = ''; });
 watch(selected, start);
 watch(newestPosition, async () => {
   following.value = true;
   await nextTick();
   scrollToLatest();
 });
-watch(filter, async () => {
+watch([filter, selectedLevels], async () => {
   await nextTick();
   if (following.value) scrollToLatest();
 });
+function toggleLevel(level: LogLevel) {
+  selectedLevels.value = selectedLevels.value.includes(level)
+    ? selectedLevels.value.filter(value => value !== level) : [...selectedLevels.value, level];
+}
+async function copyLogs() {
+  const text = formatLogMessages(displayedMessages.value);
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    exportStatus.value = 'Displayed messages copied.';
+  } catch {
+    copyFallback.value = text;
+    await nextTick();
+    copyText.value?.focus();
+    copyText.value?.select();
+  }
+}
+function closeCopy() { copyFallback.value = undefined; copyButton.value?.focus(); }
+function saveLogs() {
+  if (!displayedMessages.value.length) return;
+  const text = formatLogMessages(displayedMessages.value);
+  const url = URL.createObjectURL(new Blob([text + '\n'], { type: 'text/plain;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `uber-device-log-${currentDevice.value?.platform ?? 'device'}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  exportStatus.value = 'Log download requested.';
+}
+function displayTime(timestamp: string) { return timestamp.includes('T') ? timestamp.split('T')[1]?.replace(/Z$/, '') : timestamp; }
 onMounted(() => {
   void refresh();
   poll = setInterval(() => void refresh(), 3000);
@@ -169,50 +218,44 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main>
-    <h1>Device logs</h1>
-    <div class="toolbar">
-      <label for="device">Device</label>
-      <select id="device" v-model="selected">
-        <option value="">{{ devices.length ? 'Select an Android or iOS device' : 'No connected devices' }}</option>
-        <option v-for="device in devices" :key="keyOf(device)" :value="keyOf(device)" :disabled="device.state !== 'connected'">
-          {{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.name }} · {{ device.id }}{{ device.state !== 'connected' ? ` (${device.state})` : '' }}
-        </option>
-      </select>
-      <button :disabled="loading" @click="refresh">Refresh</button>
-      <button :disabled="!currentDevice" @click="start">Reconnect</button>
-      <button :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" @click="togglePause">{{ paused ? 'Resume' : 'Pause' }}</button>
-      <button :disabled="!messages.length && !visibleMessages.length" @click="clearView">Clear view</button>
-      <label for="newest-position">Newest messages</label>
-      <select id="newest-position" v-model="newestPosition">
-        <option value="top">On top</option>
-        <option value="bottom">On bottom</option>
-      </select>
-      <label for="buffer-size">Buffer size</label>
-      <select id="buffer-size" v-model.number="bufferSize">
-        <option v-for="size in bufferSizes" :key="size" :value="size">{{ size.toLocaleString() }} messages</option>
-      </select>
-    </div>
-    <div class="filter-bar" role="search">
-      <label for="log-filter">Filter logs</label>
-      <input id="log-filter" v-model="filter" type="search" placeholder="Search all log text…" aria-describedby="filter-help" @keydown.esc="filter = ''" />
-      <button :disabled="!filter" @click="filter = ''">Clear filter</button>
-    </div>
-    <p id="filter-help" class="hint">Fuzzy, case-insensitive search. All search terms must match anywhere in a message or its metadata.</p>
-    <p v-for="warning in warnings" :key="warning" class="warning">{{ warning }}</p>
-    <div class="summary">
-      <span role="status">{{ status }}{{ paused ? ' · View paused.' : '' }}</span>
-      <button v-if="!following && !paused" @click="follow">Follow latest</button>
-      <span>{{ filter.trim() ? `${filteredMessages.length.toLocaleString()} matching · ` : '' }}{{ visibleMessages.length.toLocaleString() }} / {{ bufferSize.toLocaleString() }} messages</span>
-    </div>
-    <div ref="viewport" class="logs" tabindex="0" aria-label="Device log messages" @scroll="onScroll">
-      <p v-if="!visibleMessages.length" class="empty">{{ paused ? 'View paused. Resume to show incoming messages.' : selected ? 'Waiting for messages…' : 'Connect a device, then choose it above.' }}</p>
-      <p v-else-if="!displayedMessages.length" class="empty">No messages match this filter.</p>
-      <div v-for="entry in displayedMessages" :key="entry.key" class="entry">
-        <time>{{ entry.timestamp }}</time>
-        <span class="message"><strong v-if="entry.level || entry.tag">{{ [entry.level, entry.tag, entry.pid].filter(value => value !== undefined).join(' ') }} </strong>{{ entry.message }}</span>
+  <div id="precision-design" :data-platform="currentDevice?.platform">
+    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><span class="precision-topnote">Local device logs</span></header>
+    <main class="precision-main">
+      <div class="precision-heading"><div><h1>Device logs.</h1><p>Android &amp; iOS logs, in one place.</p></div><span class="precision-live" :data-active="capturing"><span class="precision-dot"></span>{{ paused ? 'View paused · capture ' + (capturing ? 'active' : 'stopped') : capturing ? 'Live capture' : 'Not capturing' }}</span></div>
+      <div class="precision-controls">
+        <div class="precision-field precision-device"><label>Connected device</label>
+          <PrecisionMenu label="Choose connected device">
+            <template #selected><span v-if="currentDevice" class="precision-platform" :class="'precision-' + currentDevice.platform" aria-hidden="true"></span><span class="device-label">{{ currentDevice?.name ?? (devices.length ? 'Select a device' : 'No connected devices') }}<span class="precision-sub">{{ currentDevice ? `${currentDevice.platform === 'ios' ? 'iOS' : 'Android'} · ${currentDevice.id}` : 'Android & iOS' }}</span></span></template>
+            <div class="precision-menuhead">Available devices</div>
+            <p v-if="!devices.length" class="precision-menuhead">Connect and authorize a device.</p>
+            <button v-for="device in devices" :key="keyOf(device)" :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device)" @click="selected = keyOf(device)"><span class="precision-platform" :class="'precision-' + device.platform" aria-hidden="true"></span><span class="device-label">{{ device.name }}<span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }} · {{ device.state }}</span></span></button>
+          </PrecisionMenu>
+        </div>
+        <button class="precision-iconbutton" :disabled="loading" aria-label="Refresh devices" @click="refresh">↻</button>
+        <div class="precision-field"><label>Message order</label><PrecisionMenu label="Message order"><template #selected>↕ {{ newestPosition === 'top' ? 'Newest first' : 'Oldest first' }}</template><button :aria-pressed="newestPosition === 'top'" @click="newestPosition = 'top'">Newest first</button><button :aria-pressed="newestPosition === 'bottom'" @click="newestPosition = 'bottom'">Oldest first</button></PrecisionMenu></div>
+        <div class="precision-field"><label>Buffer capacity</label><PrecisionMenu label="Buffer capacity"><template #selected>{{ bufferSize.toLocaleString() }}</template><button v-for="size in bufferSizes" :key="size" :aria-pressed="bufferSize === size" @click="bufferSize = size">{{ size.toLocaleString() }} messages</button></PrecisionMenu></div>
       </div>
-    </div>
-    <p class="hint">Android: enable USB debugging and authorize this computer. iOS: unlock the device and trust this computer. iOS timestamps below are receipt times; original log text is preserved.</p>
-  </main>
+      <p v-for="warning in warnings" :key="warning" class="warning" role="status">{{ warning }}</p>
+      <section class="precision-console" aria-label="Device messages">
+        <div class="precision-searchbar" role="search"><span aria-hidden="true">⌕</span><input v-model="filter" type="search" aria-label="Filter logs" placeholder="Find a message, tag, or process…" @keydown.esc="filter = ''" /><span class="precision-fuzzy">FUZZY SEARCH</span><button v-if="filter" class="precision-searchclear" @click="filter = ''">Clear filter</button></div>
+        <div class="precision-consolebar"><div class="precision-caption"><strong>Log stream</strong><span>·</span><span>{{ displayedMessages.length.toLocaleString() }} messages</span></div><div class="precision-actions">
+          <button class="precision-action" :disabled="!currentDevice" @click="start">↻ Reconnect</button>
+          <button class="precision-action" :disabled="!messages.length && !visibleMessages.length" @click="clearView">Clear</button>
+          <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" @click="togglePause">{{ paused ? '▷ Resume' : 'Ⅱ Pause' }}</button>
+          <div class="precision-export-actions" role="group" aria-label="Export filtered messages"><button ref="copyButton" class="precision-action" :disabled="!displayedMessages.length" title="Copy the displayed filtered messages" @click="copyLogs">Copy</button><button class="precision-action" :disabled="!displayedMessages.length" title="Save the displayed filtered messages as a .log file" @click="saveLogs">↓ Save</button></div>
+        </div></div>
+        <div class="precision-severitybar" role="group" aria-label="Android severity filters" :aria-describedby="currentDevice?.platform === 'ios' ? 'ios-note' : undefined"><span class="precision-severitylabel">Levels</span><button class="precision-severity" :disabled="currentDevice?.platform !== 'android'" :aria-pressed="currentDevice?.platform === 'android' && selectedLevels.length === logLevels.length" @click="selectedLevels = [...logLevels]">All</button><button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="currentDevice?.platform !== 'android'" :aria-pressed="currentDevice?.platform === 'android' && selectedLevels.includes(level)" @click="toggleLevel(level)"><span class="precision-check">✓</span>{{ level }}</button><span v-if="currentDevice?.platform === 'ios'" id="ios-note" class="precision-ios-note">Level filters are available for Android. For this iOS stream, search the original log text.</span></div>
+        <div class="precision-columns" aria-hidden="true"><span class="precision-number">#</span><span>{{ currentDevice?.platform === 'ios' ? 'Received' : 'Time' }}</span><span class="precision-level-heading">Level</span><span class="precision-tag">Tag / PID</span><span>Message</span></div>
+        <div ref="viewport" class="logs" tabindex="0" aria-label="Device log messages" @scroll="onScroll">
+          <div v-if="!visibleMessages.length" class="precision-empty">{{ paused ? 'View paused. Resume to show incoming messages.' : selected ? 'Waiting for messages…' : 'Connect a device, then choose it above.' }}</div>
+          <div v-else-if="!displayedMessages.length" class="precision-empty">No messages match these filters.</div>
+          <div v-for="entry in displayedMessages" :key="entry.key" class="entry precision-row" :data-level="logLevel(entry.level)"><span class="precision-number">{{ entry.key + 1 }}</span><time class="precision-time" :title="entry.timestamp">{{ displayTime(entry.timestamp) }}</time><span class="precision-level">{{ logLevel(entry.level) }}</span><span class="precision-tag">{{ entry.tag }}<span class="precision-sub">{{ entry.pid }}</span></span><span class="precision-msg">{{ entry.message }}</span></div>
+        </div>
+        <div v-if="copyFallback !== undefined" class="precision-copy-fallback"><label for="copy-text">Clipboard unavailable. Copy the selected text manually.</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">Close</button></div>
+        <div class="precision-bottom"><span>{{ visibleMessages.length.toLocaleString() }} of {{ bufferSize.toLocaleString() }} retained</span><button v-if="!following && !paused" class="precision-action" @click="follow">Follow latest</button><span v-else>{{ paused ? 'View frozen · capture ' + (capturing ? 'continues' : 'stopped') : (newestPosition === 'top' ? '↑' : '↓') + ' Following newest messages' }}</span></div>
+      </section>
+      <footer class="precision-footer"><span>On your machine. Logs stay local.</span><span role="status">{{ exportStatus || status }}</span></footer>
+      <p class="setup-hint">Android: enable USB debugging and authorize this computer. iOS: unlock and trust this computer. iOS timestamps are receipt times.</p>
+    </main>
+  </div>
 </template>

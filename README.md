@@ -2,7 +2,7 @@
 
 The approved **Über Device Log** visual direction is [Precision](docs/design/README.md). The interactive design reference is stored there separately from the current prototype UI.
 
-The production interface has not yet been restyled. Custom selectors, platform icons, Android severity filters and Copy/Save actions are currently part of the design reference, not the running application.
+The Vue interface implements **Precision**, including responsive light/dark styling, keyboard-accessible custom selectors, locally bundled platform icons, Android severity filters and Copy/Save actions.
 
 Minimal Vue 3 + TypeScript frontend with a Node.js/TypeScript backend. One selector lists Android and iOS devices; selecting a device opens a scrollable live message list. No Appium server, Python runtime, or `idevicesyslog` installation is needed for this implementation.
 
@@ -11,7 +11,7 @@ Minimal Vue 3 + TypeScript frontend with a Node.js/TypeScript backend. One selec
 Use Node.js 22.12+ (prefer an active LTS release) and npm 10+:
 
 ```sh
-cd phone-log-viewer
+cd uber-device-log
 npm ci
 npm run dev
 ```
@@ -47,13 +47,15 @@ Discovery refreshes every three seconds and has a manual refresh button. A failu
 - Scroll away from the newest end to stop following new messages; use **Follow latest** to resume. Incoming messages preserve your reading position while following is paused, as long as those messages remain in the configured buffer.
 - **Clear view** clears browser messages only; it never clears device logs.
 - **Filter logs** searches message text, timestamps, tags, levels and PIDs with case-insensitive fuzzy matching (Fuse.js). All whitespace-separated terms must match; results retain the selected chronological order. Filtering only affects the view, including while paused. **Clear filter** or Escape restores all retained messages.
+- **Android levels** toggle Verbose, Debug, Info, Warn, Error and Fatal independently and combine with fuzzy search. All restores all levels. Selections survive device changes; iOS disables these filters.
+- **Copy / Save** use the displayed order and current filtered snapshot, preserving timestamps, metadata and multiline messages. Save downloads a plain-text `.log`; Copy offers selectable text if clipboard access fails.
 - **Pause** freezes the displayed messages while capture continues in the bounded buffer. **Resume** shows the latest retained messages and follows the newest end. Reconnecting or selecting another device resumes the view; clearing while paused keeps it paused.
 - **Buffer size** selects 1,000, 2,000 (default), 10,000, 50,000 or 100,000 messages for the browser. Reducing it immediately removes the oldest entries from both the live buffer and any paused snapshot. Increasing it allows more future messages; discarded entries cannot be recovered. The setting lasts for the current page session.
 - The server batches up to 100 messages every 100 ms and caps its queue at 1,000, dropping the oldest queued records and reporting when overloaded. Individual message text is capped at 16,384 JavaScript characters. This is a viewer, not a lossless recorder.
 - Android includes whatever history remains in logcat plus live output; reconnects may repeat that history. iOS uses the legacy syslog relay, which may expose fewer records than Apple's unified-log Console view or Xcode debugger output. Its upstream decoder also uses a fixed 5 KiB line buffer; long iOS lines are not guaranteed intact. Test real Unity logs/exceptions before relying on completeness.
 - Android timestamps come from logcat; iOS timestamps in the UI are host receipt times, with the device's original text retained. No cross-device clock normalization.
 - Disconnections stop capture. Select the device again or use **Reconnect**; there is no silent automatic retry or promise of gap-free capture.
-- Localhost only, with Host/Origin checks. No persistent storage, remote access, structured severity filters, or export in the running prototype. Logs render as text, never HTML.
+- Localhost only, with Host/Origin checks. No persistent storage or remote access. Android supports structured severity filters; iOS retains its original text-only logs. Copy and Save export only the currently displayed, filtered messages, including the frozen snapshot while paused. Logs render as text, never HTML.
 
 ## Architecture
 
@@ -62,7 +64,9 @@ Vue 3 and Vite provide the frontend; Express runs the TypeScript backend on Node
 | File | Purpose |
 | --- | --- |
 | `src/App.vue` | Device selection, polling, streaming, filtering, pause, ordering and buffer controls |
-| `src/style.css` | Responsive prototype styling |
+| `src/style.css` | Responsive Precision light/dark styling |
+| `src/components/PrecisionMenu.vue` | Custom keyboard-accessible selector |
+| `shared/log-view.ts` | Severity normalization/filtering and plain-text export |
 | `src/main.ts` | Vue entry point |
 | `shared/types.ts` | Device, discovery and log-message types |
 | `shared/search.ts` | Fuse.js full-text search, preserving arrival order |
@@ -99,13 +103,13 @@ Android capture owns the raw `shell('logcat -B *:V')` socket and passes it to ad
 
 `npm test` (or `bun run test`) checks collector cleanup, device-switch races, connection errors, safe stream framing, bounded slow-client behavior, and fuzzy matching across metadata and long messages. `npm run build` (or `bun run build`) checks frontend/backend types and produces the Vue bundle.
 
-The last recorded checks on 29 September 2026 passed all eight tests and the build. Startup, frontend serving and the discovery API were verified locally on macOS. Earlier browser checks used simulated devices to exercise combined selection, incoming messages, device switching, scrolling, clearing and safe text rendering. Those temporary fixtures are not a committed browser test suite; newer UI controls have not all received end-to-end browser testing.
+The latest checks on 29 September 2026 passed all eleven tests and the production build. Browser checks using simulated devices verified severity/search composition, newest/oldest order, pause/resume, Copy/Save against the filtered frozen snapshot, iOS filter disabling, retained Android selections, keyboard menu focus/Escape, buffer trimming, and clipboard fallback. Light/dark rendering and a 390-pixel mobile viewport were checked. Startup, frontend serving and the discovery API were verified locally on macOS. Earlier browser checks used simulated devices to exercise combined selection, incoming messages, device switching, scrolling, clearing and safe text rendering. Those temporary fixtures are not a committed browser test suite; the current browser checks are also manual automation, not a committed end-to-end suite.
 
 Physical Android/iOS log capture remains unverified. Windows/Linux compatibility and rendering/search performance at 100,000 records have not been validated.
 
 ## Next validation and implementation work
 
-- Apply the approved [Precision design](docs/design/README.md), including its custom selectors, Android severity filters and Copy/Save actions.
+- Keep the implemented [Precision design](docs/design/README.md) aligned with its reference while validating real-device capture.
 - Connect authorized Android and iOS devices and verify discovery, trust errors and real message delivery.
 - Compare Unity `Debug.Log`, warnings, exceptions, long stack traces and native-plugin messages against logcat and Apple Console in relevant debug/release builds.
 - Exercise switching during connection, app restarts, locking, unplug/replug and noisy streams; verify cleanup and usable scrolling at larger buffer sizes.

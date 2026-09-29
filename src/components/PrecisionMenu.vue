@@ -1,0 +1,32 @@
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue';
+defineProps<{ label: string }>();
+const root = ref<HTMLDetailsElement>();
+function close(focus = false) {
+  if (!root.value) return;
+  root.value.open = false;
+  if (focus) root.value.querySelector('summary')?.focus();
+}
+function outside(event: MouseEvent) {
+  if (event.target instanceof Node && !root.value?.contains(event.target)) close();
+}
+function keys(event: KeyboardEvent) {
+  if (event.key === 'Escape') { event.preventDefault(); close(true); }
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  if (!root.value) return;
+  root.value.open = true;
+  const buttons = Array.from(root.value.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+  const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : event.key === 'ArrowDown' ? (index + 1) % buttons.length : (index <= 0 ? buttons.length : index) - 1;
+  buttons[next]?.focus();
+}
+onMounted(() => document.addEventListener('click', outside));
+onUnmounted(() => document.removeEventListener('click', outside));
+</script>
+<template>
+  <details ref="root" @keydown="keys" @focusout="event => { if (!root?.contains(event.relatedTarget as Node)) close(); }">
+    <summary :aria-label="label"><slot name="selected" /><span class="menu-chevron" aria-hidden="true">⌄</span></summary>
+    <div class="precision-menu" @click="event => { if ((event.target as HTMLElement).closest('button:not(:disabled)')) close(true); }"><slot /></div>
+  </details>
+</template>
