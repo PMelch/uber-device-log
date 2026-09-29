@@ -1,6 +1,6 @@
 import type { ServerResponse } from 'node:http';
-import type { Device, LogMessage } from '../shared/types';
-import type { OpenLogs, Stop } from './devices';
+import type { Device, LogMessage } from '../shared/types.js';
+import type { OpenLogs, Stop } from './devices.js';
 
 // A connection owns one collector. Closing the tab or changing selection closes
 // the collector, including one that resolves after the browser has gone away.

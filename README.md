@@ -6,6 +6,34 @@ The Vue interface implements **Precision**, including responsive light/dark styl
 
 Minimal Vue 3 + TypeScript frontend with a Node.js/TypeScript backend. One selector lists Android and iOS devices; selecting a device opens a scrollable live message list. No Appium server, Python runtime, or `idevicesyslog` installation is needed for this implementation.
 
+## Run the npm package
+
+After publication to npm:
+
+```sh
+npx uber-device-log
+# or
+bunx uber-device-log
+```
+
+Open the printed URL (default: http://127.0.0.1:4310). Stop with Ctrl+C.
+Node.js 22.12+ is required for both launchers; `bunx` respects the Node shebang.
+Do not use `bunx --bun`: direct Bun execution of the device adapters is not validated.
+
+```sh
+npx uber-device-log --port 4311
+bunx uber-device-log --help
+npx uber-device-log --version
+```
+
+`PORT` sets the default port; `--port` overrides it. The CLI only binds to
+127.0.0.1. Android still needs `adb` and USB debugging; iOS needs host pairing
+and the platform services described below. The npm package includes the compiled
+server and frontend; no TypeScript compiler, Vite, repository checkout, account,
+or application credentials are needed to run it.
+
+See [Publishing](docs/publishing.md) for package verification and release steps.
+
 ## Run
 
 Use Node.js 22.12+ (prefer an active LTS release) and npm 10+:
@@ -28,7 +56,7 @@ npm start
 npm test
 ```
 
-`build` checks frontend and backend types and builds the frontend. `start` serves that frontend and runs the backend with `tsx`; retain development dependencies in this prototype. TypeScript is pinned to 5.9 because the currently resolved Vue type checker does not support TypeScript 7.
+`build` checks frontend/backend types, builds the frontend and compiles the server to JavaScript. `start` runs the production CLI and serves the built frontend. Only development uses `tsx`; published installations need runtime dependencies only. TypeScript is pinned to 5.9 because the currently resolved Vue type checker does not support TypeScript 7.
 
 Both `package-lock.json` and `bun.lock` are maintained. Keep them consistent when changing dependencies. Running scripts through Bun has been verified; running the backend directly on the Bun runtime has not.
 
@@ -48,14 +76,14 @@ Discovery refreshes every three seconds and has a manual refresh button. A failu
 - **Clear view** clears browser messages only; it never clears device logs.
 - **Filter logs** searches message text, timestamps, tags, levels and PIDs with case-insensitive fuzzy matching (Fuse.js). All whitespace-separated terms must match; results retain the selected chronological order. Filtering only affects the view, including while paused. **Clear filter** or Escape restores all retained messages.
 - **Android levels** toggle Verbose, Debug, Info, Warn, Error and Fatal independently and combine with fuzzy search. All restores all levels. Selections survive device changes; iOS disables these filters.
-- **Copy / Save** use the displayed order and current filtered snapshot, preserving timestamps, metadata and multiline messages. Save downloads a plain-text `.log`; Copy offers selectable text if clipboard access fails.
+- **Copy / Save** use text marked inside the log list. Copy is disabled without a selection; Save then exports all displayed messages in the current filtered order (the frozen snapshot while paused), preserving metadata and multiline messages. Save downloads a plain-text `.log`; Copy offers selectable text if clipboard access fails.
 - **Pause** freezes the displayed messages while capture continues in the bounded buffer. **Resume** shows the latest retained messages and follows the newest end. Reconnecting or selecting another device resumes the view; clearing while paused keeps it paused.
 - **Buffer size** selects 1,000, 2,000 (default), 10,000, 50,000 or 100,000 messages for the browser. Reducing it immediately removes the oldest entries from both the live buffer and any paused snapshot. Increasing it allows more future messages; discarded entries cannot be recovered. The setting lasts for the current page session.
 - The server batches up to 100 messages every 100 ms and caps its queue at 1,000, dropping the oldest queued records and reporting when overloaded. Individual message text is capped at 16,384 JavaScript characters. This is a viewer, not a lossless recorder.
 - Android includes whatever history remains in logcat plus live output; reconnects may repeat that history. iOS uses the legacy syslog relay, which may expose fewer records than Apple's unified-log Console view or Xcode debugger output. Its upstream decoder also uses a fixed 5 KiB line buffer; long iOS lines are not guaranteed intact. Test real Unity logs/exceptions before relying on completeness.
 - Android timestamps come from logcat; iOS timestamps in the UI are host receipt times, with the device's original text retained. No cross-device clock normalization.
 - Disconnections stop capture. Select the device again or use **Reconnect**; there is no silent automatic retry or promise of gap-free capture.
-- Localhost only, with Host/Origin checks. No persistent storage or remote access. Android supports structured severity filters; iOS retains its original text-only logs. Copy and Save export only the currently displayed, filtered messages, including the frozen snapshot while paused. Logs render as text, never HTML.
+- Localhost only, with Host/Origin checks. No persistent storage or remote access. Android supports structured severity filters; iOS retains its original text-only logs. Copy exports selected log text. Save exports the selection, or all currently displayed, filtered messages when nothing is selected, including the frozen snapshot while paused. Logs render as text, never HTML.
 
 ## Architecture
 
@@ -101,9 +129,9 @@ Android capture owns the raw `shell('logcat -B *:V')` socket and passes it to ad
 
 ## Verification
 
-`npm test` (or `bun run test`) checks collector cleanup, device-switch races, connection errors, safe stream framing, bounded slow-client behavior, and fuzzy matching across metadata and long messages. `npm run build` (or `bun run build`) checks frontend/backend types and produces the Vue bundle.
+`npm test` (or `bun run test`) checks collector cleanup, device-switch races, connection errors, safe stream framing, bounded slow-client behavior, and fuzzy matching across metadata and long messages. `npm run build` (or `bun run build`) checks frontend/backend types and produces the Vue bundle and compiled server. `npm run test:package` builds and packs the application, checks the archive allowlist, installs it without development dependencies into a temporary directory, and tests npx/bunx startup plus frontend/API serving. Both npm and Bun must be installed to run that packaging check.
 
-The latest checks on 29 September 2026 passed all eleven tests and the production build. Browser checks using simulated devices verified severity/search composition, newest/oldest order, pause/resume, Copy/Save against the filtered frozen snapshot, iOS filter disabling, retained Android selections, keyboard menu focus/Escape, buffer trimming, and clipboard fallback. Light/dark rendering and a 390-pixel mobile viewport were checked. Startup, frontend serving and the discovery API were verified locally on macOS. Earlier browser checks used simulated devices to exercise combined selection, incoming messages, device switching, scrolling, clearing and safe text rendering. Those temporary fixtures are not a committed browser test suite; the current browser checks are also manual automation, not a committed end-to-end suite.
+The latest checks on 29 September 2026 passed all fifteen tests and the production build. Browser checks using simulated devices verified severity/search composition, newest/oldest order, pause/resume, Copy/Save against the filtered frozen snapshot, iOS filter disabling, retained Android selections, keyboard menu focus/Escape, buffer trimming, and clipboard fallback. Light/dark rendering and a 390-pixel mobile viewport were checked. Startup, frontend serving and the discovery API were verified locally on macOS. Earlier browser checks used simulated devices to exercise combined selection, incoming messages, device switching, scrolling, clearing and safe text rendering. Those temporary fixtures are not a committed browser test suite; the current browser checks are also manual automation, not a committed end-to-end suite.
 
 Physical Android/iOS log capture remains unverified. Windows/Linux compatibility and rendering/search performance at 100,000 records have not been validated.
 

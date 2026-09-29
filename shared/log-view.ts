@@ -16,3 +16,8 @@ export function formatLogMessages(messages: readonly LogMessage[]): string {
     return `${entry.timestamp} ${metadata ? `${metadata}: ` : ''}${entry.message}`;
   }).join('\n');
 }
+
+/** Preserve a native text selection exactly; otherwise export the displayed records. */
+export function logExportText(messages: readonly LogMessage[], selection: string): string {
+  return selection || formatLogMessages(messages);
+}

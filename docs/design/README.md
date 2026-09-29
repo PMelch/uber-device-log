@@ -18,7 +18,7 @@ Open [precision.html](precision.html) in a browser to explore the approved desig
 - Buffer choices: 1,000, 2,000 (default), 10,000, 50,000 and 100,000.
 - Full-text fuzzy search combines with selectable Android severity filters. Android selections are retained when switching devices; severity filters are disabled for the current iOS text-only collector.
 - Pause freezes the visible snapshot while capture continues. Resume shows the retained messages.
-- Copy and Save operate on the filtered view in its displayed order, including timestamps and available metadata. Save produces a plain-text `.log` file.
+- Implementation update: Copy and Save export text selected inside the log list. Without a selection, Copy is disabled and Save exports the entire filtered view in its displayed order, including timestamps and available metadata. Save produces a plain-text `.log` file.
 - Keep keyboard access, clear focus states, responsive controls and readable light/dark contrast.
 
 ## Reference scope

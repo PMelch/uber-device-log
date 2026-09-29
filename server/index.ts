@@ -1,10 +1,10 @@
 import express from 'express';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
-import { listDevices, openLogs, type Stop } from './devices';
-import { streamLogs } from './stream';
+import { listDevices, openLogs, type Stop } from './devices.js';
+import { streamLogs } from './stream.js';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL(process.argv.includes('--production') ? '../..' : '..', import.meta.url));
 const app = express();
 const server = createServer(app);
 const port = Number(process.env.PORT || 4310);
@@ -62,7 +62,7 @@ if (process.argv.includes('--production')) {
 
 server.once('error', async (error: NodeJS.ErrnoException) => {
   console.error(error.code === 'EADDRINUSE'
-    ? `Port ${port} is already in use. Stop the existing server or run with a different port: PORT=${port + 1} bun run dev`
+    ? `Port ${port} is already in use. Stop the existing server or run with a different port: uber-device-log --port ${port + 1}`
     : `Unable to start device logs: ${error.message}`);
   process.exitCode = 1;
   await shutdown();

@@ -3,7 +3,7 @@ import logcat from '@devicefarmer/adbkit-logcat';
 import { services, utilities } from 'appium-ios-device';
 import { getDefaultSocket } from 'appium-ios-device/build/lib/usbmux/index.js';
 import type { Socket } from 'node:net';
-import type { Device, DeviceList, LogMessage } from '../shared/types';
+import type { Device, DeviceList, LogMessage } from '../shared/types.js';
 
 const adb = Adb.createClient({ bin: process.env.ADB_PATH || 'adb', timeout: 5000 });
 export const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);

@@ -23,3 +23,10 @@ test('export preserves displayed order, zero PID, multiline text and iOS origina
   assert.equal(formatLogMessages([entries[2]!]), 't3 original iOS text');
   assert.equal(formatLogMessages([]), '');
 });
+
+test('selection export preserves the exact range and falls back to the full displayed log', async () => {
+  const { logExportText } = await import('../shared/log-view');
+  assert.equal(logExportText(entries, 'failed\n  sta'), 'failed\n  sta');
+  assert.equal(logExportText(entries, ''), formatLogMessages(entries));
+  assert.equal(logExportText([], ''), '');
+});

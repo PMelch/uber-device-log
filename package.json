@@ -1,24 +1,24 @@
 {
-  "name": "device-log-viewer",
+  "name": "uber-device-log",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "tsx watch server/index.ts",
-    "build": "vue-tsc --noEmit && vite build",
-    "start": "node --import tsx server/index.ts --production",
-    "test": "node --import tsx --test server/*.test.ts"
+    "build": "vue-tsc --noEmit && vite build && tsc -p tsconfig.server.json",
+    "start": "node bin/uber-device-log.mjs",
+    "test": "node --import tsx --test server/*.test.ts",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm test",
+    "test:package": "node scripts/test-package.mjs"
   },
   "dependencies": {
     "@devicefarmer/adbkit": "^3.3.9",
     "@devicefarmer/adbkit-logcat": "2.1.3",
     "appium-ios-device": "^3.1.24",
-    "express": "^5.2.1",
-    "fuse.js": "^7.5.0",
-    "vue": "^3.5.43"
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
@@ -27,6 +27,39 @@
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "vite": "^8.3.1",
-    "vue-tsc": "^3.3.11"
+    "vue-tsc": "^3.3.11",
+    "vue": "^3.5.43",
+    "fuse.js": "^7.5.0"
+  },
+  "description": "Local Android and iOS device log viewer with search, severity filters and export.",
+  "license": "Apache-2.0",
+  "bin": {
+    "uber-device-log": "bin/uber-device-log.mjs"
+  },
+  "files": [
+    "bin/",
+    "build/server/*.js",
+    "build/shared/*.js",
+    "dist/",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PMelch/uber-device-log.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PMelch/uber-device-log/issues"
+  },
+  "homepage": "https://github.com/PMelch/uber-device-log#readme",
+  "keywords": [
+    "android",
+    "ios",
+    "logcat",
+    "device",
+    "logs"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

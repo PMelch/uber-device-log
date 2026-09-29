@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { Device, DeviceList, LogMessage } from '../shared/types';
 import { createLogSearch } from '../shared/search';
-import { filterLogLevels, formatLogMessages, logLevel, logLevels, type LogLevel } from '../shared/log-view';
+import { filterLogLevels, logExportText, logLevel, logLevels, type LogLevel } from '../shared/log-view';
 import PrecisionMenu from './components/PrecisionMenu.vue';
 
 const devices = ref<Device[]>([]);
@@ -20,6 +20,7 @@ const selectedLevels = ref<LogLevel[]>([...logLevels]);
 const filteredMessages = computed(() => filterLogLevels(filter.value.trim() ? search.value(filter.value) : visibleMessages.value, currentDevice.value?.platform, selectedLevels.value));
 const capturing = ref(false);
 const exportStatus = ref('');
+const selectedLogText = ref('');
 const copyFallback = ref<string>();
 const copyText = ref<HTMLTextAreaElement>();
 const copyButton = ref<HTMLButtonElement>();
@@ -162,6 +163,7 @@ watch(bufferSize, async () => {
   if (following.value) scrollToLatest();
 });
 
+watch(displayedMessages, async () => { await nextTick(); updateLogSelection(); });
 watch(status, () => { exportStatus.value = ''; });
 watch(selected, start);
 watch(newestPosition, async () => {
@@ -177,12 +179,18 @@ function toggleLevel(level: LogLevel) {
   selectedLevels.value = selectedLevels.value.includes(level)
     ? selectedLevels.value.filter(value => value !== level) : [...selectedLevels.value, level];
 }
+function updateLogSelection() {
+  const selection = window.getSelection();
+  const inside = selection && !selection.isCollapsed && selection.anchorNode && selection.focusNode
+    && viewport.value?.contains(selection.anchorNode) && viewport.value?.contains(selection.focusNode);
+  selectedLogText.value = inside ? selection.toString() : '';
+}
 async function copyLogs() {
-  const text = formatLogMessages(displayedMessages.value);
+  const text = selectedLogText.value;
   if (!text) return;
   try {
     await navigator.clipboard.writeText(text);
-    exportStatus.value = 'Displayed messages copied.';
+    exportStatus.value = 'Selected log text copied.';
   } catch {
     copyFallback.value = text;
     await nextTick();
@@ -193,7 +201,7 @@ async function copyLogs() {
 function closeCopy() { copyFallback.value = undefined; copyButton.value?.focus(); }
 function saveLogs() {
   if (!displayedMessages.value.length) return;
-  const text = formatLogMessages(displayedMessages.value);
+  const text = logExportText(displayedMessages.value, selectedLogText.value);
   const url = URL.createObjectURL(new Blob([text + '\n'], { type: 'text/plain;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
@@ -206,10 +214,12 @@ function saveLogs() {
 }
 function displayTime(timestamp: string) { return timestamp.includes('T') ? timestamp.split('T')[1]?.replace(/Z$/, '') : timestamp; }
 onMounted(() => {
+  document.addEventListener('selectionchange', updateLogSelection);
   void refresh();
   poll = setInterval(() => void refresh(), 3000);
 });
 onUnmounted(() => {
+  document.removeEventListener('selectionchange', updateLogSelection);
   disposed = true;
   discovery?.abort();
   clearInterval(poll);
@@ -242,7 +252,7 @@ onUnmounted(() => {
           <button class="precision-action" :disabled="!currentDevice" @click="start">↻ Reconnect</button>
           <button class="precision-action" :disabled="!messages.length && !visibleMessages.length" @click="clearView">Clear</button>
           <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" @click="togglePause">{{ paused ? '▷ Resume' : 'Ⅱ Pause' }}</button>
-          <div class="precision-export-actions" role="group" aria-label="Export filtered messages"><button ref="copyButton" class="precision-action" :disabled="!displayedMessages.length" title="Copy the displayed filtered messages" @click="copyLogs">Copy</button><button class="precision-action" :disabled="!displayedMessages.length" title="Save the displayed filtered messages as a .log file" @click="saveLogs">↓ Save</button></div>
+          <div class="precision-export-actions" role="group" aria-label="Export selected text or displayed log"><button ref="copyButton" class="precision-action" :disabled="!selectedLogText" title="Copy selected log text" @pointerdown.prevent @click="copyLogs">Copy</button><button class="precision-action" :disabled="!displayedMessages.length" :title="selectedLogText ? 'Save selected log text' : 'Save all displayed log messages'" @pointerdown.prevent @click="saveLogs">↓ Save</button></div>
         </div></div>
         <div class="precision-severitybar" role="group" aria-label="Android severity filters" :aria-describedby="currentDevice?.platform === 'ios' ? 'ios-note' : undefined"><span class="precision-severitylabel">Levels</span><button class="precision-severity" :disabled="currentDevice?.platform !== 'android'" :aria-pressed="currentDevice?.platform === 'android' && selectedLevels.length === logLevels.length" @click="selectedLevels = [...logLevels]">All</button><button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="currentDevice?.platform !== 'android'" :aria-pressed="currentDevice?.platform === 'android' && selectedLevels.includes(level)" @click="toggleLevel(level)"><span class="precision-check">✓</span>{{ level }}</button><span v-if="currentDevice?.platform === 'ios'" id="ios-note" class="precision-ios-note">Level filters are available for Android. For this iOS stream, search the original log text.</span></div>
         <div class="precision-columns" aria-hidden="true"><span class="precision-number">#</span><span>{{ currentDevice?.platform === 'ios' ? 'Received' : 'Time' }}</span><span class="precision-level-heading">Level</span><span class="precision-tag">Tag / PID</span><span>Message</span></div>
