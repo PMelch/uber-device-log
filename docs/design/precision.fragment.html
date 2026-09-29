@@ -1,0 +1,194 @@
+<style>
+#precision-design { --pl-bg:light-dark(#f3f4f1,#131715); --pl-panel:light-dark(#ffffff,#1a201c); --pl-text:light-dark(#222c26,#e5ece7); --pl-soft:light-dark(#64736a,#a0afa5); --pl-line:light-dark(#e3e8e1,#303c33); --pl-wash:light-dark(#f7f9f6,#202922); --pl-accent:light-dark(#176849,#92dcb3); --pl-accent-bg:light-dark(#e8f4ec,#253f30); --pl-error:light-dark(#b84640,#f29f94); --pl-error-bg:light-dark(#fff5f2,#332523); --pl-warn:light-dark(#936416,#e2bb76); --pl-warn-bg:light-dark(#fff9ec,#302c21); --pl-radius:12px; --pl-row:12px; color:var(--pl-text); background:var(--pl-bg); font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; border:1px solid var(--pl-line); border-radius:16px; overflow:clip; }
+#precision-design *{box-sizing:border-box} #precision-design button,#precision-design input,#precision-design summary{font:inherit} #precision-design button,#precision-design summary{color:inherit} #precision-design button{cursor:pointer} #precision-design button:focus-visible,#precision-design summary:focus-visible,#precision-design input:focus-visible{outline:2px solid var(--pl-accent);outline-offset:3px} #precision-design button{border:0;background:none} #precision-design .precision-top{padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--pl-line);background:var(--pl-panel)} #precision-design .precision-brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.5px;font-size:18px} #precision-design .precision-brandmark{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;color:var(--pl-panel);background:var(--pl-text)} #precision-design .precision-topnote{font-size:12px;color:var(--pl-soft);display:flex;gap:8px;align-items:center} #precision-design .precision-main{padding:28px} #precision-design .precision-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px} #precision-design h1{font-size:26px;line-height:1.2;font-weight:600;letter-spacing:-1px;margin:0 0 7px} #precision-design p{margin:0;color:var(--pl-soft);font-size:13px} #precision-design .precision-live{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--pl-accent);padding:6px 10px;border-radius:30px;background:var(--pl-accent-bg);white-space:nowrap} #precision-design .precision-dot{width:6px;height:6px;border-radius:100%;background:currentColor;display:inline-block} #precision-design .precision-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:20px} #precision-design .precision-field{min-width:0} #precision-design .precision-field>label{display:block;color:var(--pl-soft);font-size:11px;letter-spacing:.7px;text-transform:uppercase;font-weight:600;margin:0 0 7px 2px} #precision-design .precision-device{flex:1;min-width:240px} #precision-design details{position:relative} #precision-design summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;border:1px solid var(--pl-line);background:var(--pl-panel);padding:11px 13px;border-radius:var(--pl-radius);min-height:46px;white-space:nowrap} #precision-design summary::-webkit-details-marker{display:none} #precision-design summary>svg:last-child{margin-left:auto;width:14px;color:var(--pl-soft)} #precision-design .precision-sub{display:block;color:var(--pl-soft);font-size:11px} #precision-design .precision-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:100%;width:max-content;max-width:100%;z-index:10;border:1px solid var(--pl-line);padding:6px;background:var(--pl-panel);border-radius:12px;box-shadow:0 14px 36px #0002} #precision-design .precision-device .precision-menu{width:100%} #precision-design .precision-menuhead{padding:7px 9px;color:var(--pl-soft);font-size:11px;letter-spacing:.5px;text-transform:uppercase} #precision-design .precision-menu button{width:100%;display:flex;text-align:left;align-items:center;gap:12px;padding:10px;border-radius:7px;white-space:nowrap} #precision-design .precision-menu button:hover,#precision-design .precision-menu button[aria-pressed=true]{background:var(--pl-wash)} #precision-design .precision-menu button:disabled{opacity:.5;cursor:default} #precision-design .precision-platform{display:inline-block;flex:0 0 22px;width:22px;height:22px;background:currentColor;mask-position:center;mask-size:contain;mask-repeat:no-repeat} #precision-design .precision-android{color:var(--pl-accent);mask-image:url('https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/android.svg')} #precision-design .precision-ios{mask-image:url('https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/apple.svg')} #precision-design .precision-iconbutton{height:46px;width:44px;display:grid;place-items:center;border:1px solid var(--pl-line);border-radius:var(--pl-radius);background:var(--pl-panel)} #precision-design .precision-console{border:1px solid var(--pl-line);border-radius:var(--pl-radius);background:var(--pl-panel)} #precision-design .precision-searchbar{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--pl-line)} #precision-design .precision-searchbar>svg{width:18px;color:var(--pl-soft)} #precision-design input{background:none;border:0;min-width:80px;flex:1;color:var(--pl-text);padding:3px 0;outline-offset:5px} #precision-design input::placeholder{color:var(--pl-soft)} #precision-design .precision-fuzzy{font-size:10px;font-weight:600;letter-spacing:.6px;color:var(--pl-accent);background:var(--pl-accent-bg);padding:3px 7px;border-radius:5px} #precision-design .precision-searchclear{color:var(--pl-soft);font-size:12px} #precision-design .precision-consolebar{padding:12px 18px;display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--pl-wash);border-bottom:1px solid var(--pl-line)} #precision-design .precision-caption{display:flex;gap:9px;align-items:center;font-size:12px;color:var(--pl-soft)} #precision-design .precision-caption strong{color:var(--pl-text);font-weight:500} #precision-design .precision-actions{display:flex;align-items:center;gap:10px} #precision-design .precision-action{display:flex;gap:6px;align-items:center;padding:6px 9px;border-radius:7px;font-size:12px;white-space:nowrap} #precision-design .precision-action:hover{background:var(--pl-line)} #precision-design .precision-action.precision-pause{border:1px solid var(--pl-line);background:var(--pl-panel)} #precision-design svg{width:16px;height:16px;flex-shrink:0} #precision-design .precision-columns,#precision-design .precision-row{display:grid;grid-template-columns:28px 100px 52px 100px minmax(0,1fr);gap:12px;align-items:start} #precision-design .precision-columns{padding:11px 18px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--pl-soft);border-bottom:1px solid var(--pl-line)} #precision-design .precision-row{padding:var(--pl-row) 18px;font:11px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;border-bottom:1px solid var(--pl-line)} #precision-design .precision-row:last-child{border-bottom:0} #precision-design .precision-row:hover{background:var(--pl-wash)} #precision-design .precision-number{color:var(--pl-soft);opacity:.65} #precision-design .precision-time{color:var(--pl-soft);font-variant-numeric:tabular-nums} #precision-design .precision-tag{color:var(--pl-soft)} #precision-design .precision-msg{overflow-wrap:anywhere;white-space:pre-wrap} #precision-design .precision-level{font-size:10px;font-weight:600} #precision-design .precision-row[data-level=ERROR]{background:var(--pl-error-bg)} #precision-design .precision-row[data-level=ERROR] .precision-level{color:var(--pl-error)} #precision-design .precision-row[data-level=WARN]{background:var(--pl-warn-bg)} #precision-design .precision-row[data-level=WARN] .precision-level{color:var(--pl-warn)} #precision-design .precision-row[data-level=INFO] .precision-level{color:var(--pl-accent)} #precision-design .precision-row[data-level=DEBUG] .precision-level{color:var(--pl-soft)} #precision-design .precision-bottom{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;align-items:center;padding:13px 18px;border-top:1px solid var(--pl-line);font-size:11px;color:var(--pl-soft)} #precision-design .precision-footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:15px;color:var(--pl-soft);font-size:11px} #precision-design .precision-footer span{display:flex;align-items:center;gap:6px} #precision-design .precision-empty{text-align:center;color:var(--pl-soft);padding:70px 20px} #precision-design [hidden]{display:none!important}
+@media(max-width:700px){#precision-design .precision-main{padding:18px 12px}#precision-design .precision-top{padding:15px}#precision-design .precision-topnote span{display:none}#precision-design .precision-device{flex-basis:80%}#precision-design .precision-columns,#precision-design .precision-row{grid-template-columns:82px 44px minmax(0,1fr);gap:8px}#precision-design .precision-number,#precision-design .precision-tag{display:none}#precision-design .precision-consolebar{align-items:flex-start;flex-wrap:wrap}#precision-design .precision-heading{align-items:flex-start}#precision-design .precision-fuzzy{display:none}#precision-design .precision-row{padding-left:12px;padding-right:12px}#precision-design .precision-controls{gap:8px}#precision-design .precision-field:not(.precision-device){flex:1}#precision-design .precision-heading p{max-width:220px}}
+#precision-design .precision-severitybar{padding:12px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:7px;border-bottom:1px solid var(--pl-line)}
+#precision-design .precision-severitylabel{font-size:11px;color:var(--pl-soft);margin-right:5px}
+#precision-design .precision-severity{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--pl-line);border-radius:6px;padding:5px 8px;font:11px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--pl-soft);background:var(--pl-panel)}
+#precision-design .precision-severity[aria-pressed=true]{background:var(--pl-wash);color:var(--pl-text)}
+#precision-design .precision-severity[aria-pressed=false]:not(:disabled){opacity:.55}
+#precision-design .precision-severity .precision-check{width:10px;visibility:hidden}
+#precision-design .precision-severity[aria-pressed=true] .precision-check{visibility:visible}
+#precision-design .precision-severity[data-severity=INFO] .precision-dot{color:var(--pl-accent)}
+#precision-design .precision-severity[data-severity=WARN] .precision-dot{color:var(--pl-warn)}
+#precision-design .precision-severity[data-severity=ERROR] .precision-dot,#precision-design .precision-severity[data-severity=FATAL] .precision-dot{color:var(--pl-error)}
+#precision-design .precision-severity:disabled{opacity:.35;cursor:default}
+#precision-design .precision-ios-note{width:100%;font-size:11px;color:var(--pl-soft);padding-top:3px}
+#precision-design[data-platform=ios] .precision-columns,#precision-design[data-platform=ios] .precision-row{grid-template-columns:28px 100px minmax(0,1fr)}
+#precision-design[data-platform=ios] .precision-level,#precision-design[data-platform=ios] .precision-tag,#precision-design[data-platform=ios] .precision-level-heading{display:none}
+@media(max-width:700px){#precision-design[data-platform=ios] .precision-columns,#precision-design[data-platform=ios] .precision-row{grid-template-columns:82px minmax(0,1fr)}#precision-design .precision-top{flex-wrap:wrap;gap:10px}}
+#precision-design [data-severity=VERBOSE],#precision-design [data-level=VERBOSE]{--pl-level-ink:light-dark(#7540b9,#d2afff);--pl-level-fill:light-dark(#f0e5ff,#39254f)}
+#precision-design [data-severity=DEBUG],#precision-design [data-level=DEBUG]{--pl-level-ink:light-dark(#235fc5,#99c1ff);--pl-level-fill:light-dark(#e5efff,#203958)}
+#precision-design [data-severity=INFO],#precision-design [data-level=INFO]{--pl-level-ink:light-dark(#08714d,#80e0b4);--pl-level-fill:light-dark(#d9f5e7,#1b4031)}
+#precision-design [data-severity=WARN],#precision-design [data-level=WARN]{--pl-level-ink:light-dark(#8b5500,#ffd17a);--pl-level-fill:light-dark(#fff0c6,#4b3516)}
+#precision-design [data-severity=ERROR],#precision-design [data-level=ERROR]{--pl-level-ink:light-dark(#bb3035,#ffa5a9);--pl-level-fill:light-dark(#ffe2e3,#53262d)}
+#precision-design [data-severity=FATAL],#precision-design [data-level=FATAL]{--pl-level-ink:light-dark(#a22077,#ffa2db);--pl-level-fill:light-dark(#ffddf2,#4e2345)}
+#precision-design .precision-severity[data-severity][aria-pressed=true]{color:var(--pl-level-ink);background:var(--pl-level-fill);border-color:color-mix(in srgb,var(--pl-level-ink) 25%,var(--pl-panel));opacity:1}
+#precision-design .precision-severity[data-severity] .precision-dot{color:var(--pl-level-ink)}
+#precision-design .precision-severity[data-severity][aria-pressed=false]:not(:disabled){color:var(--pl-level-ink);background:var(--pl-panel);opacity:.7}
+#precision-design .precision-severity[data-severity]:disabled .precision-dot{color:var(--pl-soft)}
+#precision-design .precision-row[data-level] .precision-level{color:var(--pl-level-ink);background:var(--pl-level-fill);padding:3px 6px;border-radius:5px;text-align:center;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.1px}
+#precision-design .precision-columns,#precision-design .precision-row{grid-template-columns:28px 100px 64px 100px minmax(0,1fr)}
+@media(max-width:700px){#precision-design .precision-columns,#precision-design .precision-row{grid-template-columns:82px 62px minmax(0,1fr)}}
+#precision-design .precision-consolebar,#precision-design .precision-actions{flex-wrap:wrap}
+#precision-design .precision-action:disabled{opacity:.4;cursor:default}
+#precision-design .precision-export-actions{display:flex;align-items:center;gap:4px;padding-left:10px;border-left:1px solid var(--pl-line)}
+#precision-design .precision-copy-fallback{padding:14px 18px;border-top:1px solid var(--pl-line);background:var(--pl-wash)}
+#precision-design .precision-copy-fallback label{display:block;font-size:12px;color:var(--pl-soft);margin-bottom:8px}
+#precision-design .precision-copy-fallback textarea{width:100%;height:140px;resize:vertical;border:1px solid var(--pl-line);border-radius:7px;padding:10px;color:var(--pl-text);background:var(--pl-panel);font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+#precision-design{min-height:1080px;display:flex;flex-direction:column}
+#precision-design .precision-main{flex:1;min-width:0}
+#precision-design{--pl-bg:light-dark(#f7f7f9,#151517);--pl-panel:light-dark(#fff,#202023);--pl-text:light-dark(#202024,#f3f3f5);--pl-soft:light-dark(#727279,#a5a5af);--pl-line:light-dark(#e5e5e9,#36363b);--pl-wash:light-dark(#f5f5f7,#29292e);--pl-accent:light-dark(#2565cb,#99beff);--pl-accent-bg:light-dark(#eaf1ff,#29364b);border-radius:22px;border-color:var(--pl-line);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;letter-spacing:-.15px}
+#precision-design .precision-top{background:linear-gradient(var(--pl-panel),var(--pl-bg));padding:22px 32px;border-bottom:1px solid var(--pl-line)}
+#precision-design .precision-brand{font-size:15px;font-weight:600;gap:10px;letter-spacing:-.3px}
+#precision-design .precision-brandmark{width:27px;height:27px;background:transparent;color:var(--pl-text);border:1px solid var(--pl-line);border-radius:7px}
+#precision-design .precision-topnote{font-size:11px}
+#precision-design .precision-main{display:flex;flex-direction:column;padding:32px;gap:24px}
+#precision-design .precision-heading{margin:0;align-items:center}
+#precision-design .precision-heading h1{font-size:34px;font-weight:400;letter-spacing:-1.4px;margin-bottom:7px}
+#precision-design .precision-heading p{font-size:12px}
+#precision-design .precision-live{background:transparent;color:var(--pl-soft);font-size:11px;padding:0}
+#precision-design .precision-live .precision-dot{color:light-dark(#268448,#77ce94)}
+#precision-design .precision-controls{margin:0;gap:16px;align-items:end;padding-bottom:24px;border-bottom:1px solid var(--pl-line)}
+#precision-design .precision-field>label{font-size:11px;letter-spacing:0;text-transform:none;font-weight:400;margin-bottom:8px}
+#precision-design summary{background:var(--pl-panel);border:1px solid var(--pl-line);border-radius:9px;min-height:46px;padding:10px 13px;box-shadow:0 1px 2px light-dark(#00000006,#00000020)}
+#precision-design .precision-platform{color:var(--pl-text);width:20px;height:20px;flex-basis:20px}
+#precision-design .precision-iconbutton{border-radius:9px}
+#precision-design .precision-console{border:1px solid var(--pl-line);border-radius:12px;overflow:clip;flex:1;display:flex;flex-direction:column;background:var(--pl-panel)}
+#precision-design .precision-searchbar{padding:17px 20px;border-bottom:1px solid var(--pl-line)}
+#precision-design input{font-size:13px}
+#precision-design .precision-fuzzy{background:var(--pl-wash);color:var(--pl-soft);font-size:9px;border-radius:4px}
+#precision-design .precision-consolebar{background:var(--pl-panel);padding:10px 16px;border-bottom:0}
+#precision-design .precision-actions{gap:6px}
+#precision-design .precision-action{font-size:11px;padding:7px 9px}
+#precision-design .precision-action.precision-pause{box-shadow:0 1px 3px light-dark(#00000008,#00000030);border-radius:6px}
+#precision-design .precision-severitybar{padding:8px 16px 14px;gap:5px;border-bottom:1px solid var(--pl-line)}
+#precision-design .precision-severity{border-radius:5px;padding:4px 7px;font-size:10px}
+#precision-design .precision-severity .precision-dot{display:none}
+#precision-design .precision-columns{background:var(--pl-wash);padding-top:10px;padding-bottom:10px;font-size:9px;font-weight:500;letter-spacing:.7px}
+#precision-design .precision-row{padding-top:14px;padding-bottom:14px;border-bottom:1px solid color-mix(in srgb,var(--pl-line) 65%,var(--pl-panel))}
+#precision-design .precision-row[data-level=ERROR],#precision-design .precision-row[data-level=WARN]{background:var(--pl-panel)}
+#precision-design .precision-row[data-level=ERROR] .precision-msg{color:var(--pl-error)}
+#precision-design .precision-row[data-level] .precision-level{border-radius:4px;font-size:10px;font-weight:500;padding:2px 5px}
+#precision-design .precision-bottom{margin-top:auto;padding:13px 18px;background:var(--pl-panel)}
+#precision-design .precision-footer{margin:0;font-size:10px}
+@media(max-width:760px){
+#precision-design{min-height:1480px}
+#precision-design .precision-main{padding:20px 14px;gap:18px}
+#precision-design .precision-top{padding:18px}
+#precision-design .precision-heading h1{font-size:28px}
+}
+@media(max-width:420px){
+#precision-design{min-height:1690px}
+#precision-design .precision-heading{flex-wrap:wrap}
+}
+</style>
+<div id="precision-design" data-design="Precision" aria-label="Precision">
+  <header class="precision-top variation-top"><div class="precision-brand"><span class="precision-brandmark"><i data-lucide="terminal" aria-hidden="true"></i></span><span>Über <span style="font-weight:400;color:var(--pl-soft)">Device Log</span></span></div><div class="precision-topnote"><i data-lucide="shield-check" aria-hidden="true"></i><span>Local device logs</span> <span style="margin:0 7px;color:var(--pl-line)">/</span> Design preview</div></header>
+  <div class="precision-main variation-body">
+    <div class="precision-heading variation-heading"><div><h1>Device logs.</h1><p>Android & iOS logs, in one place.</p></div><span class="precision-live" id="precision-live"><span class="precision-dot"></span><span id="precision-state">Live capture</span></span></div>
+    <div class="precision-controls">
+      <div class="precision-field precision-device"><label>Connected device</label><details id="precision-device-menu"><summary aria-label="Choose connected device"><span id="precision-device-icon" class="precision-platform precision-android" aria-hidden="true"></span><span><span id="precision-device-name">Pixel 9 Pro</span><span id="precision-device-sub" class="precision-sub">Android · USB · 4A291F0</span></span><i data-lucide="chevrons-up-down" aria-hidden="true"></i></summary><div class="precision-menu"><div class="precision-menuhead">Available devices</div><button data-device="android" aria-pressed="true"><span class="precision-platform precision-android" aria-hidden="true"></span><span>Pixel 9 Pro<span class="precision-sub">Android · USB · 4A291F0</span></span></button><button data-device="ios" aria-pressed="false"><span class="precision-platform precision-ios" aria-hidden="true"></span><span>iPhone 16 Pro<span class="precision-sub">iOS · USB · 00008140…</span></span></button><div class="precision-menuhead">Awaiting authorization</div><button disabled><span class="precision-platform precision-android" aria-hidden="true"></span><span>Galaxy S24<span class="precision-sub">Accept USB debugging on your device</span></span></button></div></details></div>
+      <button class="precision-iconbutton" id="precision-refresh" aria-label="Refresh devices"><i data-lucide="refresh-cw" aria-hidden="true"></i></button>
+      <div class="precision-field"><label>Message order</label><details id="precision-order-menu"><summary><i data-lucide="arrow-up-down" aria-hidden="true"></i><span id="precision-order-label">Newest first</span><i data-lucide="chevron-down" aria-hidden="true"></i></summary><div class="precision-menu"><button data-order="top" aria-pressed="true">Newest first</button><button data-order="bottom" aria-pressed="false">Oldest first</button></div></details></div>
+      <div class="precision-field"><label>Buffer capacity</label><details id="precision-buffer-menu"><summary><i data-lucide="layers" aria-hidden="true"></i><span id="precision-buffer-label">2,000</span><i data-lucide="chevron-down" aria-hidden="true"></i></summary><div class="precision-menu"><button data-buffer="1000">1,000 messages</button><button data-buffer="2000" aria-pressed="true">2,000 messages</button><button data-buffer="10000">10,000 messages</button><button data-buffer="50000">50,000 messages</button><button data-buffer="100000">100,000 messages</button></div></details></div>
+    </div>
+    <section class="precision-console variation-console" aria-label="Device messages">
+      <div class="precision-searchbar"><i data-lucide="search" aria-hidden="true"></i><input id="precision-search" type="search" aria-label="Filter logs" placeholder="Find a message, tag, or process…" /><span class="precision-fuzzy">FUZZY SEARCH</span><button class="precision-searchclear" id="precision-clear-filter" hidden>Clear</button></div>
+      <div class="precision-consolebar"><div class="precision-caption"><i data-lucide="terminal" aria-hidden="true"></i><strong>Log stream</strong><span>·</span><span id="precision-count">14 messages</span></div><div class="precision-actions"><button class="precision-action" id="precision-reconnect"><i data-lucide="rotate-cw" aria-hidden="true"></i>Reconnect</button><button class="precision-action" id="precision-clear"><i data-lucide="list-x" aria-hidden="true"></i>Clear</button><button class="precision-action precision-pause" id="precision-pause"><i data-lucide="pause" aria-hidden="true"></i><span>Pause</span></button><div class="precision-export-actions" role="group" aria-label="Export filtered messages"><button class="precision-action" id="precision-copy" data-tooltip="Copy messages in the current filtered view"><i data-lucide="copy" aria-hidden="true"></i>Copy</button><button class="precision-action" id="precision-save" data-tooltip="Save the current filtered view as a .log file"><i data-lucide="download" aria-hidden="true"></i>Save</button></div></div></div>
+      <div class="precision-severitybar" role="group" aria-label="Android severity filters" aria-describedby="precision-ios-note">
+        <span class="precision-severitylabel">Levels</span>
+        <button class="precision-severity" id="precision-all-levels" aria-pressed="true">All</button>
+        <button class="precision-severity" data-severity="VERBOSE" aria-pressed="true"><span class="precision-check">✓</span><span class="precision-dot"></span>VERBOSE</button>
+        <button class="precision-severity" data-severity="DEBUG" aria-pressed="true"><span class="precision-check">✓</span><span class="precision-dot"></span>DEBUG</button>
+        <button class="precision-severity" data-severity="INFO" aria-pressed="true"><span class="precision-check">✓</span><span class="precision-dot"></span>INFO</button>
+        <button class="precision-severity" data-severity="WARN" aria-pressed="true"><span class="precision-check">✓</span><span class="precision-dot"></span>WARN</button>
+        <button class="precision-severity" data-severity="ERROR" aria-pressed="true"><span class="precision-check">✓</span><span class="precision-dot"></span>ERROR</button>
+        <button class="precision-severity" data-severity="FATAL" aria-pressed="true"><span class="precision-check">✓</span><span class="precision-dot"></span>FATAL</button>
+        <span id="precision-ios-note" class="precision-ios-note" hidden>Level filters are available for Android. For this iOS stream, search the original log text.</span>
+      </div>
+      <div class="precision-columns" aria-hidden="true"><span class="precision-number">#</span><span id="precision-time-heading">Time</span><span class="precision-level-heading">Level</span><span class="precision-tag">Tag / PID</span><span>Message</span></div>
+      <div id="precision-rows" role="log" aria-label="Sample device logs"></div>
+      <div id="precision-copy-fallback" class="precision-copy-fallback" hidden><label for="precision-copy-text">Clipboard unavailable in this preview. Copy the selected text manually.</label><textarea id="precision-copy-text" readonly></textarea><button class="precision-action" id="precision-close-copy">Close</button></div>
+      <div class="precision-bottom"><span id="precision-retained">14 of 2,000 retained</span><span id="precision-follow" style="color:var(--pl-accent)">↑ Following newest messages</span></div>
+    </section>
+    <footer class="precision-footer variation-footer"><span><i data-lucide="lock-keyhole" aria-hidden="true"></i>On your machine. Logs stay local.</span><span id="precision-footnote" aria-live="polite">Sample session · 29 Sep 2026</span></footer>
+  </div>
+</div>
+<script>
+(()=>{
+const root=document.getElementById('precision-design');
+const $=id=>root.querySelector('#'+id);
+const data=[
+['14:32:08.412','INFO','Network','4821','GET /api/catalog → 200 OK · 142 ms'],
+['14:32:08.267','DEBUG','WebView','4821','Navigation finished: /products/summer-collection'],
+['14:32:08.091','INFO','App','4821','Screen visible: ProductDetail { productId: "sku_2048" }'],
+['14:32:07.884','WARN','Renderer','4821','Skipped 24 frames. The application may be doing too much work on its main thread.'],
+['14:32:07.702','ERROR','Network','4821','POST /api/checkout → 503 Service Unavailable\n    at CheckoutService.submit (checkout.ts:84:12)\n    at async onCheckout (ProductDetail.vue:126:5)'],
+['14:32:07.699','DEBUG','Network','4821','Retry scheduled in 2,000 ms · attempt 1 of 3'],
+['14:32:07.540','INFO','App','4821','Checkout started · 2 items · total €49.00'],
+['14:32:07.216','DEBUG','WebView','4821','[console] Cart state updated: { items: 2, currency: "EUR" }']
+];
+const iosData=[
+['14:32:08.412','','','','Sep 29 14:32:08 iPhone Storefront[714] <Notice>: GET /api/catalog → 200 OK · 142 ms'],
+['14:32:08.091','','','','Sep 29 14:32:08 iPhone Storefront[714] <Notice>: Screen visible: ProductDetail'],
+['14:32:07.702','','','','Sep 29 14:32:07 iPhone Storefront[714] <Error>: POST /api/checkout → 503 Service Unavailable'],
+['14:32:07.540','','','','Sep 29 14:32:07 iPhone Storefront[714] <Notice>: Checkout started · 2 items · total €49.00'],
+['14:32:06.402','','','','Sep 29 14:32:06 iPhone Storefront[714] <Notice>: Session restored · user authenticated'],
+['14:32:06.104','','','','Sep 29 14:32:06 iPhone Storefront[714] <Notice>: Storefront 2.8.0 (142) · development session started']
+];
+const allLevels=['VERBOSE','DEBUG','INFO','WARN','ERROR','FATAL'];
+let state={device:'android',order:'top',buffer:2000,paused:false,query:'',cleared:false,levels:[...allLevels]};
+const design={rowPadding:14,cornerRadius:9};
+let exportText='';
+let exportCount=0;
+function fuzzy(text,term){if(text.includes(term))return true;let i=0;for(const c of text){if(c===term[i])i++;if(i===term.length)return true;}return false;}
+function render(){
+const ios=state.device==='ios'; $('precision-device-icon').className='precision-platform '+(ios?'precision-ios':'precision-android');$('precision-device-name').textContent=ios?'iPhone 16 Pro':'Pixel 9 Pro';$('precision-device-sub').textContent=ios?'iOS · USB · 00008140…':'Android · USB · 4A291F0';
+root.dataset.platform=state.device;
+$('precision-ios-note').hidden=!ios;$('precision-time-heading').textContent=ios?'Received':'Time';
+root.querySelectorAll('[data-severity]').forEach(b=>{b.disabled=ios;b.setAttribute('aria-pressed',String(!ios&&state.levels.includes(b.dataset.severity)));b.setAttribute('aria-label','Show '+b.dataset.severity+' messages')});
+$('precision-all-levels').disabled=ios;$('precision-all-levels').setAttribute('aria-pressed',String(!ios&&state.levels.length===allLevels.length));
+$('precision-order-label').textContent=state.order==='top'?'Newest first':'Oldest first';$('precision-buffer-label').textContent=state.buffer.toLocaleString();$('precision-search').value=state.query;$('precision-clear-filter').hidden=!state.query;
+$('precision-state').textContent=state.paused?'View paused':'Live capture';$('precision-pause').innerHTML='<i data-lucide="'+(state.paused?'play':'pause')+'" aria-hidden="true"></i><span>'+(state.paused?'Resume':'Pause')+'</span>';$('precision-pause').setAttribute('aria-pressed',String(state.paused));
+const terms=state.query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+const activeData=ios?iosData:data;
+let rows=state.cleared?[]:activeData.map((row,i)=>({row,i})).filter(({row})=>(ios||state.levels.includes(row[1]))&&terms.every(t=>fuzzy(row.join(' ').toLowerCase(),t)));if(state.order==='bottom') rows.reverse();
+exportCount=rows.length;
+exportText=rows.map(({row})=>ios?row[0]+' '+row[4]:row[0]+' '+row[1]+' '+row[2]+'['+row[3]+']: '+row[4]).join('\n');
+$('precision-copy').disabled=!exportCount;$('precision-save').disabled=!exportCount;
+$('precision-copy-fallback').hidden=true;
+$('precision-rows').replaceChildren();for(const {row,i} of rows){const el=document.createElement('div');el.className='precision-row';el.dataset.level=row[1];const values=[String(activeData.length-i).padStart(2,'0'),row[0],row[1],row[2]+'\n'+row[3],row[4]];const classes=['precision-number','precision-time','precision-level','precision-tag','precision-msg'];values.forEach((value,j)=>{const span=document.createElement('span');span.className=classes[j];span.textContent=value;el.append(span)});$('precision-rows').append(el)}
+if(!rows.length){const el=document.createElement('div');el.className='precision-empty';el.textContent=state.cleared?'View cleared. Reconnect to restore the sample session.':'No messages match your filter.';$('precision-rows').append(el)}
+$('precision-count').textContent=rows.length+(terms.length||(!ios&&state.levels.length!==allLevels.length)?' matches':' messages');$('precision-retained').textContent=(state.cleared?0:activeData.length)+' of '+state.buffer.toLocaleString()+' retained';$('precision-follow').textContent=state.paused?'View frozen · capture continues':(state.order==='top'?'↑':'↓')+' Following newest messages';
+root.querySelectorAll('[data-device]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.device===state.device)));root.querySelectorAll('[data-order]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.order===state.order)));root.querySelectorAll('[data-buffer]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.buffer)===state.buffer)));
+if(globalThis.lucide)lucide.createIcons({attrs:{width:16,height:16}});
+}
+function save(){window.openai?.setWidgetState?.({modelContent:{design:'Precision',device:state.device,order:state.order,buffer:state.buffer,androidLevels:state.levels},privateContent:{...state,design,variant:"Precision"}})?.catch(()=>{});}
+function update(){render();save();}
+$('precision-copy').onclick=async()=>{
+  const text=exportText;const count=exportCount;if(!count)return;
+  try{await navigator.clipboard.writeText(text);$('precision-footnote').textContent='Copied '+count+' displayed messages';}
+  catch{$('precision-copy-fallback').hidden=false;$('precision-copy-text').value=text;$('precision-copy-text').focus();$('precision-copy-text').select();$('precision-footnote').textContent='Select and copy the prepared log text';}
+};
+$('precision-save').onclick=()=>{
+  if(!exportCount)return;
+  const device=state.device==='ios'?'iphone-16-pro':'pixel-9-pro';
+  const name='uber-device-log-'+device+'-sample.log';
+  const url=URL.createObjectURL(new Blob([exportText+'\n'],{type:'text/plain;charset=utf-8'}));
+  const link=document.createElement('a');link.href=url;link.download=name;root.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $('precision-footnote').textContent='Download requested · '+exportCount+' displayed messages · '+name;
+};
+$('precision-close-copy').onclick=()=>{$('precision-copy-fallback').hidden=true;$('precision-copy').focus()};
+root.querySelectorAll('[data-severity]').forEach(b=>b.onclick=()=>{if(state.device!=='android')return;const level=b.dataset.severity;state.levels=state.levels.includes(level)?state.levels.filter(l=>l!==level):[...state.levels,level];update()});
+$('precision-all-levels').onclick=()=>{if(state.device!=='android')return;state.levels=[...allLevels];update()};
+root.querySelectorAll('[data-device]').forEach(b=>b.onclick=()=>{state.device=b.dataset.device;state.cleared=false;$('precision-device-menu').open=false;update()});root.querySelectorAll('[data-order]').forEach(b=>b.onclick=()=>{state.order=b.dataset.order;$('precision-order-menu').open=false;update()});root.querySelectorAll('[data-buffer]').forEach(b=>b.onclick=()=>{state.buffer=Number(b.dataset.buffer);$('precision-buffer-menu').open=false;update()});
+$('precision-search').oninput=e=>{state.query=e.target.value;update()};$('precision-search').onkeydown=e=>{if(e.key==='Escape'){state.query='';update()}};$('precision-clear-filter').onclick=()=>{state.query='';update()};$('precision-pause').onclick=()=>{state.paused=!state.paused;update()};$('precision-clear').onclick=()=>{state.cleared=true;update()};$('precision-reconnect').onclick=()=>{state.cleared=false;state.paused=false;$('precision-footnote').textContent='Sample session reconnected';update()};$('precision-refresh').onclick=()=>{$('precision-footnote').textContent='2 sample devices available · 1 awaiting authorization';$('precision-device-menu').open=true};
+root.querySelectorAll('details').forEach(d=>{d.addEventListener('toggle',()=>{if(d.open)root.querySelectorAll('details').forEach(other=>{if(other!==d)other.open=false})});d.addEventListener('keydown',e=>{if(e.key==='Escape'){d.open=false;d.querySelector('summary').focus()}})});
+document.addEventListener('click',e=>{root.querySelectorAll('details').forEach(d=>{if(!d.contains(e.target))d.open=false})});
+function applyDesign(){root.style.setProperty('--pl-row',design.rowPadding+'px');root.style.setProperty('--pl-radius',design.cornerRadius+'px')}
+function restore(saved){const p=saved?.privateContent;if(!p||p.variant!=="Precision")return;if(['android','ios'].includes(p.device))state.device=p.device;if(['top','bottom'].includes(p.order))state.order=p.order;if([1000,2000,10000,50000,100000].includes(p.buffer))state.buffer=p.buffer;for(const k of ['paused','cleared'])if(typeof p[k]==='boolean')state[k]=p[k];if(typeof p.query==='string')state.query=p.query;if(Array.isArray(p.levels))state.levels=[...new Set(p.levels.filter(l=>allLevels.includes(l)))];if(p.design){if(Number.isFinite(p.design.rowPadding))design.rowPadding=p.design.rowPadding;if(Number.isFinite(p.design.cornerRadius))design.cornerRadius=p.design.cornerRadius;}applyDesign();}
+applyDesign();restore(window.openai?.widgetState);render();window.addEventListener('openai:set_globals',e=>{if(e.detail?.globals?.widgetState){restore(e.detail.globals.widgetState);render()}});
+})();
+</script>
