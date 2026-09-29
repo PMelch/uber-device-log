@@ -87,8 +87,8 @@
 body { margin: 0; }
 #precision-design { min-height: 100dvh; height: auto; border: 0; border-radius: 0; }
 #precision-design .precision-top { padding: 12px 20px; }
-#precision-design .precision-main { padding: 20px; gap: 16px; }
-#precision-design .precision-heading h1 { font-size: 26px; }
+#precision-design .precision-main { padding: 12px 20px 20px; gap: 16px; }
+#precision-design .precision-caption { flex-wrap: wrap; }
 #precision-design .precision-controls { padding-bottom: 16px; }
 #precision-design .precision-console { flex: 1 0 auto; }
 /* Keep a useful reading area even when controls wrap or browser zoom is increased.
@@ -98,6 +98,7 @@ body { margin: 0; }
 #precision-design .precision-row { padding-top: 8px; padding-bottom: 8px; }
 #precision-design .precision-time, #precision-design .precision-tag { overflow-wrap: anywhere; }
 #precision-design .precision-menu { max-height: 320px; overflow: auto; }
+#precision-design .precision-field:not(.precision-device) .precision-menu { left: auto; right: 0; max-width: calc(100vw - 28px); }
 #precision-design .device-label { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
 #precision-design .menu-chevron { margin-left: auto; }
 #precision-design button:disabled { cursor: default; opacity: .4; }
@@ -107,7 +108,7 @@ body { margin: 0; }
 #precision-design .setup-hint { font-size: 10px; }
 #precision-design .precision-row .precision-level:empty { background: none; }
 @media(max-width:760px) {
-  #precision-design .precision-main { padding: 16px 14px; }
+  #precision-design .precision-main { padding: 12px 14px 16px; }
 }
 @media(max-width:420px) {
   #precision-design .precision-device { min-width: 0; flex-basis: calc(100% - 60px); }
@@ -130,3 +131,10 @@ body { margin: 0; }
 }
 
 #precision-design .precision-menu-trigger:disabled { width: 100%; text-align: left; cursor: default; opacity: 1; }
+
+#precision-design .precision-stack { min-width: 0; white-space: normal; border-left: 2px solid var(--pl-line); padding-left: 12px; tab-size: 2; }
+#precision-design .precision-stack-line { display: block; min-height: 1.8em; white-space: pre-wrap; line-height: 1.8; padding-left: 1em; text-indent: -1em; }
+#precision-design .precision-stack-line[data-kind=frame], #precision-design .precision-stack-line[data-kind=omitted] { color: var(--pl-soft); }
+#precision-design .precision-stack-location { color: var(--pl-text); font-weight: 500; }
+#precision-design .precision-stack-line[data-kind=exception], #precision-design .precision-stack-line[data-kind=cause] { color: var(--pl-error); font-weight: 600; }
+#precision-design .precision-stack-line[data-kind=cause] { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--pl-line); }

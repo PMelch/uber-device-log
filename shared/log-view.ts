@@ -21,3 +21,30 @@ export function formatLogMessages(messages: readonly LogMessage[]): string {
 export function logExportText(messages: readonly LogMessage[], selection: string): string {
   return selection || formatLogMessages(messages);
 }
+
+export interface LogStackLine {
+  kind: 'message' | 'exception' | 'frame' | 'cause' | 'omitted';
+  text: string;
+  location?: string;
+}
+
+/** Presentation only: never change the stored message used for search/export. */
+export function parseLogStack(message: string): LogStackLine[] | undefined {
+  // Most records are not traces. Avoid splitting/allocating lines for those records.
+  if (!/(?:^|\n)(?:[\t ]|&#(?:x0*9|0*9);)*at\s+\S+\([^\r\n]*\)/i.test(message)) return;
+  let hasFrame = false;
+  const lines = message.split(/\r?\n/).map((raw): LogStackLine => {
+    // Decode only tab entities in indentation, never arbitrary HTML in log text.
+    const text = raw.replace(/^(?:[\t ]|&#(?:x0*9|0*9);)+/i, indent => indent.replace(/&#(?:x0*9|0*9);/gi, '\t'));
+    const frame = /^(\s*at\s+\S+)(\([^()\r\n]*\)\s*)$/.exec(text);
+    if (frame) {
+      hasFrame = true;
+      return { kind: 'frame', text: frame[1]!, location: frame[2]! };
+    }
+    if (/^\s*(?:Caused by:|Suppressed:)/.test(text)) return { kind: 'cause', text };
+    if (/^\s*\.\.\.\s+\d+\s+more\s*$/.test(text)) return { kind: 'omitted', text };
+    if (/^\s*(?:[\w$]+\.)*[\w$]*(?:Exception|Error)(?::|$)/.test(text)) return { kind: 'exception', text };
+    return { kind: 'message', text };
+  });
+  return hasFrame ? lines : undefined;
+}

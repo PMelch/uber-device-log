@@ -4,6 +4,7 @@ import type { Device, DeviceList, LogMessage } from '../shared/types';
 import { createLogSearch } from '../shared/search';
 import { filterLogLevels, logExportText, logLevel, logLevels, type LogLevel } from '../shared/log-view';
 import PrecisionMenu from './components/PrecisionMenu.vue';
+import LogMessageText from './components/LogMessageText.vue';
 
 const devices = ref<Device[]>([]);
 const warnings = ref<string[]>([]);
@@ -229,9 +230,8 @@ onUnmounted(() => {
 
 <template>
   <div id="precision-design" :data-platform="currentDevice?.platform">
-    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><span class="precision-topnote">Local device logs</span></header>
+    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><span class="precision-topnote">Android &amp; iOS logs, in one place.</span></header>
     <main class="precision-main">
-      <div class="precision-heading"><div><h1>Device logs.</h1><p>Android &amp; iOS logs, in one place.</p></div><span class="precision-live" :data-active="capturing"><span class="precision-dot"></span>{{ paused ? 'View paused · capture ' + (capturing ? 'active' : 'stopped') : capturing ? 'Live capture' : 'Not capturing' }}</span></div>
       <div class="precision-controls">
         <div class="precision-field precision-device"><label>Connected device</label>
           <PrecisionMenu label="Choose connected device" :disabled="!devices.length">
@@ -248,7 +248,7 @@ onUnmounted(() => {
       <p v-for="warning in warnings" :key="warning" class="warning" role="status">{{ warning }}</p>
       <section class="precision-console" aria-label="Device messages">
         <div class="precision-searchbar" role="search"><span aria-hidden="true">⌕</span><input v-model="filter" type="search" aria-label="Filter logs" placeholder="Find a message, tag, or process…" @keydown.esc="filter = ''" /><span class="precision-fuzzy">FUZZY SEARCH</span><button v-if="filter" class="precision-searchclear" @click="filter = ''">Clear filter</button></div>
-        <div class="precision-consolebar"><div class="precision-caption"><strong>Log stream</strong><span>·</span><span>{{ displayedMessages.length.toLocaleString() }} messages</span></div><div class="precision-actions">
+        <div class="precision-consolebar"><div class="precision-caption"><strong>Log stream</strong><span>·</span><span>{{ displayedMessages.length.toLocaleString() }} messages</span><span class="precision-live" :data-active="capturing"><span class="precision-dot"></span>{{ paused ? 'View paused · capture ' + (capturing ? 'active' : 'stopped') : capturing ? 'Live capture' : 'Not capturing' }}</span></div><div class="precision-actions">
           <button class="precision-action" :disabled="!currentDevice" @click="start">↻ Reconnect</button>
           <button class="precision-action" :disabled="!messages.length && !visibleMessages.length" @click="clearView">Clear</button>
           <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" @click="togglePause">{{ paused ? '▷ Resume' : 'Ⅱ Pause' }}</button>
@@ -259,7 +259,7 @@ onUnmounted(() => {
         <div ref="viewport" class="logs" tabindex="0" aria-label="Device log messages" @scroll="onScroll">
           <div v-if="!visibleMessages.length" class="precision-empty">{{ paused ? 'View paused. Resume to show incoming messages.' : selected ? 'Waiting for messages…' : 'Connect a device, then choose it above.' }}</div>
           <div v-else-if="!displayedMessages.length" class="precision-empty">No messages match these filters.</div>
-          <div v-for="entry in displayedMessages" :key="entry.key" class="entry precision-row" :data-level="logLevel(entry.level)"><span class="precision-number">{{ entry.key + 1 }}</span><time class="precision-time" :title="entry.timestamp">{{ displayTime(entry.timestamp) }}</time><span class="precision-level">{{ logLevel(entry.level) }}</span><span class="precision-tag">{{ entry.tag }}<span class="precision-sub">{{ entry.pid }}</span></span><span class="precision-msg">{{ entry.message }}</span></div>
+          <div v-for="entry in displayedMessages" :key="entry.key" class="entry precision-row" :data-level="logLevel(entry.level)"><span class="precision-number">{{ entry.key + 1 }}</span><time class="precision-time" :title="entry.timestamp">{{ displayTime(entry.timestamp) }}</time><span class="precision-level">{{ logLevel(entry.level) }}</span><span class="precision-tag">{{ entry.tag }}<span class="precision-sub">{{ entry.pid }}</span></span><LogMessageText :message="entry.message" /></div>
         </div>
         <div v-if="copyFallback !== undefined" class="precision-copy-fallback"><label for="copy-text">Clipboard unavailable. Copy the selected text manually.</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">Close</button></div>
         <div class="precision-bottom"><span>{{ visibleMessages.length.toLocaleString() }} of {{ bufferSize.toLocaleString() }} retained</span><button v-if="!following && !paused" class="precision-action" @click="follow">Follow latest</button><span v-else>{{ paused ? 'View frozen · capture ' + (capturing ? 'continues' : 'stopped') : (newestPosition === 'top' ? '↑' : '↓') + ' Following newest messages' }}</span></div>
