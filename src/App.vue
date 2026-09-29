@@ -234,7 +234,7 @@ onUnmounted(() => {
       <div class="precision-heading"><div><h1>Device logs.</h1><p>Android &amp; iOS logs, in one place.</p></div><span class="precision-live" :data-active="capturing"><span class="precision-dot"></span>{{ paused ? 'View paused · capture ' + (capturing ? 'active' : 'stopped') : capturing ? 'Live capture' : 'Not capturing' }}</span></div>
       <div class="precision-controls">
         <div class="precision-field precision-device"><label>Connected device</label>
-          <PrecisionMenu label="Choose connected device">
+          <PrecisionMenu label="Choose connected device" :disabled="!devices.length">
             <template #selected><span v-if="currentDevice" class="precision-platform" :class="'precision-' + currentDevice.platform" aria-hidden="true"></span><span class="device-label">{{ currentDevice?.name ?? (devices.length ? 'Select a device' : 'No connected devices') }}<span class="precision-sub">{{ currentDevice ? `${currentDevice.platform === 'ios' ? 'iOS' : 'Android'} · ${currentDevice.id}` : 'Android & iOS' }}</span></span></template>
             <div class="precision-menuhead">Available devices</div>
             <p v-if="!devices.length" class="precision-menuhead">Connect and authorize a device.</p>

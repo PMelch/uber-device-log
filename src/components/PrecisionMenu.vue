@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-defineProps<{ label: string }>();
+defineProps<{ label: string; disabled?: boolean }>();
 const root = ref<HTMLDetailsElement>();
 function close(focus = false) {
   if (!root.value) return;
@@ -25,7 +25,8 @@ onMounted(() => document.addEventListener('click', outside));
 onUnmounted(() => document.removeEventListener('click', outside));
 </script>
 <template>
-  <details ref="root" @keydown="keys" @focusout="event => { if (!root?.contains(event.relatedTarget as Node)) close(); }">
+  <button v-if="disabled" type="button" class="precision-menu-trigger" disabled :aria-label="label"><slot name="selected" /><span class="menu-chevron" aria-hidden="true">⌄</span></button>
+  <details v-else ref="root" @keydown="keys" @focusout="event => { if (!root?.contains(event.relatedTarget as Node)) close(); }">
     <summary :aria-label="label"><slot name="selected" /><span class="menu-chevron" aria-hidden="true">⌄</span></summary>
     <div class="precision-menu" @click="event => { if ((event.target as HTMLElement).closest('button:not(:disabled)')) close(true); }"><slot /></div>
   </details>
