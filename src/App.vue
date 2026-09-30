@@ -2,7 +2,8 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { Device, DeviceList, LogMessage } from '../shared/types';
 import { createLogSearch } from '../shared/search';
-import { filterLogLevels, logExportText, logLevel, logLevels, type LogLevel } from '../shared/log-view';
+import { filterLogLevels, formatLogMessages, logLevel, logLevels, type LogLevel } from '../shared/log-view';
+import { rangeKeys, selectedEntries } from '../shared/log-selection';
 import PrecisionMenu from './components/PrecisionMenu.vue';
 import LogMessageText from './components/LogMessageText.vue';
 
@@ -21,7 +22,14 @@ const selectedLevels = ref<LogLevel[]>([...logLevels]);
 const filteredMessages = computed(() => filterLogLevels(filter.value.trim() ? search.value(filter.value) : visibleMessages.value, currentDevice.value?.platform, selectedLevels.value));
 const capturing = ref(false);
 const exportStatus = ref('');
-const selectedLogText = ref('');
+const selectionMode = ref(false);
+const selectedKeys = ref(new Set<number>());
+const anchorKey = ref<number>();
+const rangePending = ref(false);
+const selectedRows = computed(() => selectedEntries(displayedMessages.value, selectedKeys.value));
+let drag: { anchor: number; base: Set<number>; x: number; y: number; pointer: number } | undefined;
+let dragFrame = 0;
+
 const copyFallback = ref<string>();
 const copyText = ref<HTMLTextAreaElement>();
 const copyButton = ref<HTMLButtonElement>();
@@ -72,6 +80,8 @@ function stop() {
 
 function start() {
   stop();
+  clearSelection();
+  selectionMode.value = false;
   exportStatus.value = '';
   copyFallback.value = undefined;
   const device = currentDevice.value;
@@ -140,6 +150,8 @@ async function togglePause() {
     pausedMessages.value = [...messages.value];
     return;
   }
+  clearSelection();
+  selectionMode.value = false;
   pausedMessages.value = undefined;
   following.value = true;
   await nextTick();
@@ -147,6 +159,8 @@ async function togglePause() {
 }
 
 function clearView() {
+  clearSelection();
+  selectionMode.value = false;
   exportStatus.value = '';
   copyFallback.value = undefined;
   messages.value = [];
@@ -164,7 +178,10 @@ watch(bufferSize, async () => {
   if (following.value) scrollToLatest();
 });
 
-watch(displayedMessages, async () => { await nextTick(); updateLogSelection(); });
+watch(displayedMessages, rows => {
+  selectedKeys.value = new Set(selectedEntries(rows, selectedKeys.value).map(row => row.key));
+  if (!rows.some(row => row.key === anchorKey.value)) { anchorKey.value = undefined; rangePending.value = false; }
+});
 watch(status, () => { exportStatus.value = ''; });
 watch(selected, start);
 watch(newestPosition, async () => {
@@ -180,18 +197,74 @@ function toggleLevel(level: LogLevel) {
   selectedLevels.value = selectedLevels.value.includes(level)
     ? selectedLevels.value.filter(value => value !== level) : [...selectedLevels.value, level];
 }
-function updateLogSelection() {
-  const selection = window.getSelection();
-  const inside = selection && !selection.isCollapsed && selection.anchorNode && selection.focusNode
-    && viewport.value?.contains(selection.anchorNode) && viewport.value?.contains(selection.focusNode);
-  selectedLogText.value = inside ? selection.toString() : '';
+function freezeSelection() {
+  if (!paused.value) pausedMessages.value = [...messages.value];
+  selectionMode.value = true;
+}
+function clearSelection() {
+  endDrag();
+  selectedKeys.value = new Set();
+  anchorKey.value = undefined;
+  rangePending.value = false;
+  copyFallback.value = undefined;
+  exportStatus.value = '';
+}
+function chooseRow(key: number, additive = false, extend = false) {
+  freezeSelection();
+  copyFallback.value = undefined;
+  exportStatus.value = '';
+  if ((extend || rangePending.value) && anchorKey.value !== undefined) {
+    const range = rangeKeys(displayedMessages.value, anchorKey.value, key);
+    selectedKeys.value = additive ? new Set([...selectedKeys.value, ...range]) : range;
+    rangePending.value = false;
+  } else {
+    const keys = additive ? new Set(selectedKeys.value) : new Set<number>();
+    if (keys.has(key)) keys.delete(key); else keys.add(key);
+    selectedKeys.value = keys;
+    anchorKey.value = key;
+  }
+}
+function selectAll() {
+  freezeSelection();
+  selectedKeys.value = new Set(displayedMessages.value.map(row => row.key));
+  rangePending.value = false;
+}
+function rowPointerDown(event: PointerEvent, key: number) {
+  if (event.pointerType !== 'mouse' || event.button !== 0 || (event.target as HTMLElement).closest('input')) return;
+  event.preventDefault();
+  viewport.value?.focus({preventScroll:true});
+  const additive = event.ctrlKey || event.metaKey;
+  const base = additive ? new Set(selectedKeys.value) : new Set<number>();
+  const anchor = event.shiftKey && anchorKey.value !== undefined ? anchorKey.value : key;
+  const completingRange = rangePending.value;
+  chooseRow(key, additive, event.shiftKey);
+  if (additive || completingRange) return; // modifier-click toggles; ordinary drag selects a range
+  drag = {anchor, base, x:event.clientX, y:event.clientY, pointer:event.pointerId};
+  viewport.value?.setPointerCapture(event.pointerId);
+  dragFrame = requestAnimationFrame(dragStep);
+}
+function dragStep() {
+  if (!drag || !viewport.value) return;
+  const bounds = viewport.value.getBoundingClientRect();
+  if (drag.y < bounds.top + 28) viewport.value.scrollTop -= 14;
+  else if (drag.y > bounds.bottom - 28) viewport.value.scrollTop += 14;
+  const hit = document.elementFromPoint(Math.max(bounds.left+1,Math.min(bounds.right-1,drag.x)), Math.max(bounds.top+1,Math.min(bounds.bottom-1,drag.y)))?.closest<HTMLElement>('[data-log-key]');
+  if (hit && viewport.value.contains(hit)) selectedKeys.value = new Set([...drag.base, ...rangeKeys(displayedMessages.value,drag.anchor,Number(hit.dataset.logKey))]);
+  dragFrame = requestAnimationFrame(dragStep);
+}
+function moveDrag(event: PointerEvent) { if (drag) { drag.x=event.clientX; drag.y=event.clientY; } }
+function endDrag() {
+  const pointer = drag?.pointer;
+  drag = undefined;
+  if (pointer !== undefined && viewport.value?.hasPointerCapture(pointer)) viewport.value.releasePointerCapture(pointer);
+  cancelAnimationFrame(dragFrame);
 }
 async function copyLogs() {
-  const text = selectedLogText.value;
+  const text = formatLogMessages(selectedRows.value);
   if (!text) return;
   try {
     await navigator.clipboard.writeText(text);
-    exportStatus.value = 'Selected log text copied.';
+    exportStatus.value = `${selectedRows.value.length} log entries copied.`;
   } catch {
     copyFallback.value = text;
     await nextTick();
@@ -202,7 +275,7 @@ async function copyLogs() {
 function closeCopy() { copyFallback.value = undefined; copyButton.value?.focus(); }
 function saveLogs() {
   if (!displayedMessages.value.length) return;
-  const text = logExportText(displayedMessages.value, selectedLogText.value);
+  const text = formatLogMessages(selectedRows.value.length ? selectedRows.value : displayedMessages.value);
   const url = URL.createObjectURL(new Blob([text + '\n'], { type: 'text/plain;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
@@ -215,12 +288,11 @@ function saveLogs() {
 }
 function displayTime(timestamp: string) { return timestamp.includes('T') ? timestamp.split('T')[1]?.replace(/Z$/, '') : timestamp; }
 onMounted(() => {
-  document.addEventListener('selectionchange', updateLogSelection);
   void refresh();
   poll = setInterval(() => void refresh(), 3000);
 });
 onUnmounted(() => {
-  document.removeEventListener('selectionchange', updateLogSelection);
+  endDrag();
   disposed = true;
   discovery?.abort();
   clearInterval(poll);
@@ -229,7 +301,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="precision-design" :data-platform="currentDevice?.platform">
+  <div id="precision-design" :data-platform="currentDevice?.platform" :class="{ selecting: selectionMode }">
     <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><span class="precision-topnote">Android &amp; iOS logs, in one place.</span></header>
     <main class="precision-main">
       <div class="precision-controls">
@@ -251,15 +323,25 @@ onUnmounted(() => {
         <div class="precision-consolebar"><div class="precision-caption"><strong>Log stream</strong><span>·</span><span>{{ displayedMessages.length.toLocaleString() }} messages</span><span class="precision-live" :data-active="capturing"><span class="precision-dot"></span>{{ paused ? 'View paused · capture ' + (capturing ? 'active' : 'stopped') : capturing ? 'Live capture' : 'Not capturing' }}</span></div><div class="precision-actions">
           <button class="precision-action" :disabled="!currentDevice" @click="start">↻ Reconnect</button>
           <button class="precision-action" :disabled="!messages.length && !visibleMessages.length" @click="clearView">Clear</button>
-          <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" @click="togglePause">{{ paused ? '▷ Resume' : 'Ⅱ Pause' }}</button>
-          <div class="precision-export-actions" role="group" aria-label="Export selected text or displayed log"><button ref="copyButton" class="precision-action" :disabled="!selectedLogText" title="Copy selected log text" @pointerdown.prevent @click="copyLogs">Copy</button><button class="precision-action" :disabled="!displayedMessages.length" :title="selectedLogText ? 'Save selected log text' : 'Save all displayed log messages'" @pointerdown.prevent @click="saveLogs">↓ Save</button></div>
+          <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" @click="togglePause">{{ paused ? '▷ Back to live' : 'Ⅱ Pause' }}</button>
+          <button class="precision-action" :disabled="!displayedMessages.length" :aria-pressed="selectionMode" @click="selectionMode ? (clearSelection(), selectionMode = false) : freezeSelection()">{{ selectionMode ? 'Done selecting' : 'Select' }}</button>
         </div></div>
+        <div class="precision-selectionbar" @keydown.esc="clearSelection">
+          <span role="status">{{ selectedRows.length ? `${selectedRows.length} entries selected` : 'No entries selected' }}</span>
+          <button ref="copyButton" class="precision-action" :disabled="!selectedRows.length" @click="copyLogs">Copy ({{ selectedRows.length }})</button>
+          <button class="precision-action" :disabled="!displayedMessages.length" @click="saveLogs">{{ selectedRows.length ? `Save (${selectedRows.length})` : 'Save all displayed logs' }}</button>
+            <button class="precision-action" :disabled="!displayedMessages.length" @click="selectAll">Select all filtered</button>
+            <button class="precision-action" :disabled="anchorKey === undefined" :aria-pressed="rangePending" @click="rangePending = !rangePending">{{ rangePending ? 'Cancel range' : 'Range to…' }}</button>
+            <button class="precision-action" :disabled="!selectedRows.length" @click="clearSelection">Clear selection</button>
+          <span v-if="rangePending" class="selection-hint">Tap the last entry of the range.</span>
+          <span v-else class="selection-hint">{{ selectionMode ? 'View frozen. Tap checkboxes; swipe to scroll. Back to live clears selection.' : 'Desktop: drag rows or Shift-click. Mobile: tap Select, then checkboxes.' }}</span>
+        </div>
         <div class="precision-severitybar" role="group" aria-label="Android severity filters" :aria-describedby="currentDevice?.platform === 'ios' ? 'ios-note' : undefined"><span class="precision-severitylabel">Levels</span><button class="precision-severity" :disabled="currentDevice?.platform !== 'android'" :aria-pressed="currentDevice?.platform === 'android' && selectedLevels.length === logLevels.length" @click="selectedLevels = [...logLevels]">All</button><button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="currentDevice?.platform !== 'android'" :aria-pressed="currentDevice?.platform === 'android' && selectedLevels.includes(level)" @click="toggleLevel(level)"><span class="precision-check">✓</span>{{ level }}</button><span v-if="currentDevice?.platform === 'ios'" id="ios-note" class="precision-ios-note">Level filters are available for Android. For this iOS stream, search the original log text.</span></div>
-        <div class="precision-columns" aria-hidden="true"><span class="precision-number">#</span><span>{{ currentDevice?.platform === 'ios' ? 'Received' : 'Time' }}</span><span class="precision-level-heading">Level</span><span class="precision-tag">Tag / PID</span><span>Message</span></div>
-        <div ref="viewport" class="logs" tabindex="0" aria-label="Device log messages" @scroll="onScroll">
+        <div class="precision-columns" aria-hidden="true"><span class="precision-selectcell">#</span><span>{{ currentDevice?.platform === 'ios' ? 'Received' : 'Time' }}</span><span class="precision-level-heading">Level</span><span class="precision-tag">Tag / PID</span><span>Message</span></div>
+        <div ref="viewport" class="logs" tabindex="0" aria-label="Device log messages" @scroll="onScroll" @pointermove="moveDrag" @pointerup="endDrag" @pointercancel="endDrag" @lostpointercapture="endDrag" @keydown.esc="clearSelection">
           <div v-if="!visibleMessages.length" class="precision-empty">{{ paused ? 'View paused. Resume to show incoming messages.' : selected ? 'Waiting for messages…' : 'Connect a device, then choose it above.' }}</div>
           <div v-else-if="!displayedMessages.length" class="precision-empty">No messages match these filters.</div>
-          <div v-for="entry in displayedMessages" :key="entry.key" class="entry precision-row" :data-level="logLevel(entry.level)"><span class="precision-number">{{ entry.key + 1 }}</span><time class="precision-time" :title="entry.timestamp">{{ displayTime(entry.timestamp) }}</time><span class="precision-level">{{ logLevel(entry.level) }}</span><span class="precision-tag">{{ entry.tag }}<span class="precision-sub">{{ entry.pid }}</span></span><LogMessageText :message="entry.message" /></div>
+          <div v-for="entry in displayedMessages" :key="entry.key" class="entry precision-row" :data-level="logLevel(entry.level)" :data-log-key="entry.key" :class="{ 'is-selected': selectedKeys.has(entry.key) }" @pointerdown="rowPointerDown($event, entry.key)"><label class="precision-selectcell" @pointerdown.stop><input type="checkbox" :checked="selectedKeys.has(entry.key)" :aria-label="`Select log entry ${entry.key + 1}`" @click.stop="chooseRow(entry.key, true, $event.shiftKey)" /><span class="precision-number">{{ entry.key + 1 }}</span></label><time class="precision-time" :title="entry.timestamp">{{ displayTime(entry.timestamp) }}</time><span class="precision-level">{{ logLevel(entry.level) }}</span><span class="precision-tag">{{ entry.tag }}<span class="precision-sub">{{ entry.pid }}</span></span><LogMessageText :message="entry.message" /></div>
         </div>
         <div v-if="copyFallback !== undefined" class="precision-copy-fallback"><label for="copy-text">Clipboard unavailable. Copy the selected text manually.</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">Close</button></div>
         <div class="precision-bottom"><span>{{ visibleMessages.length.toLocaleString() }} of {{ bufferSize.toLocaleString() }} retained</span><button v-if="!following && !paused" class="precision-action" @click="follow">Follow latest</button><span v-else>{{ paused ? 'View frozen · capture ' + (capturing ? 'continues' : 'stopped') : (newestPosition === 'top' ? '↑' : '↓') + ' Following newest messages' }}</span></div>

@@ -18,7 +18,7 @@ Open [precision.html](precision.html) in a browser to explore the approved desig
 - Buffer choices: 1,000, 2,000 (default), 10,000, 50,000 and 100,000.
 - Full-text fuzzy search combines with selectable Android severity filters. Android selections are retained when switching devices; severity filters are disabled for the current iOS text-only collector.
 - Pause freezes the visible snapshot while capture continues. Resume shows the retained messages.
-- Implementation update: Copy and Save export text selected inside the log list. Without a selection, Copy is disabled and Save exports the entire filtered view in its displayed order, including timestamps and available metadata. Save produces a plain-text `.log` file.
+- **Copy / Save** export whole selected log entries (including metadata and multiline stack traces) in display order. Desktop: click a row, drag for a range, Shift-click to extend, Ctrl/Cmd-click to toggle. Mobile: tap **Select**, then checkboxes; swiping always scrolls. Select a start entry, tap **Range to…**, then the end checkbox for an inclusive range. **Select all filtered** selects the current view. Selected entries are highlighted and counted. Without a selection, Copy is disabled and **Save all displayed logs** exports the filtered view. Copy has a manual-text fallback; Save downloads plain-text `.log`.
 - Keep keyboard access, clear focus states, responsive controls and readable light/dark contrast.
 
 ## Reference scope
