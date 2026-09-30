@@ -273,7 +273,7 @@ export const websiteTranslationContext = {
   },
   "siteRequirements": {
     "location": "Public landing page: Requirements",
-    "meaning": "Node.js 22.12+ and a browser. Run once with npx or bunx, or install globally and launch with udl. Technical commands, brand names and platform names remain verbatim."
+    "meaning": "Requires Node.js 22.12.0 or later and a browser. Node.js must be on PATH, even with bunx. Run with npx or bunx, or install globally and launch with udl. Technical commands, brand names and platform names remain verbatim."
   },
   "siteSetup": {
     "location": "Public landing page: Setup",

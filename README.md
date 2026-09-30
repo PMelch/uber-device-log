@@ -28,7 +28,9 @@ responsive interface and System, Light and Dark appearance options.
 
 ## Get started
 
-**Requirements:** Node.js **22.12+**, a browser, and the device setup below.
+**Minimum Node.js version: 22.12.0.** A browser and the device setup below are also required.
+Node.js must be installed and available on `PATH`, including when launching with `bunx`.
+Check your installed version with `node --version`.
 
 > **Release status:** The npm package is prepared but has not been published yet.
 > Until the first release, use [Run from source](#run-from-source).
