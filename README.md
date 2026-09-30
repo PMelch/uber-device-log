@@ -210,7 +210,7 @@ The legacy relay does not guarantee parity with unified logging. See the
 | [Technical documentation](docs/technical.md) | Development setup, architecture, API, export schema and capture limits |
 | [Contributing](CONTRIBUTING.md) | Local checks, translation requirements and change guidelines |
 | [Localization](docs/localization.md) | Six-language workflow and translation context |
-| [Publishing](PUBLISH.md) | Package verification and release steps |
+| [Publishing](docs/publishing.md) | Package verification and release steps |
 | [Design reference](docs/design/README.md) | Visual design and interface conventions |
 | [Crash-format research](docs/crash-format-research.md) | Recognized diagnostic formats and their limits |
 
