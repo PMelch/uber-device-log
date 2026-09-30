@@ -1,3 +1,5 @@
+import type { Notification } from './notifications';
+
 export type Platform = 'android' | 'ios';
 
 export interface Device {
@@ -9,7 +11,7 @@ export interface Device {
 
 export interface DeviceList {
   devices: Device[];
-  warnings: string[];
+  warnings: (Notification | string)[];
 }
 
 export interface LogMessage {

@@ -153,6 +153,7 @@ body { margin: 0; }
 /* Whole-record selection: touch gestures remain native scrolling. */
 #precision-design .precision-selectionbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 14px;border-bottom:1px solid var(--pl-line);background:var(--pl-panel);font-size:12px}
 #precision-design .selection-hint{color:var(--pl-soft);flex-basis:100%}
+#precision-design .precision-selectionbar details{min-width:160px}
 #precision-design .precision-row{user-select:none;touch-action:pan-x pan-y}
 #precision-design .precision-row.is-selected{background:var(--pl-accent-bg);box-shadow:inset 3px 0 var(--pl-accent)}
 #precision-design .precision-selectcell{display:flex;align-items:center;gap:5px;min-height:28px;cursor:pointer}
@@ -167,3 +168,23 @@ body { margin: 0; }
 }
 
 @media(pointer:coarse){#precision-design:not(.selecting) .precision-selectcell input{visibility:hidden}}
+
+/* Localized controls wrap instead of clipping long labels on narrow screens. */
+#precision-design .precision-top { gap: 16px; flex-wrap: wrap; }
+#precision-design .precision-toptools { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-left: auto; min-width: 0; }
+#precision-design .precision-language { flex: none; }
+#precision-design .precision-language summary { min-height: 36px; padding: 6px 10px; font-size: 12px; }
+#precision-design .precision-language .precision-menu { left: auto; right: 0; min-width: 160px; max-width: calc(100vw - 32px); }
+#precision-design .precision-topnote { white-space: normal; }
+#precision-design .precision-action { white-space: normal; text-align: left; }
+#precision-design .precision-controls summary { white-space: normal; }
+#precision-design .precision-menu button { white-space: normal; overflow-wrap: anywhere; }
+#precision-design .precision-selectionbar .precision-menu { width: max-content; max-width: calc(100vw - 64px); }
+#precision-design .precision-columns > span { min-width: 0; overflow-wrap: anywhere; }
+#precision-design .warning, #precision-design .precision-footer span { overflow-wrap: anywhere; min-width: 0; }
+@media(max-width:700px) {
+  #precision-design .precision-topnote { display: none; }
+  #precision-design .precision-top { gap: 8px; }
+  #precision-design .precision-live { white-space: normal; }
+  #precision-design .precision-field:not(.precision-device) { flex-basis: 160px; }
+}

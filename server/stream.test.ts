@@ -46,7 +46,10 @@ test('collector failures are delivered to the viewer and end the connection', as
   streamLogs(response.asHttp(), device, async () => { throw new Error('Device not trusted'); });
   await delay(0);
   assert.match(response.frames.join(''), /event: stopped/);
-  assert.match(response.frames.join(''), /Device not trusted/);
+  const failure = JSON.parse(response.frames.find(frame => frame.startsWith('event: stopped'))!.split('\n')[1].slice(6));
+  assert.equal(failure.code, 'streamCannotRead');
+  assert.equal(failure.params.detail, 'Device not trusted');
+  assert.match(failure.message, /Device not trusted/);
   assert.equal(response.destroyed, true);
 });
 
@@ -88,7 +91,9 @@ test('slow browsers bound the queue and are told when messages were skipped', as
     response.writable = true;
     response.emit('drain');
     await delay(120);
-    assert.match(response.frames.join(''), /200 messages skipped/);
+    const skipped = response.frames.filter(frame => frame.startsWith('event: status')).map(frame => JSON.parse(frame.split('\n')[1].slice(6))).find(event => event.code === 'streamSkipped');
+    assert.equal(skipped.params.count, 200);
+    assert.match(skipped.message, /200/);
     const frame = response.frames.find(value => value.startsWith('event: logs'))!;
     const messages = JSON.parse(frame.split('\n')[1].slice(6));
     assert.equal(messages.length, 100);

@@ -67,6 +67,36 @@ Both `package-lock.json` and `bun.lock` are maintained. Keep them consistent whe
 
 Discovery refreshes every three seconds and has a manual refresh button. A failure on one platform does not hide devices from the other. Existing Android emulators and network devices visible to the host services may also appear. This prototype does not establish wireless pairing or list iOS simulators.
 
+## Languages
+
+The language menu in the header offers **English, Español, Deutsch, Français,
+Italiano and 简体中文 (Simplified Chinese)**. On the first visit, the app uses the
+first supported browser language, falling back to English. Regional variants
+such as `de-AT` and `es-MX` use their base language; Chinese browser preferences
+use Simplified Chinese. A manual choice is stored locally for subsequent visits.
+If browser storage is blocked, language switching still works for the session.
+
+Changing language updates controls, hints, accessible labels, device states,
+counts and existing status messages immediately without reconnecting or clearing
+logs or selection. Original logs, device names, timestamps, technical diagnostic
+details, severity values in log records, and export/JSON field names stay intact.
+The page's `lang` attribute follows the chosen language.
+
+Translations live in `src/i18n/`, with English defining the typed message keys.
+Each catalog must provide every key and retain the same named placeholders.
+Count labels use locale-specific number formatting. Server notifications carry
+stable `code` and `params` fields plus an English `message` fallback; the browser
+translates the code when displaying it. Older or unknown notifications retain
+their fallback text. The CLI and developer documentation remain in English.
+
+Every new or changed website text must ship in all six languages with translation
+context describing its UI location, intended meaning and every placeholder.
+This requirement is in [AGENTS.md](AGENTS.md) and the
+[localization workflow](docs/localization.md). Translator briefs for every key
+live in `src/i18n/context.ts`; tests check complete context and placeholder
+documentation as well as translation coverage. Review also checks for hard-coded
+UI prose that bypasses the catalogs.
+
 ## Behavior and limits
 
 - The selector contains both platforms and includes IDs to distinguish similarly named phones.
@@ -76,7 +106,7 @@ Discovery refreshes every three seconds and has a manual refresh button. A failu
 - **Clear view** clears browser messages only; it never clears device logs.
 - **Filter logs** searches message text, timestamps, tags, levels and PIDs with case-insensitive fuzzy matching (Fuse.js). All whitespace-separated terms must match; results retain the selected chronological order. Filtering only affects the view, including while paused. **Clear filter** or Escape restores all retained messages.
 - **Android levels** toggle Verbose, Debug, Info, Warn, Error and Fatal independently and combine with fuzzy search. All restores all levels. Selections survive device changes; iOS disables these filters.
-- **Copy / Save** export whole selected log entries (including metadata and multiline stack traces) in display order. Desktop: click a row, drag for a range, Shift-click to extend, Ctrl/Cmd-click to toggle. Mobile: tap **Select**, then checkboxes; swiping always scrolls. Select a start entry, tap **Range to…**, then the end checkbox for an inclusive range. **Select all filtered** selects the current view. Selected entries are highlighted and counted. Without a selection, Copy is disabled and **Save all displayed logs** exports the filtered view. Copy has a manual-text fallback; Save downloads plain-text `.log`.
+- **Copy / Save** export whole selected log entries (including metadata and multiline stack traces) in display order. Desktop: click a row, drag for a range, Shift-click to extend, Ctrl/Cmd-click to toggle. Mobile: tap **Select**, then checkboxes; swiping always scrolls. Select a start entry, tap **Range to…**, then the end checkbox for an inclusive range. **Select all filtered** selects the current view. Selected entries are highlighted and counted. Without a selection, Copy is disabled and **Save all displayed logs** exports the filtered view. Choose **Plain text** or **Structured JSON** in the shared Copy/Save format selector. Copy has a manual-copy fallback in either format; Save downloads `.log` or `.json`.
 - **Pause** or starting a selection freezes the displayed snapshot while capture continues in the bounded live buffer. **Back to live** clears selection and resumes following. **Clear selection** / Escape removes marks but keeps the snapshot frozen. Filters and buffer reductions remove hidden/discarded entries from the selection; reconnecting, clearing logs or changing devices clears it. Checkbox selection also works with keyboard Space.
 - **Buffer size** selects 1,000, 2,000 (default), 10,000, 50,000 or 100,000 messages for the browser. Reducing it immediately removes the oldest entries from both the live buffer and any paused snapshot. Increasing it allows more future messages; discarded entries cannot be recovered. The setting lasts for the current page session.
 - The server batches up to 100 messages every 100 ms and caps its queue at 1,000, dropping the oldest queued records and reporting when overloaded. Individual message text is capped at 16,384 JavaScript characters. This is a viewer, not a lossless recorder.
@@ -84,6 +114,30 @@ Discovery refreshes every three seconds and has a manual refresh button. A failu
 - Android timestamps come from logcat; iOS timestamps in the UI are host receipt times, with the device's original text retained. No cross-device clock normalization.
 - Disconnections stop capture. Select the device again or use **Reconnect**; there is no silent automatic retry or promise of gap-free capture.
 - Localhost only, with Host/Origin checks. No persistent storage or remote access. Android supports structured severity filters; iOS retains its original text-only logs. Copy exports selected whole log entries. Save exports the selection, or all currently displayed, filtered messages when nothing is selected, including the frozen snapshot while paused. Logs render as text, never HTML.
+
+## JSON export
+
+Copy and Save use the same JSON structure, preserving display order and original
+message strings (including multiline traces). Each export contains one device:
+
+```json
+{
+  "schemaVersion": 1,
+  "device": { "id": "device-id", "name": "Phone", "platform": "android" },
+  "source": "android-logcat",
+  "timestampSource": "device",
+  "entries": [
+    { "timestamp": "2026-09-30T12:00:00.000Z", "message": "Hello", "level": "I", "tag": "App", "pid": 42 }
+  ]
+}
+```
+
+For iOS, `platform` is `ios`, `source` is `ios-syslog`, and `timestampSource` is
+`host-receipt`. Its `message` retains the original syslog text, including any
+device timestamp. `level`, `tag` and `pid` are optional and omitted when unavailable;
+no metadata is inferred from iOS text. Device identity is retained with the captured
+logs even after disconnecting. UI selection keys are excluded. Both formats remain
+subject to the capture and buffer limits above.
 
 ## Architecture
 
@@ -94,8 +148,11 @@ Vue 3 and Vite provide the frontend; Express runs the TypeScript backend on Node
 | `src/App.vue` | Device selection, polling, streaming, filtering, pause, ordering and buffer controls |
 | `src/style.css` | Responsive Precision light/dark styling |
 | `src/components/PrecisionMenu.vue` | Custom keyboard-accessible selector |
+| `shared/log-export.ts` | Shared plain-text/JSON serialization and export schema |
 | `shared/log-view.ts` | Severity normalization/filtering and plain-text export |
 | `src/main.ts` | Vue entry point |
+| `src/i18n/` | Six complete language catalogs, locale selection, persistence and formatting |
+| `shared/notifications.ts` | Translatable server notification codes and English fallbacks |
 | `shared/types.ts` | Device, discovery and log-message types |
 | `shared/search.ts` | Fuse.js full-text search, preserving arrival order |
 | `server/index.ts` | API routes, local access checks, Vite/static serving and shutdown |
@@ -106,7 +163,7 @@ Vue 3 and Vite provide the frontend; Express runs the TypeScript backend on Node
 | `server/search.test.ts` | Fuzzy-search regression tests |
 | `docs/design/README.md` | Approved Precision design and implementation expectations |
 
-`GET /api/devices` returns `{ devices, warnings }`. `GET /api/logs?platform=android|ios&id=...` emits `logs`, `status` and `stopped` events. Concurrent discovery requests are coalesced; a discovery failure on one platform does not discard the other platform's results.
+`GET /api/devices` returns `{ devices, warnings }`; warnings are notification objects with `code`, `params` and an English `message` fallback. `GET /api/logs?platform=android|ios&id=...` emits `logs`, `status` and `stopped` events. Concurrent discovery requests are coalesced; a discovery failure on one platform does not discard the other platform's results.
 
 Messages stay in arrival order internally so trimming always removes the oldest records. Search indexes are cached until the visible buffer changes; while paused, filtering uses the frozen snapshot.
 

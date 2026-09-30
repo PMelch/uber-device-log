@@ -2,6 +2,8 @@ import type { ServerResponse } from 'node:http';
 import type { Device, LogMessage } from '../shared/types.js';
 import type { OpenLogs, Stop } from './devices.js';
 
+import { notification, type Notification } from '../shared/notifications.js';
+
 // A connection owns one collector. Closing the tab or changing selection closes
 // the collector, including one that resolves after the browser has gone away.
 export function streamLogs(response: ServerResponse, device: Device, open: OpenLogs): Stop {
@@ -24,9 +26,9 @@ export function streamLogs(response: ServerResponse, device: Device, open: OpenL
     stopCollector?.();
     if (!response.destroyed) response.end();
   }
-  function finish(message: string) {
+  function finish(message: Notification | string) {
     if (closed) return;
-    send('stopped', { message });
+    send('stopped', typeof message === 'string' ? { message } : message);
     close();
   }
   const flushTimer = setInterval(() => {
@@ -34,7 +36,7 @@ export function streamLogs(response: ServerResponse, device: Device, open: OpenL
     if (dropped) {
       const count = dropped;
       dropped = 0;
-      send('status', { message: `Live — ${count} messages skipped while the viewer was catching up.` });
+      send('status', notification('streamSkipped', { count }));
       if (blocked) return;
     }
     if (queue.length) send('logs', queue.splice(0, 100));
@@ -42,7 +44,7 @@ export function streamLogs(response: ServerResponse, device: Device, open: OpenL
   const heartbeat = setInterval(() => {
     if (!blocked && !closed) blocked = !response.write(': heartbeat\n\n');
   }, 15000);
-  const connectTimeout = setTimeout(() => finish('Connection timed out. Check device authorization and reconnect.'), 15000);
+  const connectTimeout = setTimeout(() => finish(notification('streamTimeout')), 15000);
   response.on('drain', () => { blocked = false; });
   response.on('close', close);
   response.writeHead(200, {
@@ -62,8 +64,8 @@ export function streamLogs(response: ServerResponse, device: Device, open: OpenL
     if (closed) stop();
     else {
       stopCollector = stop;
-      send('status', { message: 'Live — reading device logs.' });
+      send('status', notification('streamLive'));
     }
-  }).catch(error => finish(`Cannot read logs: ${error instanceof Error ? error.message : String(error)}. Check device trust/debugging and reconnect.`));
+  }).catch(error => finish(notification('streamCannotRead', { detail: error instanceof Error ? error.message : String(error) })));
   return close;
 }

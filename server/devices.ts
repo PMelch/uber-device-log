@@ -5,6 +5,8 @@ import { getDefaultSocket } from 'appium-ios-device/build/lib/usbmux/index.js';
 import type { Socket } from 'node:net';
 import type { Device, DeviceList, LogMessage } from '../shared/types.js';
 
+import { notification, type Notification } from '../shared/notifications.js';
+
 const adb = Adb.createClient({ bin: process.env.ADB_PATH || 'adb', timeout: 5000 });
 export const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
@@ -28,7 +30,7 @@ async function iosDevices(): Promise<Device[]> {
   }
   return Promise.all(ids.map(async id => ({
     id,
-    name: await utilities.getDeviceName(id).catch(() => 'iOS device'),
+    name: await utilities.getDeviceName(id).catch(() => id),
     platform: 'ios' as const,
     state: 'connected',
   })));
@@ -39,10 +41,10 @@ export function listDevices(): Promise<DeviceList> {
   // Coalesce simultaneous refreshes from multiple tabs.
   pendingDiscovery ??= Promise.allSettled([androidDevices(), iosDevices()]).then(results => {
     const devices: Device[] = [];
-    const warnings: string[] = [];
+    const warnings: DeviceList['warnings'] = [];
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') devices.push(...result.value);
-      else warnings.push(`${index === 0 ? 'Android' : 'iOS'} discovery unavailable: ${errorText(result.reason)}`);
+      else warnings.push(notification('discoveryUnavailable', { platform: index === 0 ? 'Android' : 'iOS', detail: errorText(result.reason) }));
     });
     return { devices, warnings };
   }).finally(() => { pendingDiscovery = undefined; });
@@ -53,7 +55,7 @@ export type Stop = () => void;
 export type OpenLogs = (
   device: Device,
   onMessage: (message: LogMessage) => void,
-  onEnd: (reason: string) => void,
+  onEnd: (reason: Notification | string) => void,
 ) => Promise<Stop>;
 
 export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
@@ -69,18 +71,18 @@ export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
       tag: entry.tag,
       pid: entry.pid,
     }));
-    reader.on('error', error => onEnd(`Android log error: ${errorText(error)}`));
-    socket.on('close', () => onEnd('Android log stream ended. Reconnect to resume.'));
-    socket.on('end', () => onEnd('Android device disconnected or log stream ended.'));
+    reader.on('error', error => onEnd(notification('streamError', { platform: 'Android', detail: errorText(error) })));
+    socket.on('close', () => onEnd(notification('streamEnded', { platform: 'Android' })));
+    socket.on('end', () => onEnd(notification('streamEnded', { platform: 'Android' })));
     return () => { socket.destroy(); };
   }
 
   const service = await services.startSyslogService(device.id);
   // Appium's service has no public lifecycle events. Keep access to its socket
   // and decoder isolated here; package-lock pins the inspected implementation.
-  service._socketClient.on('error', error => onEnd(`iOS log error: ${errorText(error)}`));
-  service._socketClient.on('close', () => onEnd('iOS device disconnected or log stream ended.'));
-  service._decoder.on('error', error => onEnd(`iOS log decode error: ${errorText(error)}`));
+  service._socketClient.on('error', error => onEnd(notification('streamError', { platform: 'iOS', detail: errorText(error) })));
+  service._socketClient.on('close', () => onEnd(notification('streamEnded', { platform: 'iOS' })));
+  service._decoder.on('error', error => onEnd(notification('decodeError', { detail: errorText(error) })));
   service.start(message => onMessage({ timestamp: new Date().toISOString(), message }));
   return () => {
     service._socketClient.destroy();
