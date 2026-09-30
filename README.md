@@ -7,7 +7,7 @@
 A local browser-based log viewer. Connect a phone, find the message that matters,
 and share the relevant entries as plain text or structured JSON.
 
-[Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
+[Website](https://pmelch.github.io/uber-device-log/) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
 
 **Android + iOS** · **Runs locally** · **Six languages** · **Apache-2.0**
 
