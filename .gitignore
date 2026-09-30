@@ -148,3 +148,5 @@ vite.config.ts.timestamp-*
 # Compiled CLI/server and local registry credentials
 build/
 .npmrc
+
+site-dist/

@@ -160,3 +160,167 @@ export const translationContext = {
   detailInvalidType: c("Interpretation for mobileassetd invalid-type messages.", "Type mismatch is visible, but the particular asset and root cause are not established."),
   detailStack: c("Interpretation when existing stack/diagnostic syntax recognition matches.", "Recognized text may be incomplete, not necessarily a new or complete crash report."),
 } satisfies Record<MessageKey, TranslationContext>;
+
+/** Public website copy is separate from the application catalogs and npm bundle. */
+export const websiteTranslationContext = {
+  "siteSkip": {
+    "location": "Public landing page: Skip",
+    "meaning": "Skip to content"
+  },
+  "language": {
+    "location": "Public landing page: language",
+    "meaning": "Language"
+  },
+  "siteFeatures": {
+    "location": "Public landing page: Features",
+    "meaning": "Features"
+  },
+  "siteHero": {
+    "location": "Public landing page: Hero",
+    "meaning": "First line of the centered hero: Your device logs. Refers to Android and iOS device logs."
+  },
+  "siteHeroAccent": {
+    "location": "Public landing page: HeroAccent",
+    "meaning": "Second line of the hero: In focus. A concise clarity metaphor; do not add Finally or imply a new capability."
+  },
+  "siteLead": {
+    "location": "Public landing page: Lead",
+    "meaning": "Android & iOS logs. One local workspace. Find the message that matters, understand its context, and share exactly what you need."
+  },
+  "siteStart": {
+    "location": "Public landing page: Start",
+    "meaning": "Get started →"
+  },
+  "siteExplore": {
+    "location": "Public landing page: Explore",
+    "meaning": "Explore the viewer ↘"
+  },
+  "siteLocal": {
+    "location": "Public landing page: Local",
+    "meaning": "Your machine. Your logs. No account required."
+  },
+  "siteSignal": {
+    "location": "Public landing page: Signal",
+    "meaning": "Less noise. More context."
+  },
+  "siteInAction": {
+    "location": "Public landing page: InAction",
+    "meaning": "The real thing"
+  },
+  "siteDemo": {
+    "location": "Public landing page: Demo",
+    "meaning": "Actual app · fictional demo logs"
+  },
+  "siteScreenshot": {
+    "location": "Public landing page: Screenshot",
+    "meaning": "Log viewer with search, severity filters and formatted exceptions"
+  },
+  "siteCaption": {
+    "location": "Public landing page: Caption",
+    "meaning": "A familiar interface. A much calmer debugging session."
+  },
+  "siteFeatureTitle": {
+    "location": "Public landing page: FeatureTitle",
+    "meaning": "Made for the moment something breaks."
+  },
+  "siteFind": {
+    "location": "Public landing page: Find",
+    "meaning": "Search everything"
+  },
+  "siteFindBody": {
+    "location": "Public landing page: FindBody",
+    "meaning": "Find messages across text, tags, timestamps and PIDs. Combine fuzzy search with Android severity filters to narrow the view."
+  },
+  "sitePause": {
+    "location": "Public landing page: Pause",
+    "meaning": "Read at your pace"
+  },
+  "sitePauseBody": {
+    "location": "Public landing page: PauseBody",
+    "meaning": "Freeze the view while capture continues. Select complete entries, inspect their details, then jump back to live."
+  },
+  "siteExport": {
+    "location": "Public landing page: Export",
+    "meaning": "Export the context"
+  },
+  "siteExportBody": {
+    "location": "Public landing page: ExportBody",
+    "meaning": "Copy or save selected entries as plain text or structured JSON. Original messages, metadata and multiline traces stay intact."
+  },
+  "siteDetails": {
+    "location": "Public landing page: Details",
+    "meaning": "A closer look"
+  },
+  "siteDetailTitle": {
+    "location": "Public landing page: DetailTitle",
+    "meaning": "A log line is just the beginning."
+  },
+  "siteDetailBody": {
+    "location": "Public landing page: DetailBody",
+    "meaning": "Open the info button to unpack a message: process, source, exception, path and reported reason, when available. Local parsing rules explain recognized patterns without pretending to know the root cause."
+  },
+  "siteDetailAlt": {
+    "location": "Public landing page: DetailAlt",
+    "meaning": "Message details with file path, exception and error code"
+  },
+  "siteDocs": {
+    "location": "Public landing page: Docs",
+    "meaning": "Read the technical docs ↗"
+  },
+  "siteInstallTitle": {
+    "location": "Public landing page: InstallTitle",
+    "meaning": "One command. Then connect."
+  },
+  "siteRequirements": {
+    "location": "Public landing page: Requirements",
+    "meaning": "Node.js 22.12+ and a browser. Run once with npx or bunx, or install globally and launch with udl. Technical commands, brand names and platform names remain verbatim."
+  },
+  "siteSetup": {
+    "location": "Public landing page: Setup",
+    "meaning": "Android needs adb and USB debugging. iOS needs host pairing. The legacy iOS relay has capture limits; check the setup guide for platform requirements. Technical commands, brand names and platform names remain verbatim."
+  },
+  "siteCommand": {
+    "location": "Public landing page: Command",
+    "meaning": "Installation method Technical commands, brand names and platform names remain verbatim."
+  },
+  "siteGlobal": {
+    "location": "Public landing page: Global",
+    "meaning": "Global install Technical commands, brand names and platform names remain verbatim."
+  },
+  "siteCopy": {
+    "location": "Public landing page: Copy",
+    "meaning": "Copy"
+  },
+  "siteCopied": {
+    "location": "Public landing page: Copied",
+    "meaning": "Command copied."
+  },
+  "siteCopyFallback": {
+    "location": "Public landing page: CopyFallback",
+    "meaning": "Select and copy the command manually."
+  },
+  "siteSetupLink": {
+    "location": "Public landing page: SetupLink",
+    "meaning": "Device setup & capture limits ↗"
+  },
+  "siteClosing": {
+    "location": "Public landing page: Closing",
+    "meaning": "Your logs belong on your machine."
+  },
+  "siteClosingBody": {
+    "location": "Public landing page: ClosingBody",
+    "meaning": "Local capture. Six interface languages. Open source. No account, no cloud upload."
+  },
+  "siteGithub": {
+    "location": "Public landing page: Github",
+    "meaning": "Explore on GitHub ↗"
+  },
+  "siteIssue": {
+    "location": "Public landing page: Issue",
+    "meaning": "Report an issue ↗"
+  },
+  "siteOpenSource": {
+    "location": "Public landing page: OpenSource",
+    "meaning": "OPEN SOURCE"
+  }
+} as const;
