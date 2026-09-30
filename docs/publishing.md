@@ -76,3 +76,13 @@ bunx uber-device-log@0.1.0 --help
 
 Substitute the released version on subsequent releases. The local tarball smoke
 test proves package execution, not registry publication or account permissions.
+
+### Minimum Node version regression check
+
+Before publishing, also run the installed-archive smoke test on the minimum supported Node version:
+
+```sh
+npm exec --yes --package=node@22.12.0 -- npm run test:package
+```
+
+This is important for CommonJS/ESM interoperability: Node 24 can infer some named exports that Node 22.12 cannot. In particular, load `@devicefarmer/adbkit` through `createRequire`; its native ESM named `Adb` import fails on Node 22.12, and its default-export typings do not match the CommonJS exports object. A successful tsx development startup alone does not verify the published JavaScript.

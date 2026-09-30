@@ -1,4 +1,5 @@
-import { Adb, type DeviceWithPath } from '@devicefarmer/adbkit';
+import { createRequire } from 'node:module';
+import type { DeviceWithPath } from '@devicefarmer/adbkit';
 import logcat from '@devicefarmer/adbkit-logcat';
 import { services, utilities } from 'appium-ios-device';
 import { getDefaultSocket } from 'appium-ios-device/build/lib/usbmux/index.js';
@@ -7,6 +8,9 @@ import type { Device, DeviceList, LogMessage } from '../shared/types.js';
 
 import { notification, type Notification } from '../shared/notifications.js';
 
+// Load CJS explicitly: Node 22 cannot infer Adb as an ESM named export,
+// and adbkit's default-export typings differ from its runtime exports object.
+const { Adb } = createRequire(import.meta.url)('@devicefarmer/adbkit') as typeof import('@devicefarmer/adbkit');
 const adb = Adb.createClient({ bin: process.env.ADB_PATH || 'adb', timeout: 5000 });
 export const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
