@@ -25,6 +25,22 @@ The page is a product showcase, not the device-capture application. Installation
 commands launch the application locally. The website has no analytics, API calls,
 or remote fonts. Its language preference is saved under `udl.website.language`.
 
+## Search and sharing metadata
+
+The page targets Android Logcat and iOS syslog searches, with macOS, Windows and
+Linux setup guidance. Keep the host validation caveat and legacy iOS syslog-relay
+limitations alongside the platform copy.
+
+`website/index.html` contains English text and image descriptions before JavaScript
+runs. When changing website translations, update this English fallback too. The
+language switcher updates the document title, search description and social title
+and description using the website catalog. All languages currently share one URL;
+there are no separate localized URLs to advertise with `hreflang`.
+
+The canonical URL and Open Graph/Twitter image URLs use the GitHub Pages project
+URL. Update them if the site moves to a custom domain. Build and run the website
+tests before deploying changes.
+
 ## npm boundary
 
 The package's positive `files` allowlist includes only `bin/`, compiled runtime

@@ -163,6 +163,10 @@ export const translationContext = {
 
 /** Public website copy is separate from the application catalogs and npm bundle. */
 export const websiteTranslationContext = {
+  "siteMetaTitle": {"location": "Public landing page: document title and social preview title", "meaning": "Android Logcat & iOS syslog viewer | Über Device Log Preserve product names, platform names and the qualification about validation where present."},
+  "siteMetaDescription": {"location": "Public landing page: search and social preview description", "meaning": "Android Logcat and iOS syslog viewer with setup guidance for macOS, Windows and Linux. Search, filter and export device logs locally with Über Device Log. Preserve product names, platform names and the qualification about validation where present."},
+  "sitePlatforms": {"location": "Public landing page: platform requirements heading", "meaning": "Android Logcat and iOS syslog on macOS, Windows and Linux Preserve product names, platform names and the qualification about validation where present."},
+  "sitePlatformBody": {"location": "Public landing page: platform requirements paragraph", "meaning": "Android Logcat uses ADB from Android SDK Platform Tools on macOS, Windows and Linux. For iPhone and iPad syslog, macOS uses Apple’s device service; Linux needs usbmuxd, and Windows needs compatible Apple mobile-device support. macOS is the primary validation environment; Windows and Linux still need validation. Preserve product names, platform names and the qualification about validation where present."},
   "siteSkip": {
     "location": "Public landing page: Skip",
     "meaning": "Skip to content"
@@ -177,15 +181,15 @@ export const websiteTranslationContext = {
   },
   "siteHero": {
     "location": "Public landing page: Hero",
-    "meaning": "First line of the centered hero: Your device logs. Refers to Android and iOS device logs."
+    "meaning": "Android Logcat"
   },
   "siteHeroAccent": {
     "location": "Public landing page: HeroAccent",
-    "meaning": "Second line of the hero: In focus. A concise clarity metaphor; do not add Finally or imply a new capability."
+    "meaning": "& iOS syslog."
   },
   "siteLead": {
     "location": "Public landing page: Lead",
-    "meaning": "Android & iOS logs. One local workspace. Find the message that matters, understand its context, and share exactly what you need."
+    "meaning": "Android Logcat and iOS syslog, in one local browser workspace. Search, inspect and export device logs. See setup requirements for macOS, Windows and Linux below."
   },
   "siteStart": {
     "location": "Public landing page: Start",
@@ -277,7 +281,7 @@ export const websiteTranslationContext = {
   },
   "siteSetup": {
     "location": "Public landing page: Setup",
-    "meaning": "Android needs adb and USB debugging. iOS needs host pairing. The legacy iOS relay has capture limits; check the setup guide for platform requirements. Technical commands, brand names and platform names remain verbatim."
+    "meaning": "iOS capture uses the legacy syslog relay (com.apple.syslog_relay), not the full Apple unified logging system shown in Console or Xcode. Unlock and trust the device; available logs depend on the device and iOS version."
   },
   "siteCommand": {
     "location": "Public landing page: Command",

@@ -12,7 +12,13 @@ function render() {
   for (const el of document.querySelectorAll<HTMLElement>('[data-alt]')) el.setAttribute('alt', translate(locale, el.dataset.alt as MessageKey));
   for (const el of document.querySelectorAll<HTMLElement>('[data-label]')) el.setAttribute('aria-label', translate(locale, el.dataset.label as MessageKey));
   document.querySelector('#copy-status')!.textContent = '';
-  document.title = `Über Device Log — ${translate(locale, 'siteHero')} ${translate(locale, 'siteHeroAccent')}`;
+  document.title = translate(locale, 'siteMetaTitle');
+  for (const selector of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]']) {
+    document.querySelector(selector)?.setAttribute('content', translate(locale, 'siteMetaDescription'));
+  }
+  for (const selector of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) {
+    document.querySelector(selector)?.setAttribute('content', document.title);
+  }
 }
 language.addEventListener('change', () => { locale = language.value as Locale; try { localStorage.setItem('udl.website.language', locale); } catch {} render(); });
 const command = document.querySelector<HTMLElement>('#install-command')!;

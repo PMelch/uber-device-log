@@ -2,9 +2,10 @@
 
 # Über Device Log
 
-**Android & iOS logs, in one place.**
+**Android Logcat & iOS syslog, in one place.**
 
-A local browser-based log viewer. Connect a phone, find the message that matters,
+A local browser-based **Android Logcat and iOS syslog viewer**, with setup guidance
+for **macOS, Windows and Linux**. Connect a phone, find the message that matters,
 and share the relevant entries as plain text or structured JSON.
 
 [Website](https://pmelch.github.io/uber-device-log/) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
@@ -88,7 +89,11 @@ starts capture if it is connected and available. Otherwise the selection stays
 empty, while the saved device is retained for a later reload. Reattaching it
 during an open session does not automatically start capture.
 
-### Android
+### Android Logcat on macOS, Windows and Linux
+
+The viewer captures Android Logcat through ADB (`adb logcat`), including severity,
+tag, process ID and stack traces. Install the Platform Tools for your host OS;
+Android Studio does not need to be running.
 
 1. Install Android SDK Platform Tools and make `adb` available on your `PATH`.
 2. Enable **USB debugging** on your device and connect it to your computer.
@@ -98,7 +103,12 @@ during an open session does not automatically start capture.
 Devices already visible to ADB, including Android emulators, may also appear.
 If your ADB executable lives elsewhere, set `ADB_PATH` to its path.
 
-### iPhone / iPad
+### iOS syslog on macOS, Windows and Linux
+
+For iPhone and iPad, the viewer reads **iOS syslog** through the legacy
+`com.apple.syslog_relay` service. This provides device logs rather than full parity
+with Apple’s unified logging in Console or Xcode. Available output depends on the
+device and iOS version; no separate `idevicesyslog` command is required.
 
 1. Connect and unlock your device.
 2. Accept **Trust This Computer** and complete pairing.
@@ -200,7 +210,7 @@ The legacy relay does not guarantee parity with unified logging. See the
 | [Technical documentation](docs/technical.md) | Development setup, architecture, API, export schema and capture limits |
 | [Contributing](CONTRIBUTING.md) | Local checks, translation requirements and change guidelines |
 | [Localization](docs/localization.md) | Six-language workflow and translation context |
-| [Publishing](docs/publishing.md) | Package verification and release steps |
+| [Publishing](PUBLISH.md) | Package verification and release steps |
 | [Design reference](docs/design/README.md) | Visual design and interface conventions |
 | [Crash-format research](docs/crash-format-research.md) | Recognized diagnostic formats and their limits |
 

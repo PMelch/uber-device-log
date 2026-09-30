@@ -15,3 +15,19 @@ test('landing page copy is localized with context and remains outside the applic
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.ok(!manifest.files.some((entry: string) => /website|site-dist|^\*$/.test(entry)));
 });
+
+test('landing page exposes log sources and platform requirements without JavaScript', () => {
+  const html = readFileSync(new URL('../website/index.html', import.meta.url), 'utf8');
+  assert.match(html, /<title>[^<]*Android Logcat[^<]*iOS syslog/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/pmelch.github.io\/uber-device-log\/"/);
+  assert.match(html, /property="og:description"/);
+  assert.match(html, /name="twitter:card"/);
+  for (const [, key, text] of html.matchAll(/data-t="([^"]+)"[^>]*>([^<]*)</g)) {
+    assert.ok(text.trim(), `Missing static text for ${key}`);
+  }
+  for (const catalog of Object.values(websiteCatalogs)) {
+    assert.match(catalog.siteHero, /Android Logcat/);
+    assert.match(catalog.siteHeroAccent, /iOS syslog/);
+    for (const platform of ['macOS', 'Windows', 'Linux']) assert.ok(catalog.sitePlatforms.includes(platform));
+  }
+});
