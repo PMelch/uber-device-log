@@ -8,6 +8,8 @@ import { serializeLogExport, type LogExportFormat } from '../shared/log-export';
 import { useI18n, uiMessage, type UiMessage } from './i18n';
 import PrecisionMenu from './components/PrecisionMenu.vue';
 import LogMessageText from './components/LogMessageText.vue';
+import LogDetails from './components/LogDetails.vue';
+import { useLogDetails } from './composables/useLogDetails';
 
 const { locale, setLocale, languages, languageName, t, n, localizeMessage, deviceState, levelLabel } = useI18n();
 
@@ -47,6 +49,8 @@ const displayedMessages = computed(() => newestPosition.value === 'top'
   ? [...filteredMessages.value].reverse()
   : filteredMessages.value);
 const viewport = ref<HTMLElement>();
+const details = useLogDetails(() => viewport.value?.focus({ preventScroll: true }));
+const { record: detailRecord, pinned: detailPinned, position: detailPosition } = details;
 const keyOf = (device: Device) => `${device.platform}:${device.id}`;
 const currentDevice = computed(() => devices.value.find(d => keyOf(d) === selected.value));
 let source: EventSource | undefined;
@@ -85,6 +89,7 @@ function stop() {
 }
 
 function start() {
+  details.close();
   stop();
   clearSelection();
   selectionMode.value = false;
@@ -166,6 +171,7 @@ async function togglePause() {
 }
 
 function clearView() {
+  details.close();
   clearSelection();
   selectionMode.value = false;
   exportStatus.value = undefined;
@@ -217,6 +223,7 @@ function clearSelection() {
   exportStatus.value = undefined;
 }
 function chooseRow(key: number, additive = false, extend = false) {
+  details.close();
   freezeSelection();
   copyFallback.value = undefined;
   exportStatus.value = undefined;
@@ -232,12 +239,13 @@ function chooseRow(key: number, additive = false, extend = false) {
   }
 }
 function selectAll() {
+  details.close();
   freezeSelection();
   selectedKeys.value = new Set(displayedMessages.value.map(row => row.key));
   rangePending.value = false;
 }
 function rowPointerDown(event: PointerEvent, key: number) {
-  if (event.pointerType !== 'mouse' || event.button !== 0 || (event.target as HTMLElement).closest('input')) return;
+  if (event.pointerType !== 'mouse' || event.button !== 0 || (event.target as HTMLElement).closest('input, button')) return;
   event.preventDefault();
   viewport.value?.focus({preventScroll:true});
   const additive = event.ctrlKey || event.metaKey;
@@ -362,7 +370,7 @@ onUnmounted(() => {
         <div ref="viewport" class="logs" tabindex="0" :aria-label="t('logMessages')" @scroll="onScroll" @pointermove="moveDrag" @pointerup="endDrag" @pointercancel="endDrag" @lostpointercapture="endDrag" @keydown.esc="clearSelection">
           <div v-if="!visibleMessages.length" class="precision-empty">{{ t(paused ? 'pausedEmpty' : selected ? 'waiting' : 'connectPrompt') }}</div>
           <div v-else-if="!displayedMessages.length" class="precision-empty">{{ t('noMatches') }}</div>
-          <div v-for="entry in displayedMessages" :key="entry.key" class="entry precision-row" :data-level="logLevel(entry.level)" :data-log-key="entry.key" :class="{ 'is-selected': selectedKeys.has(entry.key) }" @pointerdown="rowPointerDown($event, entry.key)"><label class="precision-selectcell" @pointerdown.stop><input type="checkbox" :checked="selectedKeys.has(entry.key)" :aria-label="t('selectEntry', { count: entry.key + 1 })" @click.stop="chooseRow(entry.key, true, $event.shiftKey)" /><span class="precision-number">{{ n(entry.key + 1) }}</span></label><time class="precision-time" :title="entry.timestamp">{{ displayTime(entry.timestamp) }}</time><span class="precision-level">{{ logLevel(entry.level) }}</span><span class="precision-tag">{{ entry.tag }}<span class="precision-sub">{{ entry.pid }}</span></span><LogMessageText :message="entry.message" /></div>
+          <div v-for="entry in displayedMessages" :key="entry.key" class="entry precision-row" :data-level="logLevel(entry.level)" :data-log-key="entry.key" :class="{ 'is-selected': selectedKeys.has(entry.key) }" @pointerdown="rowPointerDown($event, entry.key)"><label class="precision-selectcell" @pointerdown.stop><input type="checkbox" :checked="selectedKeys.has(entry.key)" :aria-label="t('selectEntry', { count: entry.key + 1 })" @click.stop="chooseRow(entry.key, true, $event.shiftKey)" /><span class="precision-number">{{ n(entry.key + 1) }}</span></label><time class="precision-time" :title="entry.timestamp">{{ displayTime(entry.timestamp) }}</time><span class="precision-level">{{ logLevel(entry.level) }}</span><span class="precision-tag">{{ entry.tag }}<span class="precision-sub">{{ entry.pid }}</span></span><div class="precision-message-cell"><LogMessageText :message="entry.message" /><button type="button" class="precision-detail-trigger" :aria-label="t('detailOpen', { count: entry.key + 1 })" aria-haspopup="dialog" :aria-expanded="detailRecord?.entry.key === entry.key" :aria-controls="detailRecord?.entry.key === entry.key ? 'log-message-details' : undefined" @pointerenter="details.preview($event, entry, logDevice)" @pointermove="details.move($event, entry, logDevice)" @pointerleave="details.leave" @pointerdown.stop="details.pointerDown" @click.stop="details.toggle($event, entry, logDevice)" @focus="details.focus($event, entry, logDevice)" @blur="details.leave">ⓘ</button></div></div>
         </div>
         <div v-if="copyFallback !== undefined" class="precision-copy-fallback"><label for="copy-text">{{ t('clipboardFallback') }}</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">{{ t('close') }}</button></div>
         <div class="precision-bottom"><span>{{ t('retained', { count: visibleMessages.length, capacity: bufferSize }) }}</span><button v-if="!following && !paused" class="precision-action" @click="follow">{{ t('followLatest') }}</button><span v-else>{{ paused ? t(capturing ? 'frozenActive' : 'frozenStopped') : (newestPosition === 'top' ? '↑ ' : '↓ ') + t('followingNewest') }}</span></div>
@@ -370,5 +378,6 @@ onUnmounted(() => {
       <footer class="precision-footer"><span>{{ t('localPrivacy') }}</span><span role="status">{{ localizeMessage(exportStatus || status) }}</span></footer>
       <p class="setup-hint">{{ t('setupHint') }}</p>
     </main>
+    <LogDetails v-if="detailRecord" :record="detailRecord" :pinned="detailPinned" :position="detailPosition" :locale="locale" @close="details.close(true)" @pin="details.pinCurrent" @enter="details.keepOpen" @leave="details.leave" />
   </div>
 </template>

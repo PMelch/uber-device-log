@@ -188,3 +188,52 @@ body { margin: 0; }
   #precision-design .precision-live { white-space: normal; }
   #precision-design .precision-field:not(.precision-device) { flex-basis: 160px; }
 }
+
+/* One reusable message inspector; original text retains its own formatting. */
+#precision-design .precision-message-cell { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+#precision-design .precision-message-cell > .precision-msg { flex: 1; min-width: 0; }
+#precision-design .precision-detail-trigger { flex: none; width: 28px; min-height: 28px; padding: 3px; border-radius: 5px; color: var(--pl-accent); font: 16px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+#precision-design .precision-detail-trigger:hover, #precision-design .precision-detail-trigger[aria-expanded=true] { background: var(--pl-accent-bg); }
+#precision-design .precision-log-detail { position: fixed; z-index: 50; width: 420px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; overscroll-behavior: contain; border: 1px solid var(--pl-line); border-radius: 12px; background: var(--pl-panel); color: var(--pl-text); box-shadow: 0 12px 40px #0003; user-select: text; font: 12px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+#precision-design .log-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 16px 10px; }
+#precision-design .log-detail-header h2 { margin: 0; font-size: 14px; font-weight: 600; }
+#precision-design .log-detail-state { color: var(--pl-soft); font-size: 11px; }
+#precision-design .log-detail-actions { display: flex; align-items: center; gap: 4px; }
+#precision-design .log-detail-close { min-width: 32px; min-height: 32px; border-radius: 5px; font-size: 20px; }
+#precision-design .log-detail-close:hover { background: var(--pl-wash); }
+#precision-design .log-detail-tabs { display: flex; gap: 4px; flex-wrap: wrap; padding: 0 16px 10px; border-bottom: 1px solid var(--pl-line); }
+#precision-design .log-detail-tabs button { padding: 5px 9px; border-radius: 5px; }
+#precision-design .log-detail-tabs button[aria-pressed=true] { color: var(--pl-accent); background: var(--pl-accent-bg); }
+#precision-design .log-detail-content { padding: 14px 16px; }
+#precision-design .log-detail-content dl { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(0, 1.7fr); gap: 8px 14px; margin: 0 0 14px; }
+#precision-design .log-detail-content dt { color: var(--pl-soft); overflow-wrap: anywhere; }
+#precision-design .log-detail-content dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+#precision-design .log-detail-content p { font-size: 12px; }
+#precision-design .log-detail-content .log-detail-notice { margin: 12px 0; }
+#precision-design .log-detail-explanation { border-radius: 7px; padding: 12px; background: var(--pl-wash); }
+#precision-design .log-detail-explanation h3 { margin: 0 0 5px; font-size: 12px; font-weight: 600; }
+#precision-design .log-detail-raw { font: 11px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; padding: 16px; }
+#precision-design .precision-log-detail > footer { padding: 10px 16px; font-size: 11px; color: var(--pl-soft); border-top: 1px solid var(--pl-line); }
+@media(max-width:700px) {
+  #precision-design .precision-log-detail { top: auto !important; left: 12px !important; right: 12px; bottom: 12px; width: auto; max-height: calc(85dvh - 24px) !important; }
+}
+@media(pointer:coarse) {
+  #precision-design .precision-detail-trigger, #precision-design .log-detail-close, #precision-design .log-detail-tabs button, #precision-design .log-detail-actions button { min-width: 44px; min-height: 44px; }
+}
+
+#precision-design .precision-file-failure-line { display: block; overflow-wrap: anywhere; }
+#precision-design .precision-file-failure-line:last-child { font-weight: 600; }
+
+#precision-design .precision-action.precision-pause[aria-pressed=true] {
+  color: var(--pl-accent);
+  background: var(--pl-accent-bg);
+  border-color: color-mix(in srgb, var(--pl-accent) 35%, var(--pl-line));
+  animation: back-to-live-pulse 2.8s ease-in-out infinite;
+}
+@keyframes back-to-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--pl-accent) 16%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #precision-design .precision-action.precision-pause[aria-pressed=true] { animation: none; }
+}

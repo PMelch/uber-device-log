@@ -18,6 +18,12 @@ test('stack renderer highlights source locations and escapes all log content', a
     assert.match(html, /&lt;init&gt;/);
     assert.doesNotMatch(html, /<img|<init>/);
 
+    const fileError = await render('readFile /sys/<img src=x> failed: java.io.FileNotFoundException: /sys/<img src=x>: open failed: ENOENT (No such file or directory)');
+    assert.equal((fileError.match(/class="precision-file-failure-line"/g) ?? []).length, 3);
+    assert.match(fileError, /ENOENT \(No such file or directory\)/);
+    assert.match(fileError, /&lt;img src=x&gt;/);
+    assert.doesNotMatch(fileError, /<img/);
+
     const native = await render('signal 11 (SIGSEGV), code 1, fault addr 0x0\n#00 pc 00001234 /data/app/libscene.so (<script>alert(1)</script>+8)');
     assert.match(native, /data-kind="signal"/);
     assert.match(native, /data-kind="native-frame"/);

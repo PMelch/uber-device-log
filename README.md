@@ -115,6 +115,35 @@ UI prose that bypasses the catalogs.
 - Disconnections stop capture. Select the device again or use **Reconnect**; there is no silent automatic retry or promise of gap-free capture.
 - Localhost only, with Host/Origin checks. No persistent storage or remote access. Android supports structured severity filters; iOS retains its original text-only logs. Copy exports selected whole log entries. Save exports the selection, or all currently displayed, filtered messages when nothing is selected, including the frozen snapshot while paused. Logs render as text, never HTML.
 
+## Message details
+
+Hover over a log row’s **ⓘ** button (mouse) or focus that button to preview message details.
+Click/tap the same button to close an open card, or to open it when closed.
+**Pin details** keeps a preview open after the pointer leaves. The
+non-modal card offers **Details**, **Original** and **JSON** views. Escape or Close
+returns focus to the entry. Scrolling the page or log list, selecting a row, or
+clicking outside dismisses the card, including pinned cards. Scrolling inside the
+card remains available for long content. Hovering ordinary row text never opens it. At mobile widths
+it becomes a bottom card with bounded scrolling. Opening details never selects
+rows or pauses capture. Switching devices, reconnecting or clearing the view
+closes it; a pinned snapshot can survive live buffer changes.
+
+Android details use captured timestamp, severity, tag and PID. iOS legacy syslog
+headers are parsed into original device-time text, hostname, process, optional
+component/library, PID and reported level. Explicit leading source-file/line
+references are recognized. No year, timezone, unified-log subsystem or missing
+metadata is inferred. Records without a recognized header stay unassigned;
+neighboring records are never used to guess their origin.
+
+Local rules provide cautious explanations for observed audio, brightness,
+GetLuxInfo, Wi-Fi DNS, AppleSPU power-state and MobileAsset type-error messages,
+plus existing stack/diagnostic patterns. Unknown messages get an explicit fallback;
+these explanations are not root-cause diagnoses. `<private>` stays redacted.
+All interface text and explanations have six translations and translator context.
+Only the open record is interpreted; original records, search and full-log exports
+remain unchanged. The overlay JSON is a single-record diagnostic view containing
+`original` and `parsed`, separate from the versioned Copy/Save export format below.
+
 ## JSON export
 
 Copy and Save use the same JSON structure, preserving display order and original
@@ -148,6 +177,9 @@ Vue 3 and Vite provide the frontend; Express runs the TypeScript backend on Node
 | `src/App.vue` | Device selection, polling, streaming, filtering, pause, ordering and buffer controls |
 | `src/style.css` | Responsive Precision light/dark styling |
 | `src/components/PrecisionMenu.vue` | Custom keyboard-accessible selector |
+| `shared/log-details.ts` | Single-record metadata parsing and interpretation rules |
+| `src/components/LogDetails.vue` | Localized, accessible message detail card |
+| `src/composables/useLogDetails.ts` | Preview/pin lifecycle, placement and focus handling |
 | `shared/log-export.ts` | Shared plain-text/JSON serialization and export schema |
 | `shared/log-view.ts` | Severity normalization/filtering and plain-text export |
 | `src/main.ts` | Vue entry point |
