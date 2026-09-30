@@ -138,3 +138,14 @@ body { margin: 0; }
 #precision-design .precision-stack-location { color: var(--pl-text); font-weight: 500; }
 #precision-design .precision-stack-line[data-kind=exception], #precision-design .precision-stack-line[data-kind=cause] { color: var(--pl-error); font-weight: 600; }
 #precision-design .precision-stack-line[data-kind=cause] { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--pl-line); }
+
+/* Diagnostic text keeps original ordering/characters; color only conveys syntax. */
+#precision-design .precision-msg.precision-stack { color: var(--pl-text); }
+#precision-design .precision-stack-line[data-kind=signal] { color: var(--pl-error); font-weight: 700; background: var(--pl-error-bg); border-radius: 4px; }
+#precision-design .precision-stack-line[data-kind=diagnostic] { color: var(--pl-warn); }
+#precision-design .precision-stack-line[data-kind=section] { color: var(--pl-accent); font-weight: 600; margin-top: 5px; }
+#precision-design .precision-stack-line[data-kind=thread] { color: var(--pl-accent); font-weight: 500; }
+#precision-design .precision-stack-line[data-kind=registers],
+#precision-design .precision-stack-line[data-kind=metadata],
+#precision-design .precision-stack-line[data-kind=native-frame] { color: var(--pl-soft); }
+#precision-design .precision-stack-line[data-kind=native-frame] .precision-stack-location { color: var(--pl-text); font-weight: 400; }

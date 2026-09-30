@@ -17,6 +17,16 @@ test('stack renderer highlights source locations and escapes all log content', a
     assert.match(html, /&lt;img/);
     assert.match(html, /&lt;init&gt;/);
     assert.doesNotMatch(html, /<img|<init>/);
+
+    const native = await render('signal 11 (SIGSEGV), code 1, fault addr 0x0\n#00 pc 00001234 /data/app/libscene.so (<script>alert(1)</script>+8)');
+    assert.match(native, /data-kind="signal"/);
+    assert.match(native, /data-kind="native-frame"/);
+    assert.match(native, /&lt;script&gt;/);
+    assert.doesNotMatch(native, /<script>/);
+    const apple = await render("*** Terminating app due to uncaught exception 'NSException', reason: '<img src=x>'\n0   CrashDemo  0x0000000100000100 -[Scene open:] + 32");
+    assert.match(apple, /data-kind="exception"/);
+    assert.match(apple, /data-kind="native-frame"/);
+    assert.doesNotMatch(apple, /<img/);
     assert.equal(await render('hello\n  world'), '<span class="precision-msg">hello\n  world</span>');
   } finally {
     await server.close();

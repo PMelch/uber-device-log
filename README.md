@@ -127,6 +127,15 @@ The selected Appium version [implements `com.apple.syslog_relay`](https://github
 
 Android capture owns the raw `shell('logcat -B *:V')` socket and passes it to adbkit-logcat with `fixLineFeeds: false`. Preserve explicit socket ownership for cleanup. The iOS adapter accesses Appium's `_socketClient` and `_decoder` for lifecycle handling; these internal fields need review on upgrades.
 
+## Crash and exception formatting
+
+Java/Kotlin causes, native signal/tombstone frames, abort/sanitizer diagnostics,
+ANR threads, Unity C# frames and iOS ObjC/Swift/crash/termination text receive
+syntax-aware formatting. Recognized complete IPS/jetsam JSON is indented without
+changing numeric literals. Raw records, search and full-log export are unchanged.
+This does not add crash-file retrieval, file import, binary core-dump decoding or
+symbolication. See [research, examples and capture limits](docs/crash-format-research.md).
+
 ## Verification
 
 `npm test` (or `bun run test`) checks collector cleanup, device-switch races, connection errors, safe stream framing, bounded slow-client behavior, and fuzzy matching across metadata and long messages. `npm run build` (or `bun run build`) checks frontend/backend types and produces the Vue bundle and compiled server. `npm run test:package` builds and packs the application, checks the archive allowlist, installs it without development dependencies into a temporary directory, and tests npx/bunx startup plus frontend/API serving. Both npm and Bun must be installed to run that packaging check.
