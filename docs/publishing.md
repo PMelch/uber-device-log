@@ -1,7 +1,7 @@
 # Publishing uber-device-log
 
 The package is prepared for npm; preparing or packing it does not publish it.
-The package name is `uber-device-log`, CLI command `uber-device-log`, and the
+The package name is `uber-device-log`, CLI commands `udl` and `uber-device-log`, and the
 existing repository license is Apache-2.0. The name was not found in the registry
 on 29 September 2026; that is not a reservation or a guarantee of publish rights.
 
@@ -17,7 +17,8 @@ npm pack --dry-run
 ```
 
 `test:package` installs an actual local tarball in a temporary directory without
-devDependencies, tests help/version, starts it through npx and bunx, and verifies
+devDependencies, tests help/version, starts it through npx and bunx, installs it globally into a temporary prefix,
+starts the global `udl` command from outside the project, and verifies
 frontend assets, the discovery API and the Origin guard. It does not require
 physical devices; device capture still needs a separate hardware check.
 

@@ -7,7 +7,8 @@ try {
   if (options.help) {
     console.log(`Über Device Log — local Android and iOS log viewer
 
-Usage: uber-device-log [options]
+Usage: udl [options]
+       uber-device-log [options]
        npx uber-device-log --port 4311
        bunx uber-device-log --port 4311
 
@@ -15,6 +16,9 @@ Options:
   -p, --port <number>  HTTP port (default: PORT environment variable or 4310)
   -h, --help           Show this help
   -v, --version        Show package version
+
+Install globally: npm install --global uber-device-log
+Then run: udl
 
 Open the printed localhost URL in your browser. Press Ctrl+C to stop.
 Requires Node.js 22.12+. Android needs adb; iOS needs host pairing/usbmuxd.

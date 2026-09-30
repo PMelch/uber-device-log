@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "device-log-viewer",
+      "name": "uber-device-log",
       "dependencies": {
         "@devicefarmer/adbkit": "^3.3.9",
         "@devicefarmer/adbkit-logcat": "2.1.3",

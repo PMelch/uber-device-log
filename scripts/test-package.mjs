@@ -70,12 +70,20 @@ try {
   const installed = join(temporary, 'node_modules', 'uber-device-log');
   const manifest = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
   assert.equal(manifest.bin['uber-device-log'], 'bin/uber-device-log.mjs');
+  assert.equal(manifest.bin.udl, manifest.bin['uber-device-log']);
   assert.ok(!existsSync(join(temporary, 'node_modules', 'vite')));
   assert.ok(!existsSync(join(temporary, 'node_modules', 'tsx')));
-  assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help'], temporary), /Usage: uber-device-log/);
+  assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help'], temporary), /Usage: udl/);
   assert.equal(run('node', [join(installed, manifest.bin['uber-device-log']), '--version'], temporary).trim(), manifest.version);
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log']);
   await smoke('bunx', ['--no-install', 'uber-device-log']);
+  const prefix = join(temporary, 'global');
+  run('npm', ['install', '--global', '--prefix', prefix, '--omit=dev', '--no-audit', '--no-fund', join(temporary, pack.filename)], temporary);
+  const globalCommand = join(prefix, process.platform === 'win32' ? 'udl.cmd' : 'bin/udl');
+  assert.ok(existsSync(globalCommand), 'Global installation must expose udl');
+  assert.equal(run(globalCommand, ['--version'], tmpdir()).trim(), manifest.version);
+  assert.match(run(globalCommand, ['--help'], tmpdir()), /Usage: udl/);
+  await smoke(globalCommand, []);
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

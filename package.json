@@ -34,7 +34,8 @@
   "description": "Local Android and iOS device log viewer with search, severity filters and export.",
   "license": "Apache-2.0",
   "bin": {
-    "uber-device-log": "bin/uber-device-log.mjs"
+    "uber-device-log": "bin/uber-device-log.mjs",
+    "udl": "bin/uber-device-log.mjs"
   },
   "files": [
     "bin/",
