@@ -84,7 +84,7 @@ Discovery refreshes every three seconds and has a manual refresh button. A failu
 
 ## Languages
 
-The language menu in the header offers **English, Español, Deutsch, Français,
+The language selector in the header Settings popover offers **English, Español, Deutsch, Français,
 Italiano and 简体中文 (Simplified Chinese)**. On the first visit, the app uses the
 first supported browser language, falling back to English. Regional variants
 such as `de-AT` and `es-MX` use their base language; Chinese browser preferences
@@ -123,7 +123,7 @@ UI prose that bypasses the catalogs.
 - **Android levels** toggle Verbose, Debug, Info, Warn, Error and Fatal independently and combine with fuzzy search. All restores all levels. Selections survive device changes; iOS disables these filters.
 - **Copy / Save** export whole selected log entries (including metadata and multiline stack traces) in display order. Desktop: click a row, drag for a range, Shift-click to extend, Ctrl/Cmd-click to toggle. Mobile: tap **Select**, then checkboxes; swiping always scrolls. Select a start entry, tap **Range to…**, then the end checkbox for an inclusive range. **Select all filtered** selects the current view. Selected entries are highlighted and counted. Without a selection, Copy is disabled and **Save all displayed logs** exports the filtered view. Choose **Plain text** or **Structured JSON** in the shared Copy/Save format selector. Copy has a manual-copy fallback in either format; Save downloads `.log` or `.json`.
 - **Pause** or starting a selection freezes the displayed snapshot while capture continues in the bounded live buffer. **Back to live** clears selection and resumes following. **Clear selection** / Escape removes marks but keeps the snapshot frozen. Filters and buffer reductions remove hidden/discarded entries from the selection; reconnecting, clearing logs or changing devices clears it. Checkbox selection also works with keyboard Space.
-- **Buffer size** selects 1,000, 2,000 (default), 10,000, 50,000 or 100,000 messages for the browser. Reducing it immediately removes the oldest entries from both the live buffer and any paused snapshot. Increasing it allows more future messages; discarded entries cannot be recovered. The setting lasts for the current page session.
+- **Buffer size** selects 1,000, 2,000 (default), 10,000, 50,000 or 100,000 messages for the browser. Reducing it immediately removes the oldest entries from both the live buffer and any paused snapshot. Increasing it allows more future messages; discarded entries cannot be recovered. The setting is saved locally and restored on reload.
 - The server batches up to 100 messages every 100 ms and caps its queue at 1,000, dropping the oldest queued records and reporting when overloaded. Individual message text is capped at 16,384 JavaScript characters. This is a viewer, not a lossless recorder.
 - Android includes whatever history remains in logcat plus live output; reconnects may repeat that history. iOS uses the legacy syslog relay, which may expose fewer records than Apple's unified-log Console view or Xcode debugger output. Its upstream decoder also uses a fixed 5 KiB line buffer; long iOS lines are not guaranteed intact. Test real Unity logs/exceptions before relying on completeness.
 - Android timestamps come from logcat; iOS timestamps in the UI are host receipt times, with the device's original text retained. No cross-device clock normalization.
@@ -264,3 +264,23 @@ Physical Android/iOS log capture remains unverified. Windows/Linux compatibility
 ### Whole-entry selection verification (30 September 2026)
 
 29 automated tests and the production build pass. Browser checks with synthetic logs verified desktop click, Shift/Ctrl-click, real mouse range dragging, frozen selection during incoming batches, metadata and multiline clipboard exports, Escape, return to live and filter pruning. A 390px touch-emulated browser verified checkbox taps, inclusive start/end range selection and a CDP touch swipe that scrolls without changing selection; no physical-phone test was performed. The packed archive also passed npx and bunx startup checks. These browser checks are manual automation, not a committed end-to-end suite.
+
+## User preferences
+
+The header Settings popover contains language, appearance, message order and buffer
+capacity. Preferences are stored separately under `uber-device-log.language`,
+`uber-device-log.theme`, `uber-device-log.messageOrder` and
+`uber-device-log.bufferSize` in localStorage. Existing language choices are retained.
+Invalid values fall back to browser language, System appearance, newest first and
+2,000 messages. Blocked storage leaves the controls usable for the current session.
+System appearance tracks `prefers-color-scheme` changes; Light and Dark override
+it. Only preferences persist, not captured records or selection. Reducing the
+buffer still immediately trims live and paused records.
+
+The last selected connected device is stored as `platform:id` under
+`uber-device-log.lastDevice`. Only the first successful discovery after page load
+restores it, and only when its state is `connected`. An absent, unauthorized or
+offline device leaves the selection empty without erasing the saved key. Later
+polling does not restore it automatically; a new page load retries. Selecting a
+different connected device replaces the saved key. Discovery errors do not consume
+the initial restoration attempt.

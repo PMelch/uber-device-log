@@ -6,19 +6,21 @@ import { filterLogLevels, logLevel, logLevels, type LogLevel } from '../shared/l
 import { rangeKeys, selectedEntries } from '../shared/log-selection';
 import { serializeLogExport, type LogExportFormat } from '../shared/log-export';
 import { useI18n, uiMessage, type UiMessage } from './i18n';
+import UserSettings from './components/UserSettings.vue';
+import { createRememberedDevice, deviceKey } from './remembered-device';
+import { usePreferences } from './composables/usePreferences';
 import PrecisionMenu from './components/PrecisionMenu.vue';
 import LogMessageText from './components/LogMessageText.vue';
 import LogDetails from './components/LogDetails.vue';
 import { useLogDetails } from './composables/useLogDetails';
 
-const { locale, setLocale, languages, languageName, t, n, localizeMessage, deviceState, levelLabel } = useI18n();
+const { locale, setLocale, t, n, localizeMessage, deviceState, levelLabel } = useI18n();
 
 const devices = ref<Device[]>([]);
 const warnings = ref<(DeviceList['warnings'][number] | UiMessage)[]>([]);
 const selected = ref('');
 const messages = ref<(LogMessage & { key: number })[]>([]);
-const bufferSizes = [1000, 2000, 10000, 50000, 100000];
-const bufferSize = ref(2000);
+const { bufferSize, theme, newestPosition } = usePreferences();
 const pausedMessages = ref<typeof messages.value>();
 const paused = computed(() => pausedMessages.value !== undefined);
 const visibleMessages = computed(() => pausedMessages.value ?? messages.value);
@@ -44,14 +46,14 @@ const copyButton = ref<HTMLButtonElement>();
 const status = ref<UiMessage | string>(uiMessage('initialStatus'));
 const loading = ref(false);
 const following = ref(true);
-const newestPosition = ref<'top' | 'bottom'>('top');
 const displayedMessages = computed(() => newestPosition.value === 'top'
   ? [...filteredMessages.value].reverse()
   : filteredMessages.value);
 const viewport = ref<HTMLElement>();
 const details = useLogDetails(() => viewport.value?.focus({ preventScroll: true }));
 const { record: detailRecord, pinned: detailPinned, position: detailPosition } = details;
-const keyOf = (device: Device) => `${device.platform}:${device.id}`;
+const keyOf = deviceKey;
+const rememberedDevice = createRememberedDevice();
 const currentDevice = computed(() => devices.value.find(d => keyOf(d) === selected.value));
 let source: EventSource | undefined;
 let poll: ReturnType<typeof setInterval>;
@@ -70,7 +72,9 @@ async function refresh() {
     if (disposed) return;
     devices.value = result.devices;
     warnings.value = result.warnings;
-    if (selected.value && !currentDevice.value) {
+    const restored = rememberedDevice.restoreOnce(result.devices);
+    if (!selected.value && restored) selected.value = restored;
+    if (selected.value && currentDevice.value?.state !== 'connected') {
       stop();
       selected.value = '';
       status.value = uiMessage('disconnected');
@@ -196,7 +200,7 @@ watch(displayedMessages, rows => {
   if (!rows.some(row => row.key === anchorKey.value)) { anchorKey.value = undefined; rangePending.value = false; }
 });
 watch(status, () => { exportStatus.value = undefined; });
-watch(selected, start);
+watch(selected, () => { rememberedDevice.remember(currentDevice.value); start(); });
 watch(newestPosition, async () => {
   following.value = true;
   await nextTick();
@@ -321,12 +325,8 @@ onUnmounted(() => {
 
 <template>
   <div id="precision-design" :data-platform="currentDevice?.platform" :class="{ selecting: selectionMode }">
-    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><span class="precision-topnote">{{ t('tagline') }}</span><div class="precision-language">
-      <PrecisionMenu :label="t('language')"><template #selected><span aria-hidden="true">◎</span><span :lang="locale">{{ languageName }}</span></template>
-        <div class="precision-menuhead">{{ t('language') }}</div>
-        <button v-for="language in languages" :key="language.code" :lang="language.code" :aria-pressed="locale === language.code" @click="setLocale(language.code)">{{ language.name }}</button>
-      </PrecisionMenu>
-    </div></div></header>
+    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
+    </div></header>
     <main class="precision-main">
       <div class="precision-controls">
         <div class="precision-field precision-device"><label>{{ t('connectedDevice') }}</label>
@@ -338,8 +338,6 @@ onUnmounted(() => {
           </PrecisionMenu>
         </div>
         <button class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button>
-        <div class="precision-field"><label>{{ t('messageOrder') }}</label><PrecisionMenu :label="t('messageOrder')"><template #selected>↕ {{ t(newestPosition === 'top' ? 'newestFirst' : 'oldestFirst') }}</template><button :aria-pressed="newestPosition === 'top'" @click="newestPosition = 'top'">{{ t('newestFirst') }}</button><button :aria-pressed="newestPosition === 'bottom'" @click="newestPosition = 'bottom'">{{ t('oldestFirst') }}</button></PrecisionMenu></div>
-        <div class="precision-field"><label>{{ t('bufferCapacity') }}</label><PrecisionMenu :label="t('bufferCapacity')"><template #selected>{{ n(bufferSize) }}</template><button v-for="size in bufferSizes" :key="size" :aria-pressed="bufferSize === size" @click="bufferSize = size">{{ t('messageCount', { count: size }) }}</button></PrecisionMenu></div>
       </div>
       <p v-for="(warning, index) in warnings" :key="index" class="warning" role="status">{{ localizeMessage(warning) }}</p>
       <section class="precision-console" :aria-label="t('deviceMessages')">

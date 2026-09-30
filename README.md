@@ -24,7 +24,7 @@ and share the relevant entries as plain text or structured JSON.
 | Search messages, tags, timestamps and PIDs. Combine search with Android severity filters. | Pause the view, inspect formatted exceptions, and open structured message details. | Select whole entries and copy or save them as plain text or JSON. |
 
 No account or cloud service. Logs are viewed locally in your browser, with a
-responsive interface and automatic light/dark styling.
+responsive interface and System, Light and Dark appearance options.
 
 ## Get started
 
@@ -78,6 +78,11 @@ for production builds and development commands.
 
 ## Connect a device
 
+The app remembers the last selected device. On reload, it selects that device and
+starts capture if it is connected and available. Otherwise the selection stays
+empty, while the saved device is retained for a later reload. Reattaching it
+during an open session does not automatically start capture.
+
 ### Android
 
 1. Install Android SDK Platform Tools and make `adb` available on your `PATH`.
@@ -104,7 +109,7 @@ validation. No Appium server is required. iOS simulators are not listed.
 ### Find a message
 
 Type in **Filter logs** to search message text and metadata. Use Android's severity
-buttons to narrow the view further. Change **Message order** to show newest entries
+buttons to narrow the view further. Change **Message order** in **Settings** to show newest entries
 first or last. Scrolling away stops automatic following; **Follow latest** resumes it.
 
 ### Pause, inspect, resume
@@ -135,7 +140,14 @@ Exports preserve whole entries, metadata and multiline messages in display order
 
 **English · Español · Deutsch · Français · Italiano · 简体中文**
 
-Use the language menu in the header. The app remembers your choice locally;
+Open **Settings** in the header to choose your language, appearance, message order,
+and buffer capacity. All four preferences are saved locally in this browser;
+System appearance follows your operating system. Changes apply immediately, and
+remain usable for the session if browser storage is blocked.
+
+<img src="docs/images/settings.png" alt="Settings popover with language, appearance, message order and buffer capacity" width="320">
+
+Your preferences survive reloads; captured logs are not saved. As always,
 original log messages and technical values are never translated.
 
 ## Good to know
