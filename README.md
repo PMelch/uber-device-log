@@ -78,6 +78,9 @@ for production builds and development commands.
 
 ## Connect a device
 
+On wide screens, choose a device from the left sidebar. On narrower screens,
+use the device menu above the logs.
+
 The app remembers the last selected device. On reload, it selects that device and
 starts capture if it is connected and available. Otherwise the selection stays
 empty, while the saved device is retained for a later reload. Reattaching it

@@ -327,6 +327,18 @@ onUnmounted(() => {
   <div id="precision-design" :data-platform="currentDevice?.platform" :class="{ selecting: selectionMode }">
     <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
     </div></header>
+    <div class="precision-workspace">
+      <aside class="precision-device-sidebar" :aria-label="t('availableDevices')">
+        <div class="device-sidebar-heading"><h2>{{ t('availableDevices') }}</h2><button class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button></div>
+        <p v-if="!devices.length" class="device-sidebar-empty">{{ t('authorizeDevice') }}</p>
+        <div class="device-sidebar-list">
+          <button v-for="device in devices" :key="keyOf(device)" type="button" class="device-sidebar-item" :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device)" @click="selected = keyOf(device)">
+            <span class="precision-platform" :class="'precision-' + device.platform" aria-hidden="true"></span>
+            <span class="device-sidebar-label"><strong>{{ device.name }}</strong><span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }}</span><span class="precision-sub">{{ deviceState(device.state) }}</span></span>
+            <span class="device-sidebar-dot" :data-connected="device.state === 'connected'" aria-hidden="true"></span>
+          </button>
+        </div>
+      </aside>
     <main class="precision-main">
       <div class="precision-controls">
         <div class="precision-field precision-device"><label>{{ t('connectedDevice') }}</label>
@@ -376,6 +388,7 @@ onUnmounted(() => {
       <footer class="precision-footer"><span>{{ t('localPrivacy') }}</span><span role="status">{{ localizeMessage(exportStatus || status) }}</span></footer>
       <p class="setup-hint">{{ t('setupHint') }}</p>
     </main>
+    </div>
     <LogDetails v-if="detailRecord" :record="detailRecord" :pinned="detailPinned" :position="detailPosition" :locale="locale" @close="details.close(true)" @pin="details.pinCurrent" @enter="details.keepOpen" @leave="details.leave" />
   </div>
 </template>
