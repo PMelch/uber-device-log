@@ -76,7 +76,6 @@ export const en = {
   frozenActive: 'View frozen · capture continues',
   frozenStopped: 'View frozen · capture stopped',
   followingNewest: 'Following newest messages',
-  localPrivacy: 'On your machine. Logs stay local.',
   setupHint: 'Android: enable USB debugging and authorize this computer. iOS: unlock and trust this computer. iOS timestamps are receipt times.',
   initialStatus: 'Select a device to start reading logs.',
   disconnected: 'Selected device disconnected. Reconnect it and select it again.',

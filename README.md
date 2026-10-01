@@ -4,13 +4,13 @@
 
 **Android Logcat & iOS syslog, in one place.**
 
-A local browser-based **Android Logcat and iOS syslog viewer**, with setup guidance
+A browser-based **Android Logcat and iOS syslog viewer**, with setup guidance
 for **macOS, Windows and Linux**. Connect a phone, find the message that matters,
 and share the relevant entries as plain text or structured JSON.
 
 [Website](https://pmelch.github.io/uber-device-log/) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
 
-**Android + iOS** · **Runs locally** · **Six languages** · **Apache-2.0**
+**Android + iOS** · **Six languages** · **Apache-2.0**
 
 </div>
 
@@ -24,8 +24,7 @@ and share the relevant entries as plain text or structured JSON.
 | --- | --- | --- |
 | Search messages, tags, timestamps and PIDs. Combine search with Android severity filters. | Pause the view, inspect formatted exceptions, and open structured message details. | Select whole entries and copy or save them as plain text or JSON. |
 
-No account or cloud service. Logs are viewed locally in your browser, with a
-responsive interface and System, Light and Dark appearance options.
+The responsive interface offers System, Light and Dark appearance options.
 
 ## Get started
 

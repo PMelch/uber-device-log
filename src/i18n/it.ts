@@ -75,7 +75,6 @@ export const it = {
   frozenActive: 'Vista bloccata · acquisizione in corso',
   frozenStopped: 'Vista bloccata · acquisizione interrotta',
   followingNewest: 'Seguendo i messaggi più recenti',
-  localPrivacy: 'Sul tuo computer. I log restano locali.',
   setupHint: 'Android: abilita il debug USB e autorizza questo computer. iOS: sblocca il dispositivo e autorizza questo computer. I timestamp iOS indicano l’ora di ricezione.',
   initialStatus: 'Seleziona un dispositivo per iniziare a leggere i log.',
   disconnected: 'Il dispositivo selezionato si è disconnesso. Ricollegalo e selezionalo di nuovo.',

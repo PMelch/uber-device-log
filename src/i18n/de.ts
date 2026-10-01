@@ -75,7 +75,6 @@ export const de = {
   frozenActive: 'Ansicht eingefroren · Erfassung läuft weiter',
   frozenStopped: 'Ansicht eingefroren · Erfassung gestoppt',
   followingNewest: 'Neueste Meldungen werden verfolgt',
-  localPrivacy: 'Auf deinem Rechner. Logs bleiben lokal.',
   setupHint: 'Android: USB-Debugging aktivieren und diesen Rechner autorisieren. iOS: entsperren und diesem Rechner vertrauen. iOS-Zeitstempel geben die Empfangszeit an.',
   initialStatus: 'Gerät auswählen, um Logs zu lesen.',
   disconnected: 'Verbindung zum ausgewählten Gerät getrennt. Erneut verbinden und auswählen.',

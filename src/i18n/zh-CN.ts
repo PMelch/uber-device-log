@@ -75,7 +75,6 @@ export const zhCN = {
   frozenActive: '视图已冻结 · 采集继续',
   frozenStopped: '视图已冻结 · 采集已停止',
   followingNewest: '正在跟随最新消息',
-  localPrivacy: '在你的电脑上运行。日志保留在本地。',
   setupHint: 'Android：启用 USB 调试并授权此电脑。iOS：解锁设备并信任此电脑。iOS 时间戳表示接收时间。',
   initialStatus: '选择设备以开始读取日志。',
   disconnected: '所选设备已断开连接。请重新连接并再次选择。',

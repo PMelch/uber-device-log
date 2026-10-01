@@ -75,7 +75,6 @@ export const es = {
   frozenActive: 'Vista congelada · la captura continúa',
   frozenStopped: 'Vista congelada · captura detenida',
   followingNewest: 'Siguiendo los mensajes más recientes',
-  localPrivacy: 'En tu ordenador. Los registros permanecen locales.',
   setupHint: 'Android: activa la depuración USB y autoriza este ordenador. iOS: desbloquea el dispositivo y confía en este ordenador. Las marcas de tiempo de iOS indican la hora de recepción.',
   initialStatus: 'Selecciona un dispositivo para empezar a leer registros.',
   disconnected: 'El dispositivo seleccionado se ha desconectado. Conéctalo y selecciónalo de nuevo.',

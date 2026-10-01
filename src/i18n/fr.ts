@@ -75,7 +75,6 @@ export const fr = {
   frozenActive: 'Vue figée · la capture continue',
   frozenStopped: 'Vue figée · capture arrêtée',
   followingNewest: 'Suivi des messages les plus récents',
-  localPrivacy: 'Sur votre ordinateur. Les journaux restent locaux.',
   setupHint: 'Android : activez le débogage USB et autorisez cet ordinateur. iOS : déverrouillez l’appareil et faites confiance à cet ordinateur. Les horodatages iOS indiquent l’heure de réception.',
   initialStatus: 'Sélectionnez un appareil pour lire ses journaux.',
   disconnected: 'L’appareil sélectionné a été déconnecté. Reconnectez-le et sélectionnez-le à nouveau.',

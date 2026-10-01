@@ -397,7 +397,7 @@ onUnmounted(() => {
         <div v-if="copyFallback !== undefined" class="precision-copy-fallback"><label for="copy-text">{{ t('clipboardFallback') }}</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">{{ t('close') }}</button></div>
         <div class="precision-bottom"><span>{{ t('retained', { count: visibleMessages.length, capacity: bufferSize }) }}</span><button v-if="!following && !paused" class="precision-action" @click="follow">{{ t('followLatest') }}</button><span v-else>{{ paused ? t(capturing ? 'frozenActive' : 'frozenStopped') : (newestPosition === 'top' ? '↑ ' : '↓ ') + t('followingNewest') }}</span></div>
       </section>
-      <footer class="precision-footer"><span>{{ t('localPrivacy') }}</span><span role="status">{{ localizeMessage(exportStatus || status) }}</span></footer>
+      <footer class="precision-footer"><span role="status">{{ localizeMessage(exportStatus || status) }}</span></footer>
       <p class="setup-hint">{{ t('setupHint') }}</p>
     </main>
     </div>

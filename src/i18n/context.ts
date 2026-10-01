@@ -87,7 +87,6 @@ export const translationContext = {
   frozenActive: c('Viewport footer while paused and capturing.', 'The view is frozen but collection continues in a bounded buffer.'),
   frozenStopped: c('Viewport footer while paused and not capturing.', 'The view is frozen and collection has stopped.'),
   followingNewest: c('Viewport footer next to an up/down arrow.', 'The view automatically follows incoming records; arrow indicates the configured newest end.'),
-  localPrivacy: c('Page footer privacy statement.', 'The viewer runs locally and does not send captured logs to a remote service.'),
   setupHint: c('Setup guidance below the console.', 'Describe Android USB-debugging authorization and iOS trust/unlock requirements; distinguish iOS host receipt timestamps.'),
   initialStatus: c('Page footer before first capture.', 'Prompt to choose a device so the viewer can start reading logs.'),
   disconnected: c('Page footer when discovery no longer finds the selected device.', 'Reconnect the device and choose it again to restart reading logs.'),
@@ -166,7 +165,7 @@ export const translationContext = {
 /** Public website copy is separate from the application catalogs and npm bundle. */
 export const websiteTranslationContext = {
   "siteMetaTitle": {"location": "Public landing page: document title and social preview title", "meaning": "Android Logcat & iOS syslog viewer | Über Device Log Preserve product names, platform names and the qualification about validation where present."},
-  "siteMetaDescription": {"location": "Public landing page: search and social preview description", "meaning": "Android Logcat and iOS syslog viewer with setup guidance for macOS, Windows and Linux. Search, filter and export device logs locally with Über Device Log. Preserve product names, platform names and the qualification about validation where present."},
+  "siteMetaDescription": {"location": "Public landing page: search and social preview description", "meaning": "Android Logcat and iOS syslog viewer with setup guidance for macOS, Windows and Linux. Search, filter and export device logs with Über Device Log. Preserve product names, platform names and the qualification about validation where present."},
   "sitePlatforms": {"location": "Public landing page: platform requirements heading", "meaning": "Android Logcat and iOS syslog on macOS, Windows and Linux Preserve product names, platform names and the qualification about validation where present."},
   "sitePlatformBody": {"location": "Public landing page: platform requirements paragraph", "meaning": "Android Logcat uses ADB from Android SDK Platform Tools on macOS, Windows and Linux. For iPhone and iPad syslog, macOS uses Apple’s device service; Linux needs usbmuxd, and Windows needs compatible Apple mobile-device support. macOS is the primary validation environment; Windows and Linux still need validation. Preserve product names, platform names and the qualification about validation where present."},
   "siteSkip": {
@@ -191,7 +190,7 @@ export const websiteTranslationContext = {
   },
   "siteLead": {
     "location": "Public landing page: Lead",
-    "meaning": "Android Logcat and iOS syslog, in one local browser workspace. Search, inspect and export device logs. See setup requirements for macOS, Windows and Linux below."
+    "meaning": "Android Logcat and iOS syslog, in one browser workspace. Search, inspect and export device logs. See setup requirements for macOS, Windows and Linux below."
   },
   "siteStart": {
     "location": "Public landing page: Start",
@@ -200,10 +199,6 @@ export const websiteTranslationContext = {
   "siteExplore": {
     "location": "Public landing page: Explore",
     "meaning": "Explore the viewer ↘"
-  },
-  "siteLocal": {
-    "location": "Public landing page: Local",
-    "meaning": "Your machine. Your logs. No account required."
   },
   "siteSignal": {
     "location": "Public landing page: Signal",
@@ -263,7 +258,7 @@ export const websiteTranslationContext = {
   },
   "siteDetailBody": {
     "location": "Public landing page: DetailBody",
-    "meaning": "Open the info button to unpack a message: process, source, exception, path and reported reason, when available. Local parsing rules explain recognized patterns without pretending to know the root cause."
+    "meaning": "Open the info button to unpack a message: process, source, exception, path and reported reason, when available. Parsing rules explain recognized patterns without pretending to know the root cause."
   },
   "siteDetailAlt": {
     "location": "Public landing page: DetailAlt",
@@ -309,13 +304,9 @@ export const websiteTranslationContext = {
     "location": "Public landing page: SetupLink",
     "meaning": "Device setup & capture limits ↗"
   },
-  "siteClosing": {
-    "location": "Public landing page: Closing",
-    "meaning": "Your logs belong on your machine."
-  },
   "siteClosingBody": {
     "location": "Public landing page: ClosingBody",
-    "meaning": "Local capture. Six interface languages. Open source. No account, no cloud upload."
+    "meaning": "Six interface languages. Open source."
   },
   "siteGithub": {
     "location": "Public landing page: Github",
