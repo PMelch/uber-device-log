@@ -9,6 +9,8 @@ export const en = {
   noDevices: 'No connected devices',
   availableDevices: 'Available devices',
   authorizeDevice: 'Connect and authorize a device.',
+  disconnectDevice: "Disconnect",
+  captureDisconnected: "Capture stopped. Logs are kept. Select a device to start a new capture.",
   refreshDevices: 'Refresh devices',
   messageOrder: 'Message order',
   newestFirst: 'Newest first',

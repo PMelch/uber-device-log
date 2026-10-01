@@ -8,6 +8,8 @@ export const es = {
   noDevices: 'No hay dispositivos conectados',
   availableDevices: 'Dispositivos disponibles',
   authorizeDevice: 'Conecta un dispositivo y autoriza el acceso.',
+  disconnectDevice: "Desconectar",
+  captureDisconnected: "Captura detenida. Los registros se conservan. Selecciona un dispositivo para iniciar una nueva captura.",
   refreshDevices: 'Actualizar dispositivos',
   messageOrder: 'Orden de mensajes',
   newestFirst: 'Más recientes primero',

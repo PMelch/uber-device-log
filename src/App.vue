@@ -27,7 +27,7 @@ const visibleMessages = computed(() => pausedMessages.value ?? messages.value);
 const filter = ref('');
 const search = computed(() => createLogSearch(visibleMessages.value));
 const selectedLevels = ref<LogLevel[]>([...logLevels]);
-const filteredMessages = computed(() => filterLogLevels(filter.value.trim() ? search.value(filter.value) : visibleMessages.value, currentDevice.value?.platform, selectedLevels.value));
+const filteredMessages = computed(() => filterLogLevels(filter.value.trim() ? search.value(filter.value) : visibleMessages.value, logDevice.value?.platform, selectedLevels.value));
 const capturing = ref(false);
 const exportStatus = ref<UiMessage>();
 const exportFormat = ref<LogExportFormat>('text');
@@ -90,6 +90,12 @@ function stop() {
   capturing.value = false;
   source?.close();
   source = undefined;
+}
+
+function disconnect() {
+  stop();
+  selected.value = '';
+  status.value = uiMessage('captureDisconnected');
 }
 
 function start() {
@@ -200,7 +206,11 @@ watch(displayedMessages, rows => {
   if (!rows.some(row => row.key === anchorKey.value)) { anchorKey.value = undefined; rangePending.value = false; }
 });
 watch(status, () => { exportStatus.value = undefined; });
-watch(selected, () => { rememberedDevice.remember(currentDevice.value); start(); });
+watch(selected, () => {
+  rememberedDevice.remember(currentDevice.value);
+  if (selected.value) start();
+  else stop();
+});
 watch(newestPosition, async () => {
   following.value = true;
   await nextTick();
@@ -324,7 +334,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="precision-design" :data-platform="currentDevice?.platform" :class="{ selecting: selectionMode }">
+  <div id="precision-design" :data-platform="logDevice?.platform" :class="{ selecting: selectionMode }">
     <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
     </div></header>
     <div class="precision-workspace">
@@ -338,6 +348,7 @@ onUnmounted(() => {
             <span class="device-sidebar-dot" :data-connected="device.state === 'connected'" aria-hidden="true"></span>
           </button>
         </div>
+        <button type="button" class="precision-action precision-disconnect" :disabled="!selected" @click="disconnect">{{ t('disconnectDevice') }}</button>
       </aside>
     <main class="precision-main">
       <div class="precision-controls">
@@ -349,6 +360,7 @@ onUnmounted(() => {
             <button v-for="device in devices" :key="keyOf(device)" :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device)" @click="selected = keyOf(device)"><span class="precision-platform" :class="'precision-' + device.platform" aria-hidden="true"></span><span class="device-label">{{ device.name }}<span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }} · {{ deviceState(device.state) }}</span></span></button>
           </PrecisionMenu>
         </div>
+        <button type="button" class="precision-action precision-disconnect" :disabled="!selected" @click="disconnect">{{ t('disconnectDevice') }}</button>
         <button class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button>
       </div>
       <p v-for="(warning, index) in warnings" :key="index" class="warning" role="status">{{ localizeMessage(warning) }}</p>
@@ -375,8 +387,8 @@ onUnmounted(() => {
           <span v-if="rangePending" class="selection-hint">{{ t('rangeHint') }}</span>
           <span v-else class="selection-hint">{{ t(selectionMode ? 'frozenHint' : 'selectionHint') }}</span>
         </div>
-        <div class="precision-severitybar" role="group" :aria-label="t('severityFilters')" :aria-describedby="currentDevice?.platform === 'ios' ? 'ios-note' : undefined"><span class="precision-severitylabel">{{ t('levels') }}</span><button class="precision-severity" :disabled="currentDevice?.platform !== 'android'" :aria-pressed="currentDevice?.platform === 'android' && selectedLevels.length === logLevels.length" @click="selectedLevels = [...logLevels]">{{ t('all') }}</button><button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="currentDevice?.platform !== 'android'" :aria-pressed="currentDevice?.platform === 'android' && selectedLevels.includes(level)" @click="toggleLevel(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button><span v-if="currentDevice?.platform === 'ios'" id="ios-note" class="precision-ios-note">{{ t('iosNote') }}</span></div>
-        <div class="precision-columns" aria-hidden="true"><span class="precision-selectcell">#</span><span>{{ t(currentDevice?.platform === 'ios' ? 'received' : 'time') }}</span><span class="precision-level-heading">{{ t('level') }}</span><span class="precision-tag">{{ t('tagPid') }}</span><span>{{ t('message') }}</span></div>
+        <div class="precision-severitybar" role="group" :aria-label="t('severityFilters')" :aria-describedby="logDevice?.platform === 'ios' ? 'ios-note' : undefined"><span class="precision-severitylabel">{{ t('levels') }}</span><button class="precision-severity" :disabled="logDevice?.platform !== 'android'" :aria-pressed="logDevice?.platform === 'android' && selectedLevels.length === logLevels.length" @click="selectedLevels = [...logLevels]">{{ t('all') }}</button><button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="logDevice?.platform !== 'android'" :aria-pressed="logDevice?.platform === 'android' && selectedLevels.includes(level)" @click="toggleLevel(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button><span v-if="logDevice?.platform === 'ios'" id="ios-note" class="precision-ios-note">{{ t('iosNote') }}</span></div>
+        <div class="precision-columns" aria-hidden="true"><span class="precision-selectcell">#</span><span>{{ t(logDevice?.platform === 'ios' ? 'received' : 'time') }}</span><span class="precision-level-heading">{{ t('level') }}</span><span class="precision-tag">{{ t('tagPid') }}</span><span>{{ t('message') }}</span></div>
         <div ref="viewport" class="logs" tabindex="0" :aria-label="t('logMessages')" @scroll="onScroll" @pointermove="moveDrag" @pointerup="endDrag" @pointercancel="endDrag" @lostpointercapture="endDrag" @keydown.esc="clearSelection">
           <div v-if="!visibleMessages.length" class="precision-empty">{{ t(paused ? 'pausedEmpty' : selected ? 'waiting' : 'connectPrompt') }}</div>
           <div v-else-if="!displayedMessages.length" class="precision-empty">{{ t('noMatches') }}</div>

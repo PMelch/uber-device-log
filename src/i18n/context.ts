@@ -21,6 +21,8 @@ export const translationContext = {
   availableDevices: c('Heading inside the compact device menu and accessible heading of the wide-screen device sidebar.', 'List of discovered devices, including devices not yet authorized.'),
   authorizeDevice: c('Empty device-menu help.', 'Connect a device and grant this computer access on the device.'),
   refreshDevices: c('Accessible name of the refresh icon beside the compact device picker or in the wide-screen device sidebar.', 'Repeat device discovery; does not reload the page or restart capture.'),
+  disconnectDevice: c('Button beside the device picker.', 'Stop this viewer’s log capture and deselect the device, retaining logs, filters and selection. Does not unplug the device or revoke authorization.'),
+  captureDisconnected: c('Page footer after the user disconnects.', 'Capture has stopped and retained logs remain available. Selecting a device starts a new capture.'),
   messageOrder: c('Message-order selector label in the Settings popover; preference persists locally.', 'Display order of log records, not severity or search relevance.'),
   newestFirst: c('Ordering-menu option and selected value.', 'Display the most recent records at the top.'),
   oldestFirst: c('Ordering-menu option and selected value.', 'Display older records first, with the newest records at the bottom.'),

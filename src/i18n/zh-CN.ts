@@ -8,6 +8,8 @@ export const zhCN = {
   noDevices: '没有已连接的设备',
   availableDevices: '可用设备',
   authorizeDevice: '连接设备并授权访问。',
+  disconnectDevice: "断开连接",
+  captureDisconnected: "采集已停止，日志已保留。请选择设备以开始新的采集。",
   refreshDevices: '刷新设备列表',
   messageOrder: '消息顺序',
   newestFirst: '最新优先',

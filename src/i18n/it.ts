@@ -8,6 +8,8 @@ export const it = {
   noDevices: 'Nessun dispositivo connesso',
   availableDevices: 'Dispositivi disponibili',
   authorizeDevice: 'Collega un dispositivo e autorizza l’accesso.',
+  disconnectDevice: "Disconnetti",
+  captureDisconnected: "Acquisizione interrotta. I log vengono conservati. Seleziona un dispositivo per avviare una nuova acquisizione.",
   refreshDevices: 'Aggiorna dispositivi',
   messageOrder: 'Ordine dei messaggi',
   newestFirst: 'Più recenti prima',

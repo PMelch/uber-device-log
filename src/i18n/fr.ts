@@ -8,6 +8,8 @@ export const fr = {
   noDevices: 'Aucun appareil connecté',
   availableDevices: 'Appareils disponibles',
   authorizeDevice: 'Connectez un appareil et autorisez son accès.',
+  disconnectDevice: "Déconnecter",
+  captureDisconnected: "Capture arrêtée. Les journaux sont conservés. Sélectionnez un appareil pour démarrer une nouvelle capture.",
   refreshDevices: 'Actualiser les appareils',
   messageOrder: 'Ordre des messages',
   newestFirst: 'Plus récents en premier',

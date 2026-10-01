@@ -269,3 +269,7 @@ body { margin: 0; }
   #precision-design .device-sidebar-dot[data-connected=true] { background: #319965; }
   #precision-design .device-sidebar-empty { padding: 4px 8px; font-size: 12px; }
 }
+
+#precision-design .precision-disconnect { min-height: 46px; padding: 10px 14px; border: 1px solid var(--pl-line); background: var(--pl-panel); border-radius: var(--pl-radius); }
+#precision-design .precision-disconnect:hover:not(:disabled) { background: var(--pl-wash); }
+#precision-design .precision-device-sidebar > .precision-disconnect { margin-top: 16px; width: 100%; justify-content: center; }

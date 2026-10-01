@@ -8,6 +8,8 @@ export const de = {
   noDevices: 'Keine Geräte verbunden',
   availableDevices: 'Verfügbare Geräte',
   authorizeDevice: 'Gerät verbinden und Zugriff erlauben.',
+  disconnectDevice: "Trennen",
+  captureDisconnected: "Erfassung gestoppt. Die Protokolle bleiben erhalten. Wähle ein Gerät, um eine neue Erfassung zu starten.",
   refreshDevices: 'Geräteliste aktualisieren',
   messageOrder: 'Reihenfolge',
   newestFirst: 'Neueste zuerst',
