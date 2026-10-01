@@ -1,6 +1,6 @@
 {
   "name": "uber-device-log",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
