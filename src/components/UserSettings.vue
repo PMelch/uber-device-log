@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { ref } from 'vue';
+import { useDisclosureDismissal } from '../composables/useDisclosureDismissal';
 import { languages, translate, type Locale } from '../i18n';
 import { bufferSizes, resolveBufferSize, resolveMessageOrder, resolveTheme, type Theme, type MessageOrder } from '../preferences';
 const props = defineProps<{ locale: Locale; theme: Theme; order: MessageOrder; bufferSize: number }>();
@@ -12,19 +13,15 @@ function close(focus = false) {
   root.value.open = false;
   if (focus) trigger.value?.focus();
 }
-function outside(event: PointerEvent) {
-  if (event.target instanceof Node && !root.value?.contains(event.target)) close();
-}
+useDisclosureDismissal(root, close);
 function languageChanged(event: Event) {
   const value = (event.target as HTMLSelectElement).value;
   const language = languages.find(item => item.code === value);
   if (language) emit('locale', language.code);
 }
-onMounted(() => document.addEventListener('pointerdown', outside));
-onUnmounted(() => document.removeEventListener('pointerdown', outside));
 </script>
 <template>
-  <details ref="root" class="precision-settings" @keydown.esc.stop.prevent="close(true)" @focusout="event => { if (!root?.contains(event.relatedTarget as Node)) close(); }">
+  <details ref="root" class="precision-settings" @keydown.esc.stop.prevent="close(true)">
     <summary ref="trigger" :aria-label="t('settings')"><span aria-hidden="true">⚙</span> {{ t('settings') }}</summary>
     <section class="settings-panel" :aria-label="t('settings')">
       <header><strong>{{ t('settings') }}</strong><button type="button" :aria-label="t('settingsClose')" @click="close(true)">×</button></header>
