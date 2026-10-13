@@ -2,10 +2,10 @@
 
 # Über Device Log
 
-**Android Logcat & iOS syslog, in one place.**
+**Android Logcat, iOS syslog & WebView consoles, in one place.**
 
-A local browser-based **Android Logcat and iOS syslog viewer**, with setup guidance
-for **macOS, Windows and Linux**. Connect a phone, find the message that matters,
+A local browser-based **Android Logcat, iOS syslog and WebView console viewer**,
+with setup guidance for **macOS, Windows and Linux**. Connect a phone, find the message that matters,
 and share the relevant entries as plain text or structured JSON.
 
 [Website](https://pmelch.github.io/uber-device-log/) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
@@ -14,7 +14,7 @@ and share the relevant entries as plain text or structured JSON.
 
 </div>
 
-![Über Device Log showing Android messages, severity filters and formatted exceptions](docs/images/log-viewer.png)
+![Über Device Log combining Android Logcat and WebView console messages with independent source filters](docs/images/log-viewer.png)
 
 *Actual app screenshots with fictional demo logs.*
 
@@ -119,18 +119,45 @@ Windows needs compatible Apple mobile-device support. macOS is the primary
 validation environment; Windows/Linux and physical-device capture still need
 validation. No Appium server is required. iOS simulators are not listed.
 
+### Android WebView consoles
+
+Inspectable WebViews appear beneath their Android device with their page title
+and URL. Select one to capture JavaScript console calls and uncaught exceptions,
+or combine it with native Logcat using the source checkboxes above the stream.
+Multiple WebViews can be included from the same device.
+
+Use the Android setup above and keep the app and its WebView open. The app must
+enable WebView debugging with `WebView.setWebContentsDebuggingEnabled(true)`;
+the viewer cannot enable it for you. Refresh the device list if a new WebView
+does not appear. Capture uses ADB and Chrome DevTools Protocol; no separate
+debugging proxy or browser extension is required.
+
+### iPhone and iPad WebView consoles
+
+Inspectable iOS WebViews appear beneath their device with the same selection,
+combined capture and per-source filtering controls as Android WebViews.
+
+Unlock and trust the connected device, keep the app open, and enable Safari's
+**Web Inspector** on the device. The app must expose its WKWebView for inspection
+(`isInspectable = true` on iOS 16.4 and later). The viewer cannot enable inspection
+for an app that has not opted in. Capture uses the existing USB WebInspector
+service; no additional proxy, browser extension or Appium server is required.
+
 ## Using the viewer
 
 ### Find a message
 
-Type in **Filter logs** to search message text and metadata. Use Android's severity
-buttons to narrow the view further. Change **Message order** in **Settings** to show newest entries
-first or last. Scrolling away stops automatic following; **Follow latest** resumes it.
+Type in a source's search field to search message text and metadata. Use Android
+and WebView severity buttons to narrow the view further. Native iOS syslog does
+not provide severity filtering. Change **Message order** in **Settings** to show
+newest entries first or last. Scrolling away stops automatic following;
+**Follow latest** resumes it.
 
 Choose **Fuzzy search** for typo-tolerant matching or **Literal search** for a
 case-insensitive, contiguous phrase in a single message or metadata field.
 Literal search treats punctuation as text, without regular expressions.
-For Android, **Exact Android tag** matches the entire tag with case sensitivity;
+For native Android logs, expand **Advanced filters**. **Exact Android tag** matches
+the entire tag with case sensitivity;
 **Exact Android PID** matches the numeric process ID. Combine these with search
 and severity filters. Invalid PIDs show a validation message and no results.
 **Reset filters** clears search, tag, PID and severity restrictions while keeping
@@ -140,11 +167,26 @@ and Copy/Save use the displayed filtered entries.
 ### Combine device and WebView logs
 
 Select a device or WebView, then enable the desired sources above the stream.
-Each source has independent search and severity controls; native Android logs
-also have exact tag and PID filters. Entries merge by timestamp and show the
+The source checkboxes combine native logs and one or more WebView consoles from
+the selected device. Each source has independent search and severity controls
+(except native iOS syslog); native Android logs also have exact tag and PID
+filters. Entries merge by timestamp and show the
 platform or WebView icon beside their source. A stopped WebView does not stop
 the other sources. Re-enabling a source replaces its previous buffer with the
 new capture, since collectors can replay their history.
+
+Selecting a device or WebView in the device list starts a fresh view with that
+source alone. Use the checkboxes to add other sources. Only the parent device
+is remembered across reloads; WebView page targets are temporary.
+
+WebView console timestamps come from CDP on Android and WebKit on iOS, with host
+receipt time as a fallback. Native iOS syslog uses host receipt time, so merged
+timestamps do not guarantee the exact causal order of device events.
+
+![An iPhone WebView console showing JavaScript messages, warnings and an exception](docs/images/webview-console.png)
+
+WebView capture reads console output. It does not offer JavaScript execution,
+expandable object inspection, a DOM inspector or a network panel.
 
 Exports retain source identity: plain text prefixes each entry with its source
 name, and structured JSON uses schema version 2 with source metadata per entry.
@@ -159,7 +201,7 @@ The card offers **Details**, **Original**, and **JSON** views. Click the info bu
 again or use **×** to close it. Scrolling the list or selecting a row also closes it.
 Explanations describe patterns in the message; they are not definitive diagnoses.
 
-![Message details showing the file path, exception, error code and reported reason for a failed read](docs/images/message-details.png)
+![Message details showing WebView exception metadata, interpretation and tabs for the original text and JSON](docs/images/message-details.png)
 
 ### Copy or save
 
@@ -178,7 +220,7 @@ Exports preserve whole entries, metadata and multiline messages in display order
 
 ### Choose your language
 
-**English · Español · Deutsch · Français · Italiano · 简体中文**
+**English · Español · Deutsch · Français · Italiano · 日本語 · 简体中文**
 
 Open **Settings** in the header to choose your language, appearance, message order,
 and buffer capacity. All four preferences are saved locally in this browser;
@@ -226,6 +268,14 @@ Bun normally uses `~/.bun/bin`. Alternatively, launch with `npx uber-device-log`
 The legacy relay does not guarantee parity with unified logging. See the
 [capture limits](docs/technical.md#behavior-and-limits) before relying on completeness.
 
+**A WebView is missing or its console stops**
+
+Keep the app and page open, confirm that the app has enabled inspection, and
+refresh the device list. Android also needs ADB authorization; iOS needs trust,
+pairing and Safari Web Inspector. A page that closes or is replaced can disappear
+from discovery. Select its current target to start a fresh capture. Other enabled
+sources continue capturing when one WebView stops.
+
 </details>
 
 ## Documentation
@@ -246,16 +296,3 @@ private information before sharing log excerpts.
 ## License
 
 [Apache License 2.0](LICENSE).
-
-### iPhone and iPad WebView consoles
-
-Inspectable iOS WebViews appear beneath their device, just like Android WebViews.
-Select a WebView or include it alongside native device logs. Each WebView has its
-own search and severity filters. Console timestamps come from WebKit; native iOS
-syslog timestamps remain host receipt times.
-
-Unlock and trust the connected device, keep the app open, and enable Safari's
-Web Inspector on the device. The app must expose its WKWebView for inspection
-([`isInspectable = true`](https://webkit.org/blog/13936/enabling-the-inspection-of-web-content-in-apps/) on iOS 16.4 and later). The viewer cannot enable this for
-an app that has not opted in. Capture uses the existing USB WebInspector service;
-no additional proxy, browser extension or Appium server is required.
