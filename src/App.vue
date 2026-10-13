@@ -512,7 +512,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="precision-design" :data-platform="logDevice?.platform" :class="{ selecting: selectionMode }">
+  <div id="precision-design" :data-platform="selectedSources.some(source => source.device.webview) ? 'webview' : logDevice?.platform" :class="{ selecting: selectionMode }">
     <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
     </div></header>
     <div class="precision-workspace">
@@ -586,7 +586,7 @@ onUnmounted(() => {
           <span v-if="rangePending" class="selection-hint">{{ t('rangeHint') }}</span>
           <span v-else class="selection-hint">{{ t(selectionMode ? 'frozenHint' : 'selectionHint') }}</span>
         </div>
-        <div class="precision-columns" aria-hidden="true"><span class="precision-selectcell">#</span><span>{{ t(logDevice?.platform === 'ios' ? 'received' : 'time') }}</span><span class="precision-source-heading">{{ t('sourceColumn') }}</span><span class="precision-level-heading">{{ t('level') }}</span><span class="precision-tag">{{ t('tagPid') }}</span><span>{{ t('message') }}</span></div>
+        <div class="precision-columns" aria-hidden="true"><span class="precision-selectcell">#</span><span>{{ t(logDevice?.platform === 'ios' && !selectedSources.some(source => source.device.webview) ? 'received' : 'time') }}</span><span class="precision-source-heading">{{ t('sourceColumn') }}</span><span class="precision-level-heading">{{ t('level') }}</span><span class="precision-tag">{{ t('tagPid') }}</span><span>{{ t('message') }}</span></div>
         <div ref="viewport" class="logs" tabindex="0" :aria-label="t('logMessages')" @scroll="onScroll" @pointermove="moveDrag" @pointerup="endDrag" @pointercancel="endDrag" @lostpointercapture="endDrag" @keydown.esc="clearSelection" @focusin="focusRow" @focusout="blurRow">
           <div v-if="!visibleMessages.length" class="precision-empty">{{ t(paused ? 'pausedEmpty' : selected ? includedKeys.length ? 'waiting' : 'noSources' : 'connectPrompt') }}</div>
           <div v-else-if="!displayedMessages.length" class="precision-empty">{{ t('noMatches') }}</div>

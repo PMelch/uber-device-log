@@ -95,7 +95,7 @@ export const en = {
   levelWarn: 'Warning',
   levelError: 'Error',
   levelFatal: 'Fatal',
-  iosNote: 'Level filters are available for Android. For this iOS stream, search the original log text.',
+  iosNote: "Native iOS logs have no structured level filters. Search the original log text.",
   received: 'Received',
   time: 'Time',
   level: 'Level',

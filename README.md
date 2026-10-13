@@ -246,3 +246,16 @@ private information before sharing log excerpts.
 ## License
 
 [Apache License 2.0](LICENSE).
+
+### iPhone and iPad WebView consoles
+
+Inspectable iOS WebViews appear beneath their device, just like Android WebViews.
+Select a WebView or include it alongside native device logs. Each WebView has its
+own search and severity filters. Console timestamps come from WebKit; native iOS
+syslog timestamps remain host receipt times.
+
+Unlock and trust the connected device, keep the app open, and enable Safari's
+Web Inspector on the device. The app must expose its WKWebView for inspection
+([`isInspectable = true`](https://webkit.org/blog/13936/enabling-the-inspection-of-web-content-in-apps/) on iOS 16.4 and later). The viewer cannot enable this for
+an app that has not opted in. Capture uses the existing USB WebInspector service;
+no additional proxy, browser extension or Appium server is required.

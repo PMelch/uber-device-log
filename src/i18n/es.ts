@@ -94,7 +94,7 @@ export const es = {
   levelWarn: 'Advertencia',
   levelError: 'Error',
   levelFatal: 'Fatal',
-  iosNote: 'Los filtros de nivel están disponibles para Android. En este flujo de iOS, busca en el texto original.',
+  iosNote: "Los registros nativos de iOS no tienen filtros de nivel estructurados. Busca en el texto original.",
   received: 'Recibido',
   time: 'Hora',
   level: 'Nivel',

@@ -16,6 +16,7 @@ const displayName = computed(() => props.source.webview ? props.source.name : pr
 const emit = defineEmits<{ 'update:modelValue': [value: SourceFilter] }>();
 const update = (patch: Partial<SourceFilter>) => emit('update:modelValue', { ...props.modelValue, ...patch });
 const invalidPid = computed(() => !isLogPidFilterValid(props.modelValue.pid));
+const nativeIos = computed(() => props.source.platform === 'ios' && !props.source.webview);
 const nativeAndroid = computed(() => props.source.platform === 'android' && !props.source.webview);
 const id = computed(() => `source-${encodeURIComponent(props.source.key)}`);
 const active = computed(() => !!(props.modelValue.text || props.modelValue.tag || props.modelValue.pid) || props.modelValue.levels.length !== logLevels.length);
@@ -50,11 +51,11 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
       <p v-if="invalidPid" :id="`${id}-error`" class="precision-filter-error" role="status">{{ t('pidFilterInvalid') }}</p>
     </div>
     </details>
-    <div class="precision-severitybar source-levels" role="group" :aria-label="t('sourceLevels', { source: displayName })" :aria-describedby="source.platform === 'ios' ? `${id}-ios` : undefined">
+    <div class="precision-severitybar source-levels" role="group" :aria-label="t('sourceLevels', { source: displayName })" :aria-describedby="nativeIos ? `${id}-ios` : undefined">
       <span class="precision-severitylabel">{{ t('levels') }}</span>
-      <button class="precision-severity" :disabled="source.platform === 'ios'" :aria-pressed="source.platform !== 'ios' && modelValue.levels.length === logLevels.length" @click="update({ levels: [...logLevels] })">{{ t('all') }}</button>
-      <button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="source.platform === 'ios'" :aria-pressed="source.platform !== 'ios' && modelValue.levels.includes(level)" @click="toggle(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button>
-      <span v-if="source.platform === 'ios'" :id="`${id}-ios`" class="precision-ios-note">{{ t('iosNote') }}</span>
+      <button class="precision-severity" :disabled="nativeIos" :aria-pressed="!nativeIos && modelValue.levels.length === logLevels.length" @click="update({ levels: [...logLevels] })">{{ t('all') }}</button>
+      <button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="nativeIos" :aria-pressed="!nativeIos && modelValue.levels.includes(level)" @click="toggle(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button>
+      <span v-if="nativeIos" :id="`${id}-ios`" class="precision-ios-note">{{ t('iosNote') }}</span>
     </div>
   </section>
 </template>

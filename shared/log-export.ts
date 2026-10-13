@@ -7,7 +7,7 @@ export type LogExportFormat = 'text' | 'json';
 export interface LogExport {
   schemaVersion: 1;
   device: Pick<Device, 'id' | 'name' | 'platform'>;
-  source: 'android-logcat' | 'ios-syslog' | 'android-webview';
+  source: 'android-logcat' | 'ios-syslog' | 'android-webview' | 'ios-webview';
   webview?: WebView;
   timestampSource: 'device' | 'host-receipt';
   entries: LogMessage[];
@@ -36,9 +36,9 @@ export function serializeLogExport(messages: readonly LogMessage[], device: Devi
   const document: LogExport = {
     schemaVersion: 1,
     device: { id: device.id, name: device.name, platform: device.platform },
-    source: device.webview ? 'android-webview' : device.platform === 'android' ? 'android-logcat' : 'ios-syslog',
+    source: device.webview ? (device.platform === 'ios' ? 'ios-webview' : 'android-webview') : device.platform === 'android' ? 'android-logcat' : 'ios-syslog',
     ...(device.webview ? { webview: device.webview } : {}),
-    timestampSource: device.platform === 'android' ? 'device' : 'host-receipt',
+    timestampSource: device.platform === 'android' || device.webview ? 'device' : 'host-receipt',
     // Explicit fields exclude UI selection keys and retain original message text.
     entries: messages.map(({ timestamp, message, level, tag, pid }) => ({ timestamp, message, level, tag, pid })),
   };

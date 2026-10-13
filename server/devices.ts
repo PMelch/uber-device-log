@@ -6,6 +6,7 @@ import { getDefaultSocket } from 'appium-ios-device/build/lib/usbmux/index.js';
 import type { Socket } from 'node:net';
 import type { Device, DeviceList, LogMessage } from '../shared/types.js';
 
+import { discoverIosWebViews, openIosWebViewLogs } from './ios-webviews.js';
 import { discoverWebViews, openWebViewLogs } from './webviews.js';
 import { notification, type Notification } from '../shared/notifications.js';
 
@@ -41,6 +42,7 @@ async function iosDevices(): Promise<Device[]> {
   })));
 }
 
+const knownIosWebViews = new Map<string, NonNullable<Device['webviews']>>();
 let pendingDiscovery: Promise<DeviceList> | undefined;
 export function listDevices(): Promise<DeviceList> {
   // Coalesce simultaneous refreshes from multiple tabs.
@@ -51,9 +53,10 @@ export function listDevices(): Promise<DeviceList> {
       if (result.status === 'fulfilled') devices.push(...result.value);
       else warnings.push(notification('discoveryUnavailable', { platform: index === 0 ? 'Android' : 'iOS', detail: errorText(result.reason) }));
     });
-    await Promise.all(devices.filter(device => device.platform === 'android' && device.state === 'connected').map(async device => {
-      try { device.webviews = await discoverWebViews(adb.getDevice(device.id)); }
-      catch (error) { warnings.push(notification('webviewDiscoveryUnavailable', { device: device.name, detail: errorText(error) })); }
+    for (const id of knownIosWebViews.keys()) if (!devices.some(device => device.platform === 'ios' && device.id === id)) knownIosWebViews.delete(id);
+    await Promise.all(devices.filter(device => device.state === 'connected').map(async device => {
+      try { device.webviews = device.platform === 'ios' ? await discoverIosWebViews(device.id) : await discoverWebViews(adb.getDevice(device.id)); if (device.platform === 'ios') knownIosWebViews.set(device.id, device.webviews); }
+      catch (error) { if (device.platform === 'ios') device.webviews = knownIosWebViews.get(device.id); warnings.push(notification('webviewDiscoveryUnavailable', { device: device.name, detail: errorText(error) })); }
     }));
     return { devices, warnings };
   }).finally(() => { pendingDiscovery = undefined; });
@@ -87,6 +90,7 @@ export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
     return () => { socket.destroy(); };
   }
 
+  if (device.webview) return openIosWebViewLogs(device.id, device.webview, onMessage, onEnd);
   const service = await services.startSyslogService(device.id);
   // Appium's service has no public lifecycle events. Keep access to its socket
   // and decoder isolated here; package-lock pins the inspected implementation.

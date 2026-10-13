@@ -94,7 +94,7 @@ export const ja = {
   levelWarn: '警告',
   levelError: 'エラー',
   levelFatal: '致命的',
-  iosNote: 'ログレベルでの絞り込みは Android で利用できます。この iOS ストリームでは、元のログテキストを検索してください。',
+  iosNote: "iOS のネイティブログには構造化されたログレベルのフィルターがありません。元のログテキストを検索してください。",
   received: '受信時刻',
   time: '時刻',
   level: 'レベル',

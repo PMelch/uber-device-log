@@ -26,6 +26,8 @@ test('source filters scope accessible names, native metadata and levels to each 
     assert.match(web, /aria-label="Slot filtern"/);
     assert.match(web, /precision-web/);
     assert.doesNotMatch(web, /inputmode="numeric"|aria-invalid/);
+    const iosWeb = await render({ ...device, platform: 'ios', webview: {id:'2',socket:'PID:42',title:'Slot',url:''} });
+    assert.doesNotMatch(iosWeb, /precision-severity[^>]*disabled/);
     const ios = await render({ ...device, platform: 'ios' });
     assert.match(ios, /precision-severity[^>]*disabled/);
     assert.doesNotMatch(ios, /inputmode="numeric"/);

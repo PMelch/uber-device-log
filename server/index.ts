@@ -29,8 +29,8 @@ app.get('/api/devices', async (_request, response) => {
 app.get('/api/logs', async (request, response) => {
   const { platform, id, webviewSocket, webviewId } = request.query;
   if ((webviewSocket !== undefined || webviewId !== undefined) &&
-      (platform !== 'android' || typeof webviewSocket !== 'string' || typeof webviewId !== 'string' || !webviewId)) {
-    response.status(400).json({ error: 'An Android WebView socket and target ID are required.' });
+      ((platform !== 'android' && platform !== 'ios') || typeof webviewSocket !== 'string' || typeof webviewId !== 'string' || !webviewId)) {
+    response.status(400).json({ error: 'A WebView application/socket and target ID are required.' });
     return;
   }
   if ((platform !== 'android' && platform !== 'ios') || typeof id !== 'string' || !id) {

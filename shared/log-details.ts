@@ -3,7 +3,7 @@ import { parseLogStack } from './log-view';
 
 export type Interpretation = 'generic' | 'audio' | 'brightness' | 'lux' | 'dns' | 'power' | 'invalidType' | 'stack' | 'fileRead';
 export interface ParsedLogDetails {
-  format: 'android-structured' | 'ios-syslog' | 'unrecognized';
+  format: 'android-structured' | 'webview-console' | 'ios-syslog' | 'unrecognized';
   deviceTimestamp?: string;
   host?: string;
   process?: string;
@@ -38,14 +38,14 @@ export function parseFileReadFailure(message: string): FileReadFailure | undefin
 }
 
 /** Parse one record only. Never inherit fields from neighboring/interleaved records. */
-export function interpretLog(entry: LogMessage, platform: Platform): ParsedLogDetails {
+export function interpretLog(entry: LogMessage, platform: Platform, webview = !!entry.source?.webview): ParsedLogDetails {
   const parsed: ParsedLogDetails = {
-    format: platform === 'android' ? 'android-structured' : 'unrecognized',
+    format: webview ? 'webview-console' : platform === 'android' ? 'android-structured' : 'unrecognized',
     body: entry.message,
     hasPrivateData: /<private>/.test(entry.message),
     interpretation: 'generic',
   };
-  if (platform === 'android') {
+  if (platform === 'android' || webview) {
     parsed.level = entry.level;
     parsed.tag = entry.tag;
     if (entry.pid !== undefined) parsed.pid = String(entry.pid);
@@ -81,7 +81,7 @@ export function logDetailsJson(entry: LogMessage, platform: Platform, parsed: Pa
   const { timestamp, message, level, tag, pid } = entry;
   return JSON.stringify({
     platform,
-    timestampSource: platform === 'ios' ? 'host-receipt' : 'device',
+    timestampSource: platform === 'ios' && parsed.format !== 'webview-console' ? 'host-receipt' : 'device',
     original: { timestamp, message, level, tag, pid },
     parsed,
   }, null, 2);

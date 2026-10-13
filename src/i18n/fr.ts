@@ -94,7 +94,7 @@ export const fr = {
   levelWarn: 'Avertissement',
   levelError: 'Erreur',
   levelFatal: 'Fatal',
-  iosNote: 'Les filtres de niveau sont disponibles pour Android. Pour ce flux iOS, recherchez dans le texte d’origine.',
+  iosNote: "Les journaux natifs iOS ne disposent pas de filtres de niveau structurés. Recherchez dans le texte d’origine.",
   received: 'Reçu',
   time: 'Heure',
   level: 'Niveau',

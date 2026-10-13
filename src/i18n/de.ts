@@ -94,7 +94,7 @@ export const de = {
   levelWarn: 'Warnung',
   levelError: 'Fehler',
   levelFatal: 'Fatal',
-  iosNote: 'Schweregradfilter sind für Android verfügbar. Bei diesem iOS-Stream den Originaltext durchsuchen.',
+  iosNote: "Native iOS-Logs haben keine strukturierten Schweregradfilter. Durchsuche den Originaltext.",
   received: 'Empfangen',
   time: 'Zeit',
   level: 'Stufe',

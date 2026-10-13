@@ -13,7 +13,7 @@ const panel = ref<HTMLElement>();
 const closeButton = ref<HTMLButtonElement>();
 const view = ref<'fields' | 'raw' | 'json'>('fields');
 const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, key, params);
-const parsed = computed(() => interpretLog(props.record.entry, props.record.device.platform));
+const parsed = computed(() => interpretLog(props.record.entry, props.record.device.platform, !!props.record.device.webview));
 const original = computed(() => formatLogMessages([props.record.entry]));
 const json = computed(() => logDetailsJson(props.record.entry, props.record.device.platform, parsed.value));
 const interpretations: Record<Interpretation, MessageKey> = {
@@ -22,7 +22,7 @@ const interpretations: Record<Interpretation, MessageKey> = {
 };
 const fields = computed(() => {
   const p = parsed.value;
-  const ios = props.record.device.platform === 'ios';
+  const ios = props.record.device.platform === 'ios' && !props.record.device.webview;
   const rows: [MessageKey, string | undefined][] = [
     [ios ? 'detailReceived' : 'detailTimestamp', props.record.entry.timestamp],
     ['detailDevice', props.record.device.name],

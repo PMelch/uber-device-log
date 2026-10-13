@@ -94,7 +94,7 @@ export const zhCN = {
   levelWarn: '警告',
   levelError: '错误',
   levelFatal: '致命',
-  iosNote: '级别筛选适用于 Android。对于此 iOS 日志流，请搜索原始日志文本。',
+  iosNote: "iOS 原生日志不支持结构化级别筛选。请搜索原始日志文本。",
   received: '接收时间',
   time: '时间',
   level: '级别',
