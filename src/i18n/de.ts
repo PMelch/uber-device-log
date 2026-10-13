@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const de = {
+  performanceIncoming: "Eingang: {rate} Logs/s",
+  performanceRows: "Live-Puffer: {retained} · Gefilterte Ansicht: {matching} · Gerenderte Zeilen: {rendered}",
+  performanceClose: "Performance-Diagnose ausschalten",
+
   performanceToggle: "Performance-Diagnose anzeigen",
   performanceTitle: "Performance",
   performanceWindow: "Messintervall: {seconds} s",

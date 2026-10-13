@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const zhCN = {
+  performanceIncoming: "接收：{rate} 条日志/秒",
+  performanceRows: "实时缓冲区：{retained} 条 · 筛选后视图：{matching} 条 · 渲染行数：{rendered}",
+  performanceClose: "关闭性能诊断",
+
   performanceToggle: "显示性能诊断",
   performanceTitle: "性能",
   performanceWindow: "采样间隔：{seconds} 秒",

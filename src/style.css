@@ -325,8 +325,17 @@ body { margin: 0; }
 
 #precision-design .settings-panel .settings-performance-toggle { display: flex; align-items: center; gap: 8px; }
 #precision-design .settings-performance-toggle input { flex: 0 0 auto; min-width: 0; width: 16px; height: 16px; accent-color: var(--pl-accent); }
-#precision-design .precision-performance { margin-top: 16px; padding: 14px 18px; border: 1px solid var(--pl-line); border-radius: var(--pl-radius); background: var(--pl-panel); font-size: 12px; }
+#precision-design .precision-performance { position: fixed; right: 12px; bottom: 12px; z-index: 55; pointer-events: none; width: 440px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; box-shadow: 0 6px 24px #0002; padding: 14px 18px; border: 1px solid var(--pl-line); border-radius: var(--pl-radius); background: var(--pl-panel); font-size: 12px; }
 #precision-design .precision-performance h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
 #precision-design .precision-performance p { margin: 0; overflow-wrap: anywhere; }
 #precision-design .performance-metrics { display: flex; flex-wrap: wrap; gap: 8px 24px; font-variant-numeric: tabular-nums; }
 #precision-design .precision-performance .performance-hint { margin-top: 10px; color: var(--pl-soft); line-height: 1.5; }
+
+#precision-design .precision-performance header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+#precision-design .precision-performance header h2 { margin: 0; }
+#precision-design .precision-performance header button { pointer-events: auto; flex: 0 0 32px; min-height: 32px; border-radius: 6px; font-size: 20px; }
+#precision-design .precision-performance header button:hover { background: var(--pl-wash); }
+#precision-design .precision-performance .performance-row-counts { margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+
+#precision-design .precision-performance.is-scrollable { pointer-events: auto; }
+#precision-design .precision-performance header { position: sticky; top: 0; background: var(--pl-panel); z-index: 1; }

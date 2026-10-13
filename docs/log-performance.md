@@ -65,13 +65,18 @@ For a repeatable real-browser check, make Playwright available in your environme
 and run:
 
 ```sh
-node scripts/test-log-performance.mjs
+npm run build:debug
+PERFORMANCE_DIST=dist-debug node scripts/test-log-performance.mjs
+
+# Verify release builds ignore a previously enabled diagnostics preference.
+npm run build
+PERFORMANCE_RELEASE_CHECK=true node scripts/test-log-performance.mjs
 ```
 
 Optional environment variables: `PLAYWRIGHT_MODULE` (absolute Playwright module
 path), `CHROME_EXECUTABLE` (installed Chrome executable), and
-`PERFORMANCE_SCREENSHOTS` (existing output directory). The script runs an ephemeral
-localhost fixture serving the production build, starts with 10,000 mixed-height
+`PERFORMANCE_SCREENSHOTS` (existing output directory). `PERFORMANCE_DIST` selects the build directory (default: `dist`). The script runs
+an ephemeral localhost fixture serving the selected build, starts with 10,000 mixed-height
 records and sends up to 5,000 records/second. It checks bounded DOM rows, scroll
 anchors, following, frozen capture, complete 10K JSON export, native selection
 survival, stationary selection collapse, all seven languages and desktop/mobile
@@ -94,12 +99,26 @@ behavior still need a device test, especially Safari/iOS native selection.
 
 ## Optional diagnostics
 
-Enable **Show performance diagnostics** in Settings. The preference is stored
+Diagnostics are available only during `npm run dev` or in the separate
+`npm run build:debug` output (`dist-debug`). Release builds (`npm run build` and
+packaged releases) omit both the settings entry and panel and never start the
+monitor, even when local storage contains an enabled preference. Debug output is
+ignored by Git and excluded from the package.
+
+In development, enable **Show performance diagnostics** in Settings. The preference is stored
 locally and defaults to off. The panel updates about once a second with the actual
-sampling interval, accumulated synchronous log merge/filter/queue-compaction
+sampling interval, incoming records per second, live-buffer and filtered-view
+counts, mounted rows, accumulated synchronous log merge/filter/queue-compaction
 execution time, requestAnimationFrame callback frequency, and the count/duration
 of observed main-thread tasks longer than 50 ms. Unsupported Long Tasks API
 observation is shown as unavailable, not zero.
+
+The panel floats inside the viewport; previously its position below the log list
+could leave it offscreen. Its close button disables the persisted preference.
+Normal-height panels allow clicks through to the viewer except on the close
+button. When a short window makes the panel overflow, it becomes scrollable and
+keeps the close button visible. Incoming counts include capture during a frozen
+view and are measured before filtering or capacity limits.
 
 Processing durations are elapsed time, not CPU utilization, and exclude rendering,
 transport JSON decoding and other page work. Animation callbacks are not painted
@@ -109,8 +128,10 @@ disabled or the document is hidden. Visibility restores a fresh sampling window.
 Numeric samples remain language-independent; all UI text is localized in seven
 languages and existing samples update when the language changes.
 
-Diagnostics validation: 94 Node tests and build passed; independent review approved.
+Diagnostics validation: 108 Node tests and build passed; independent review approved.
 The browser fixture verified enable/disable by keyboard, preference persistence,
-unsupported observation, language switching and mobile layout. One 10K/5K-per-second
-sample reported 44.0 ms processing over 1.0 seconds, 60 animation callbacks/s,
+unsupported observation, language switching, desktop/mobile viewport visibility,
+scrolling at 390×240, close-button behavior and arrivals during frozen capture.
+One 10K/5K-per-second sample reported 4,598 incoming records/s, 19 mounted rows,
+38.3 ms processing over 1.0 seconds, 60 animation callbacks/s,
 and zero observed long tasks. These fixture values are not a real-device guarantee.

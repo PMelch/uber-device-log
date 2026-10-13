@@ -1,5 +1,9 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  performanceIncoming: "Incoming: {rate} logs/s",
+  performanceRows: "Live buffer: {retained} · Filtered view: {matching} · Rendered rows: {rendered}",
+  performanceClose: "Turn off performance diagnostics",
+
   performanceToggle: "Show performance diagnostics",
   performanceTitle: "Performance",
   performanceWindow: "Sampling window: {seconds} s",

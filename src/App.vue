@@ -25,8 +25,18 @@ const warnings = ref<(DeviceList['warnings'][number] | UiMessage)[]>([]);
 const selected = ref('');
 const messages = shallowRef<(LogMessage & { key: number })[]>([]);
 const { bufferSize, theme, newestPosition, performanceEnabled } = usePreferences();
-const { sample: performanceSample, measure: measurePerformance } = usePerformance(performanceEnabled);
+const developmentBuild = import.meta.env.DEV;
+const { sample: performanceSample, rows: performanceRows, received: recordIncoming, measure: measurePerformance } = usePerformance(performanceEnabled, () => ({
+  retained: messages.value.length, matching: displayedMessages.value.length, rendered: virtualRows.value.length,
+}));
 const performanceNumber = (value: number) => new Intl.NumberFormat(locale.value, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value);
+const performancePanel = ref<HTMLElement>();
+const performanceOverflow = ref(false);
+function measurePerformancePanel() {
+  const panel = performancePanel.value;
+  performanceOverflow.value = !!panel && panel.scrollHeight > panel.clientHeight + 1;
+}
+watch([performanceEnabled, performanceSample, locale], () => nextTick(measurePerformancePanel), { flush: 'post' });
 const pausedMessages = shallowRef<typeof messages.value>();
 const paused = computed(() => pausedMessages.value !== undefined);
 const visibleMessages = computed(() => pausedMessages.value ?? messages.value);
@@ -270,6 +280,7 @@ const logBatcher = createLogBatcher<(LogMessage & { key: number })>(batch => { v
   compact: (rows, capacity) => measurePerformance(() => mergeSourceMessages([], rows, capacity)),
 });
 function receiveLogs(source: StreamSource, batch: LogMessage[]) {
+  recordIncoming(batch.length);
   const origin = metadata(source);
   logBatcher.push(batch.map(message => ({ ...message, source: origin, key: nextKey++ })));
 }
@@ -494,12 +505,14 @@ function saveLogs() {
 }
 function displayTime(timestamp: string) { return timestamp.includes('T') ? timestamp.split('T')[1]?.replace(/Z$/, '') : timestamp; }
 onMounted(() => {
+  window.addEventListener('resize', measurePerformancePanel);
   document.addEventListener('selectionchange', nativeSelectionChanged);
   window.addEventListener('pointerup', endDrag);
   void refresh();
   poll = setInterval(() => void refresh(), 3000);
 });
 onUnmounted(() => {
+  window.removeEventListener('resize', measurePerformancePanel);
   document.removeEventListener('selectionchange', nativeSelectionChanged);
   window.removeEventListener('pointerup', endDrag);
   endDrag();
@@ -597,11 +610,13 @@ onUnmounted(() => {
         <div v-if="copyFallback !== undefined" class="precision-copy-fallback"><label for="copy-text">{{ t('clipboardFallback') }}</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">{{ t('close') }}</button></div>
         <div class="precision-bottom"><span>{{ t('retained', { count: visibleMessages.length, capacity: bufferSize }) }}</span><button v-if="!following && !paused" class="precision-action" @click="follow">{{ t('followLatest') }}</button><span v-else>{{ paused ? t(capturing ? 'frozenActive' : 'frozenStopped') : (newestPosition === 'top' ? '↑ ' : '↓ ') + t('followingNewest') }}</span></div>
       </section>
-      <section v-if="performanceEnabled" class="precision-performance" :aria-label="t('performanceTitle')">
-        <h2>{{ t('performanceTitle') }}</h2>
+      <section v-if="developmentBuild && performanceEnabled" ref="performancePanel" class="precision-performance" :class="{ 'is-scrollable': performanceOverflow }" :aria-label="t('performanceTitle')">
+        <header><h2>{{ t('performanceTitle') }}</h2><button type="button" :aria-label="t('performanceClose')" @click="performanceEnabled = false">×</button></header>
+        <p class="performance-row-counts">{{ t('performanceRows', { retained: performanceRows.retained, matching: performanceRows.matching, rendered: performanceRows.rendered }) }}</p>
         <p v-if="!performanceSample.windowMs">{{ t('performancePending') }}</p>
         <div v-else class="performance-metrics">
           <p>{{ t('performanceWindow', { seconds: performanceNumber(performanceSample.windowMs / 1000) }) }}</p>
+          <p>{{ t('performanceIncoming', { rate: Math.round(performanceSample.receivedPerSecond) }) }}</p>
           <p>{{ t('performanceProcessing', { milliseconds: performanceNumber(performanceSample.processingMs) }) }}</p>
           <p>{{ t('performanceFrames', { rate: Math.round(performanceSample.framesPerSecond ?? 0) }) }}</p>
           <p>{{ performanceSample.longTaskCount === null ? t('performanceUnavailable') : t('performanceLongTasks', { count: performanceSample.longTaskCount, milliseconds: performanceNumber(performanceSample.longTaskMs ?? 0) }) }}</p>

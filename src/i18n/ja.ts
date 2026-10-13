@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const ja = {
+  performanceIncoming: "受信：{rate} 件/秒",
+  performanceRows: "ライブバッファ：{retained} 件 · フィルター後の表示：{matching} 件 · 描画中の行：{rendered} 行",
+  performanceClose: "パフォーマンス診断をオフにする",
+
   performanceToggle: "パフォーマンス診断を表示",
   performanceTitle: "パフォーマンス",
   performanceWindow: "測定間隔：{seconds} 秒",

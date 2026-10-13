@@ -1,10 +1,12 @@
 import { onMounted, onUnmounted, shallowRef, watch, type Ref } from 'vue';
 import { createPerformanceMonitor, emptyPerformanceSample } from '../performance';
 
-export function usePerformance(enabled: Ref<boolean>) {
+export interface PerformanceRows { retained: number; matching: number; rendered: number }
+export function usePerformance(enabled: Ref<boolean>, readRows: () => PerformanceRows = () => ({ retained: 0, matching: 0, rendered: 0 }), developmentBuild = import.meta.env?.DEV === true) {
   const sample = shallowRef(emptyPerformanceSample());
+  const rows = shallowRef<PerformanceRows>({ retained: 0, matching: 0, rendered: 0 });
   let mounted = false;
-  const monitor = createPerformanceMonitor(value => { sample.value = value; }, {
+  const monitor = createPerformanceMonitor(value => { sample.value = value; if (developmentBuild && enabled.value && !document.hidden) rows.value = readRows(); }, {
     now: () => performance.now(),
     requestFrame: callback => requestAnimationFrame(callback),
     cancelFrame: id => { if (id) cancelAnimationFrame(id); },
@@ -22,10 +24,10 @@ export function usePerformance(enabled: Ref<boolean>) {
   });
   function sync() {
     if (!mounted) return;
-    if (enabled.value && !document.hidden) monitor.start(); else monitor.stop();
+    if (developmentBuild && enabled.value && !document.hidden) { rows.value = readRows(); monitor.start(); } else monitor.stop();
   }
   watch(enabled, sync, { flush: 'sync' });
   onMounted(() => { mounted = true; document.addEventListener('visibilitychange', sync); sync(); });
   onUnmounted(() => { mounted = false; document.removeEventListener('visibilitychange', sync); monitor.stop(); });
-  return { sample, measure: monitor.measure };
+  return { sample, rows, received: monitor.received, measure: monitor.measure };
 }

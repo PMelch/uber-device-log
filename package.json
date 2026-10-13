@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "tsx watch server/index.ts",
     "build": "vue-tsc --noEmit && vite build && tsc -p tsconfig.server.json",
+    "build:debug": "vue-tsc --noEmit && NODE_ENV=development vite build --mode development --outDir dist-debug",
     "start": "node bin/uber-device-log.mjs",
     "test": "node --import tsx --test server/*.test.ts",
     "prepack": "npm run build",
