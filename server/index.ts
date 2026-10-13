@@ -27,7 +27,12 @@ app.get('/api/devices', async (_request, response) => {
 });
 
 app.get('/api/logs', async (request, response) => {
-  const { platform, id } = request.query;
+  const { platform, id, webviewSocket, webviewId } = request.query;
+  if ((webviewSocket !== undefined || webviewId !== undefined) &&
+      (platform !== 'android' || typeof webviewSocket !== 'string' || typeof webviewId !== 'string' || !webviewId)) {
+    response.status(400).json({ error: 'An Android WebView socket and target ID are required.' });
+    return;
+  }
   if ((platform !== 'android' && platform !== 'ios') || typeof id !== 'string' || !id) {
     response.status(400).json({ error: 'A platform and device ID are required.' });
     return;
@@ -39,7 +44,13 @@ app.get('/api/logs', async (request, response) => {
     response.status(409).json({ error: 'Device is disconnected or unauthorized. Refresh the device list.' });
     return;
   }
-  const stop = streamLogs(response, device, openLogs);
+  const webview = typeof webviewSocket === 'string'
+    ? device.webviews?.find(view => view.socket === webviewSocket && view.id === webviewId) : undefined;
+  if (webviewSocket !== undefined && !webview) {
+    response.status(409).json({ error: 'WebView is no longer available. Refresh the device list.' });
+    return;
+  }
+  const stop = streamLogs(response, { ...device, webview }, openLogs);
   active.add(stop);
   response.once('close', () => active.delete(stop));
 });

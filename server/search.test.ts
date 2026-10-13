@@ -23,3 +23,24 @@ test('empty filter restores all records and unmatched text returns none', () => 
   assert.deepEqual(search('zzzzzzzzzz'), []);
   assert.deepEqual(entries[0]?.message, 'Connection failed');
 });
+
+test('literal mode matches a contiguous query without typo tolerance or cross-field joins', () => {
+  assert.deepEqual(search('CONECTION', 'literal'), []);
+  assert.deepEqual(search('CONNECTION FAILED', 'literal'), [entries[0]]);
+  assert.deepEqual(search('  connection failed  ', 'literal'), [entries[0]]);
+  assert.deepEqual(search('network rendered', 'literal'), []);
+  assert.deepEqual(search('1234 Connection', 'literal'), []);
+  assert.deepEqual(search('5678', 'literal'), [entries[1]]);
+  assert.deepEqual(search('2026-09-29T10:00:01Z', 'literal'), [entries[1]]);
+  assert.deepEqual(search('connection timeout', 'literal'), [entries[2]]);
+  assert.deepEqual(search('  ', 'literal'), entries);
+});
+
+test('literal mode treats regex characters and multiline content as original text', () => {
+  const record = { timestamp: 'now', message: 'failed [a.*]\n  at file.ts:42' };
+  const literal = createLogSearch([record]);
+  assert.deepEqual(literal('[a.*]', 'literal'), [record]);
+  assert.deepEqual(literal('failed [a.*]\n  at', 'literal'), [record]);
+  assert.deepEqual(literal('failed.*at', 'literal'), []);
+  assert.equal(record.message, 'failed [a.*]\n  at file.ts:42');
+});

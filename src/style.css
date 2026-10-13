@@ -95,6 +95,18 @@ body { margin: 0; }
    The page can scroll; log history stays in its own bounded scrolling region. */
 #precision-design .logs { flex: 1 0 auto; height: 60dvh; min-height: 360px; overflow: auto; overflow-anchor: none; }
 #precision-design .precision-searchbar { padding: 12px 16px; }
+#precision-design .precision-searchbar { flex-wrap: wrap; }
+#precision-design .precision-searchbar > input { min-width: 120px; }
+#precision-design .precision-searchbar summary { min-height: 34px; padding: 6px 10px; font-size: 12px; white-space: normal; }
+#precision-design .precision-searchbar .precision-menu { right: 0; left: auto; max-width: calc(100vw - 40px); }
+#precision-design .precision-searchbar .precision-menu button { white-space: normal; }
+#precision-design .precision-metadata-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--pl-line); }
+#precision-design .precision-metadata-filters .precision-field { flex: 1 1 150px; }
+#precision-design .precision-metadata-filters input { display: block; width: 100%; min-width: 0; padding: 7px 9px; border: 1px solid var(--pl-line); border-radius: 7px; }
+#precision-design .precision-metadata-filters input:disabled { opacity: .5; }
+#precision-design .precision-metadata-filters input[aria-invalid=true] { border-color: var(--pl-error); }
+#precision-design .precision-metadata-filters p { flex-basis: 100%; font-size: 11px; overflow-wrap: anywhere; }
+#precision-design .precision-metadata-filters .precision-filter-error { color: var(--pl-error); }
 #precision-design .precision-row { padding-top: 8px; padding-bottom: 8px; }
 #precision-design .precision-time, #precision-design .precision-tag { overflow-wrap: anywhere; }
 #precision-design .precision-menu { max-height: 320px; overflow: auto; }
@@ -273,3 +285,11 @@ body { margin: 0; }
 #precision-design .precision-disconnect { min-height: 46px; padding: 10px 14px; border: 1px solid var(--pl-line); background: var(--pl-panel); border-radius: var(--pl-radius); }
 #precision-design .precision-disconnect:hover:not(:disabled) { background: var(--pl-wash); }
 #precision-design .precision-device-sidebar > .precision-disconnect { margin-top: 16px; width: 100%; justify-content: center; }
+
+/* Nested console sources use the same button semantics as parent devices. */
+#precision-design .device-webview-item { margin-left: 18px; width: calc(100% - 18px); padding: 8px; border-left: 1px solid var(--pl-line); border-radius: 0 7px 7px 0; }
+#precision-design .device-webview-icon { color: var(--pl-soft); flex: none; }
+#precision-design .precision-menu .device-webview-option { padding-left: 24px; }
+#precision-design .device-webview-option .device-label { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+#precision-design .precision-webview-source { margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--pl-line); font-size: 12px; overflow-wrap: anywhere; }
+#precision-design .precision-webview-source .precision-sub { display: block; margin-top: 4px; white-space: normal; }

@@ -1,0 +1,15 @@
+[[skills.config]]
+path = "~/.codex/skills/context-hunter"
+enabled = true
+
+[[skills.config]]
+path = "~/.codex/skills/core-cycle"
+enabled = true
+
+[[skills.config]]
+path = "~/.codex/skills/product-development"
+enabled = true
+
+[[skills.config]]
+path = "~/.codex/skills/tdd-protocol"
+enabled = true

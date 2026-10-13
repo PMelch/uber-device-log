@@ -1,6 +1,8 @@
 import Fuse from 'fuse.js';
 import type { LogMessage } from './types';
 
+export type LogSearchMode = 'fuzzy' | 'literal';
+
 export function createLogSearch<T extends LogMessage>(messages: T[]) {
   const index = new Fuse(messages.map(message => ({
     message,
@@ -14,7 +16,13 @@ export function createLogSearch<T extends LogMessage>(messages: T[]) {
     shouldSort: false,
   });
 
-  return (query: string): T[] => {
+  return (query: string, mode: LogSearchMode = 'fuzzy'): T[] => {
+    if (mode === 'literal') {
+      const text = query.trim().toLowerCase();
+      if (!text) return messages;
+      return messages.filter(message => [message.timestamp, message.level, message.tag, message.pid, message.message]
+        .some(value => value !== undefined && String(value).toLowerCase().includes(text)));
+    }
     const terms = query.trim().split(/\s+/).filter(Boolean);
     if (!terms.length) return messages;
     // Require every term, anywhere in the record, without changing log order.

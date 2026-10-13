@@ -5,14 +5,15 @@ import { de } from './de';
 import { es } from './es';
 import { fr } from './fr';
 import { it } from './it';
+import { ja } from './ja';
 import { zhCN } from './zh-CN';
 
-export const catalogs = { en, es, de, fr, it, 'zh-CN': zhCN } satisfies Record<string, Messages>;
+export const catalogs = { en, es, de, fr, it, ja, 'zh-CN': zhCN } satisfies Record<string, Messages>;
 export type Locale = keyof typeof catalogs;
 export const languages: { code: Locale; name: string }[] = [
   { code: 'en', name: 'English' }, { code: 'es', name: 'Español' },
   { code: 'de', name: 'Deutsch' }, { code: 'fr', name: 'Français' },
-  { code: 'it', name: 'Italiano' }, { code: 'zh-CN', name: '简体中文' },
+  { code: 'it', name: 'Italiano' }, { code: 'ja', name: '日本語' }, { code: 'zh-CN', name: '简体中文' },
 ];
 export const languageStorageKey = 'uber-device-log.language';
 export interface UiMessage { code: MessageKey; params?: MessageParams; message?: string }

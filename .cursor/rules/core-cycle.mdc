@@ -1,0 +1,393 @@
+---
+description: "Managed ai-skills rule for core-cycle"
+alwaysApply: true
+---
+<!-- AI_SKILLS_CURSOR_MANAGED: core-cycle -->
+# CoRe Cycle (short for Code-Review Cycle)
+
+Use this skill to run a coding task through two explicit roles:
+
+- Agent A implements the task.
+- Agent B reviews the result and reports only actionable issues in a structured severity-based format.
+- Agent A fixes reported issues and returns the work for another review round.
+
+## Start With Config
+
+Use this lookup order before delegating work:
+
+1. If a project config exists at `.core-cycle/config.json`, use it.
+2. Otherwise, if a user-level default config exists, tell the user which file was found and ask whether to use it for this project or reconfigure now.
+3. Otherwise, use the bundled default config at `config/default.json` in this skill.
+
+If only a user-level config or the bundled default exists, you may use it directly for the current run or copy it into `.core-cycle/config.json` and edit it manually. Do not require `scripts/pair_config.py` just to bootstrap from the checked-in default.
+
+If the user asks to configure or reconfigure the pair at any time, repeat the configuration step even if a config already exists.
+
+## Configure The Agent Pair
+
+When no project config exists, or when the user asks to reconfigure:
+
+1. Show searchable options for tools and models.
+2. For Agent A, ask whether to run in the current harness, use a sub-agent in the current harness, or use an external coding harness.
+3. For Agent B, ask whether to run in the current harness, use a sub-agent in the current harness, or use an external review harness.
+4. Ask the user which implementation setup to use for Agent A.
+5. Ask the user which review setup to use for Agent B.
+6. Ask whether Agent A should create a git commit after each implementation or fix step.
+7. If commits are enabled, ask for the preferred commit message template. The commit message template should extend other required parts of the git commit message. For example, if the usage of a ticketing system requires you to include the ticket number in the commit message, this part should not be removed.
+8. Ask whether all intermediate commits should be squashed into a single final commit when Agent B approves. Squashing keeps the working history clean while preserving full traceability during the review cycle.
+9. If squash is enabled, ask whether to squash **only unpushed commits** (recommended: yes — avoids rewriting commits already on `origin` and the need for force-push).
+10. If squash is enabled, ask for the squash commit message template. This template is used for the single final commit that replaces all intermediate ones. It supports the same placeholders as the step template plus `{task_id}` and `{summary}`. Remind the user that the body of the squash commit is synthesized by Agent A from the task description and resolved review issues — only the first-line template needs to be configured.
+11. Save the chosen settings into the project config file.
+
+Use the helper for discovery:
+
+```bash
+python3 scripts/pair_config.py catalog
+python3 scripts/pair_config.py catalog --kind tool
+python3 scripts/pair_config.py catalog --kind model
+python3 scripts/pair_config.py search current
+python3 scripts/pair_config.py search subagent --kind tool
+python3 scripts/pair_config.py search codex
+python3 scripts/pair_config.py search copilot
+python3 scripts/pair_config.py search opencode
+python3 scripts/pair_config.py search pi
+python3 scripts/pair_config.py search review --kind tool
+python3 scripts/pair_config.py search gpt --kind model
+```
+
+Treat the catalog as a convenience shortlist, not an authoritative registry. Custom runners, commands, and model IDs are always allowed when the user specifies them.
+
+Use these runner rules:
+
+- `current-harness`: Run the role directly in the current harness without spawning a sub-agent. Prefer model `current` here.
+- `current-harness-subagent`: Stay inside the current harness and spawn a fresh worker/reviewer with the configured model.
+- `current` as a model means reuse the current harness configured model instead of selecting an explicit model ID.
+- External runners like `codex`, `claude`, `gemini`, `copilot`, `opencode`, `pi`, or `custom` launch a separate coding harness or CLI and pass the request through the configured command template.
+- Do not rely on changing the model of an already-running agent mid-task.
+- Do not treat a backgrounded step in the same agent as equivalent to an independent reviewer.
+- For standard external runners `codex`, `claude`, `gemini`, `copilot`, `opencode`, and `pi`, the skill provides built-in command templates. Do not ask the user to write them manually. Only `custom` should normally need a user-supplied `command_template`.
+- The built-in templates call `scripts/run_external_agent.py`, which accepts a normalized interface with `{prompt}`, `{system_prompt}`, `{model}`, `{thinking_level}`, `{model_parameters_json}`, and `{output_file}` and maps those values into each CLI's real flags. The wrapper also accepts `--prompt-file` and `--system-prompt-file`; prefer those file-based flags for long, generated, or multiline prompts instead of passing large prompt text directly on the command line.
+
+When you need a project-local config without using the helper, copy `config/default.json` from this skill into `.core-cycle/config.json` and edit the fields to match the chosen setup. Use this shape:
+
+```json
+{
+  "version": 1,
+  "project_root": ".",
+  "project_config_path": ".core-cycle/config.json",
+  "implementation": {
+    "runner": "current-harness",
+    "model": "current",
+    "thinking_level": null,
+    "model_parameters": {},
+    "command_template": null
+  },
+  "review": {
+    "runner": "current-harness",
+    "model": "current",
+    "thinking_level": null,
+    "model_parameters": {},
+    "command_template": null
+  },
+  "workflow": {
+    "max_review_rounds": 5,
+    "require_structured_review": true,
+    "issue_severities": ["critical", "high", "medium", "low"],
+    "commit_after_each_step": false,
+    "commit_message_template": "core-cycle: {step}",
+    "squash_on_approval": false,
+    "squash_only_unpushed": true,
+    "squash_commit_message_template": "{task_id}: {summary}"
+  }
+}
+```
+
+The default user-level config path is `${CODEX_HOME:-~/.codex}/skills/core-cycle/config.json`. Override it with `CORE_CYCLE_USER_CONFIG` when needed.
+
+To keep work isolated while still using the current harness model, set `runner` to `current-harness-subagent` and `model` to `current`.
+
+Each role config can also carry:
+
+- `thinking_level`: optional tool-specific reasoning level such as `low`, `medium`, or `high`
+- `model_parameters`: free-form JSON object for additional model controls like temperature, top-p, or token limits
+- `command_template`: template for external runners that can interpolate `{prompt}`, `{system_prompt}`, `{model}`, `{thinking_level}`, `{model_parameters_json}`, and `{output_file}`. For the standard external runners, let the skill fill this automatically. Prefer file-based prompt delivery for long prompts by writing the prompt payloads to UTF-8 files and invoking the wrapper with `--prompt-file` and `--system-prompt-file`.
+
+Built-in external command templates use the wrapper shape below. Prefer the file-based form whenever the prompt or system prompt is long, generated, multiline, or likely to exceed shell-safe command lengths:
+
+```bash
+python3 "${CORE_CYCLE_SKILL_DIR:-$HOME/.claude/skills/core-cycle}/scripts/run_external_agent.py" \
+  --runner "<runner>" \
+  --model "{model}" \
+  --thinking-level "{thinking_level}" \
+  --model-parameters-json "{model_parameters_json}" \
+  --output-file "{output_file}" \
+  --system-prompt-file "<system-prompt-file>" \
+  --prompt-file "<prompt-file>"
+```
+
+For short prompt values, inline flags are still supported:
+
+```bash
+python3 "${CORE_CYCLE_SKILL_DIR:-$HOME/.claude/skills/core-cycle}/scripts/run_external_agent.py" \
+  --runner "<runner>" \
+  --model "{model}" \
+  --thinking-level "{thinking_level}" \
+  --model-parameters-json "{model_parameters_json}" \
+  --output-file "{output_file}" \
+  --system-prompt "{system_prompt}" \
+  --prompt "{prompt}"
+```
+
+Use double quotes, not single quotes, around command-line parameters and template placeholders. If a substituted value itself contains double quotes, such as JSON in `{model_parameters_json}`, ensure the command generator escapes them before execution.
+
+Concrete examples using prompt files:
+
+```bash
+python3 "${CORE_CYCLE_SKILL_DIR:-$HOME/.claude/skills/core-cycle}/scripts/run_external_agent.py" --runner codex --model "{model}" --thinking-level "{thinking_level}" --model-parameters-json "{model_parameters_json}" --output-file "{output_file}" --system-prompt-file "<system-prompt-file>" --prompt-file "<prompt-file>"
+python3 "${CORE_CYCLE_SKILL_DIR:-$HOME/.claude/skills/core-cycle}/scripts/run_external_agent.py" --runner claude --model "{model}" --thinking-level "{thinking_level}" --model-parameters-json "{model_parameters_json}" --output-file "{output_file}" --system-prompt-file "<system-prompt-file>" --prompt-file "<prompt-file>"
+python3 "${CORE_CYCLE_SKILL_DIR:-$HOME/.claude/skills/core-cycle}/scripts/run_external_agent.py" --runner gemini --model "{model}" --thinking-level "{thinking_level}" --model-parameters-json "{model_parameters_json}" --output-file "{output_file}" --system-prompt-file "<system-prompt-file>" --prompt-file "<prompt-file>"
+python3 "${CORE_CYCLE_SKILL_DIR:-$HOME/.claude/skills/core-cycle}/scripts/run_external_agent.py" --runner copilot --model "{model}" --thinking-level "{thinking_level}" --model-parameters-json "{model_parameters_json}" --output-file "{output_file}" --system-prompt-file "<system-prompt-file>" --prompt-file "<prompt-file>"
+python3 "${CORE_CYCLE_SKILL_DIR:-$HOME/.claude/skills/core-cycle}/scripts/run_external_agent.py" --runner opencode --model "{model}" --thinking-level "{thinking_level}" --model-parameters-json "{model_parameters_json}" --output-file "{output_file}" --system-prompt-file "<system-prompt-file>" --prompt-file "<prompt-file>"
+python3 "${CORE_CYCLE_SKILL_DIR:-$HOME/.claude/skills/core-cycle}/scripts/run_external_agent.py" --runner pi --model "{model}" --thinking-level "{thinking_level}" --model-parameters-json "{model_parameters_json}" --output-file "{output_file}" --system-prompt-file "<system-prompt-file>" --prompt-file "<prompt-file>"
+```
+
+The wrapper maps standardized inputs to each CLI's actual flags:
+
+- `codex`: uses `codex exec`, maps `model` to `--model`, maps `thinking_level` to `-c model_reasoning_effort=...`, and treats `model_parameters` as additional `-c key=value` overrides.
+- `claude`: uses `claude --print`, maps `model` to `--model`, `system_prompt` to `--system-prompt`, `thinking_level` to `--effort`, and `model_parameters` to `--settings`.
+- `gemini`: uses `gemini --prompt`, maps `model` to `--model`, and folds unsupported system/model controls into the prompt when Gemini has no dedicated flag.
+- `copilot`: uses `copilot --prompt`, maps `model` to `--model`, maps `thinking_level` to `--reasoning-effort`, and folds unsupported system/model controls into the prompt when Copilot has no dedicated flag.
+- `opencode`: uses `opencode run`, maps `model` to `--model`, maps `thinking_level` to `--variant`, and maps supported keys from `model_parameters` to `opencode run` flags.
+- `pi`: uses `pi --print`, maps `model` to `--model`, `system_prompt` to `--system-prompt`, `thinking_level` to `--thinking`, and maps supported keys from `model_parameters` to `pi` flags.
+
+Record commit policy in the config under `workflow.commit_after_each_step`. When it is `true`, Agent A should commit after the initial implementation step and after every fix round before handing the work back to Agent B.
+
+Record squash policy in the config under `workflow.squash_on_approval`. When it is `true`, intermediate commits from the current cycle are squashed into a single final commit the moment Agent B approves (see "Squash On Approval" below).
+
+When `workflow.squash_only_unpushed` is `true` (default), never rewrite commits that already exist on the branch's upstream tracking ref. Squash only commits created during the current cycle that are not yet on `origin`.
+
+## Run The Workflow
+
+For each programming task, follow this loop:
+
+1. Launch Agent A according to `implementation.runner`, then give it the task, the relevant project context, and the active pair config.
+2. If `workflow.squash_on_approval` is enabled, record `pre_work_commit` **immediately before Agent A makes any changes for this cycle**:
+   ```bash
+   git rev-parse HEAD
+   ```
+   Store the result as `pre_work_commit`. This is the squash base — the parent of the commits this cycle will create.
+
+   **Important:** `pre_work_commit` is the **current branch tip at cycle start**, including any existing ticket commits (even if already pushed). Do **not** set it to an older base (e.g. `main` or the first commit of the ticket) unless the cycle truly started from that point with no intervening pushed commits.
+
+   The squash range is always **`pre_work_commit..HEAD` — commits created during this cycle only**.
+3. Let Agent A implement the change.
+4. If `workflow.commit_after_each_step` is enabled, have Agent A create a git commit for the current step. Immediately after the commit, capture the commit hash with `git rev-parse HEAD` and store it for inclusion in the review packet.
+5. Let Agent A prepare a handoff for review.
+6. Launch Agent B according to `review.runner`.
+7. Before launching Agent B, choose a project-local review result path for the round, such as `.core-cycle/review-round-1.json`. If a file already exists at that path from a prior run, delete it first to prevent reading stale results.
+8. Give Agent B only the review packet and require it to write the structured review report to that file instead of printing the JSON report directly. The external wrapper should return only the file path on stdout.
+9. If the external runner script exits with a non-zero code, do not read the review file. Surface the error to the user and ask whether to retry, skip the review, or abort. For `current-harness` and `current-harness-subagent` runners, explicitly verify that the review file was created before proceeding; if it was not written, treat the round as a failed review and surface the error.
+10. Have the main agent read the JSON from the returned file path immediately.
+11. Delete the review result file after it has been consumed, whether the review is `approved` or `changes_requested`, so the project folder is not left with stale review JSON files.
+12. If Agent B approves, perform the squash step if `workflow.squash_on_approval` is enabled (see "Squash On Approval" below), then stop.
+13. If Agent B reports issues, have Agent A address them and return to step 4.
+14. Stop only when Agent B approves or the configured maximum review rounds is hit.
+
+Prefer subagents when the user wants to stay inside the current harness with different models. Prefer external runners only when the user explicitly wants a different coding harness. Never assume a `/model` switch on a running agent is equivalent to spawning a fresh agent for that role.
+
+For commit-enabled workflows, name steps consistently:
+
+- Initial implementation: `implementation`
+- First fix round: `fix-1`
+- Second fix round: `fix-2`
+- Continue incrementing for later rounds
+
+## Prepare The Review Packet
+
+Before sending work to Agent B, have Agent A prepare a compact packet with:
+
+- Task summary
+- Current step name and review round
+- Files changed
+- Tests and checks run
+- Known assumptions or unresolved tradeoffs
+- The commit hash for the step if a commit was created
+- A concise diff summary or patch reference only when no commit was created for that step
+
+Do not send a full success narrative. Keep the packet optimized for review.
+
+When commit mode is enabled, prefer passing the step commit hash as the primary review anchor. Agent B can inspect that commit directly instead of reconstructing the changed files from a separate summary.
+
+## Review Result File Format
+
+The structured review report must be written to the chosen local file. Agent B should not print the JSON report itself to stdout when the file handoff is in use. The wrapper returns the path, the main agent reads the file, and then removes it after processing.
+
+Require Agent B to respond with a machine-readable block like this:
+
+```json
+{
+  "round": 1,
+  "status": "changes_requested",
+  "summary": "Two correctness issues found.",
+  "issues": [
+    {
+      "id": "R1-1",
+      "severity": "high",
+      "file": "src/example.py",
+      "line": 42,
+      "title": "Return value is dropped",
+      "why_it_matters": "Callers always receive None.",
+      "fix": "Return the parsed value from the helper."
+    }
+  ]
+}
+```
+
+Allowed severities:
+
+- `critical`: release-blocking bug, security flaw, data loss, or broken build/test baseline
+- `high`: likely correctness bug or clear regression
+- `medium`: maintainability, edge-case handling, or incomplete coverage that should be fixed now
+- `low`: minor improvement that does not block approval unless policy says otherwise
+
+If there are no actionable issues, Agent B must return:
+
+```json
+{
+  "round": 2,
+  "status": "approved",
+  "summary": "No blocking issues found.",
+  "issues": []
+}
+```
+
+## Review Rules
+
+Tell Agent B to behave like a strict reviewer:
+
+- Report only real issues, not compliments or general commentary.
+- Include file and line references whenever possible.
+- Explain why each issue matters.
+- Suggest a concrete fix direction.
+- Avoid reopening issues that Agent A already fixed unless the fix is incomplete.
+- Approve when no material issues remain.
+
+## Fix Rules
+
+Tell Agent A to answer every reported issue explicitly:
+
+- Fix all `critical` and `high` issues before resubmitting.
+- Fix `medium` issues unless there is a strong reason not to.
+- Either fix `low` issues or state why they are intentionally deferred.
+- Preserve the structured issue IDs so the review history stays traceable across rounds.
+- If commit mode is enabled, create a commit after each fix step using the configured message template. Substitute `{step}` (e.g. `fix-1`) and `{round}` (the current review round number, starting at 1 for the first fix round, 0 for the initial implementation) in the template before committing.
+
+When Agent A disagrees with a review item, require a direct rebuttal tied to the same issue ID and send that rebuttal back through Agent B in the next round.
+
+After the main agent has read the review file and incorporated the result into the next step, delete the file before continuing.
+
+## Squash On Approval
+
+When `workflow.squash_on_approval` is `true` and Agent B approves, replace intermediate **cycle** commits in `pre_work_commit..HEAD` with a single, well-described final commit — but only when doing so does not rewrite history already on the remote (see step 2 below).
+
+### Procedure
+
+1. **Verify the base commit exists.** The `pre_work_commit` hash must have been recorded before any changes were made (step 2 of the workflow). If it was not recorded, abort the squash and warn the user.
+
+2. **Verify squash is safe for the remote.** When `workflow.squash_only_unpushed` is `true` (default: `true` if the field is absent), ensure no commit that would be rewritten is already on the upstream tracking branch.
+
+   Resolve upstream (skip the remote check if the branch has no upstream):
+   ```bash
+   UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || true)
+   REMOTE_TIP=$(git rev-parse "$UPSTREAM" 2>/dev/null || true)
+   ```
+
+   **Unsafe — skip squash, keep commits on top:** any commit in `pre_work_commit..HEAD` is already contained in the remote branch history:
+   ```bash
+   for commit in $(git rev-list "$pre_work_commit"..HEAD); do
+     if [ -n "$REMOTE_TIP" ] && git merge-base --is-ancestor "$commit" "$REMOTE_TIP"; then
+       echo "skip squash: $commit is already on $UPSTREAM"
+       break
+     fi
+   done
+   ```
+
+   **Rule of thumb:** never `git reset --soft` to a commit *before* a commit that is already on `origin`. That rewrites published history and requires force-push.
+
+   **Safe:** every commit in `pre_work_commit..HEAD` is local-only (not yet on `origin`). Proceed with squash.
+
+   When unsafe, tell the user that fix commits were left on top to avoid force-push.
+
+3. **Confirm there is something to squash.** Let `N = git rev-list --count <pre_work_commit>..HEAD`.
+   - `N = 0`: nothing to squash — skip.
+   - `N = 1` and the commit already matches the final `squash_commit_message_template` format: skip.
+   - `N = 1` and the commit is a `core-cycle:*` step commit: squash (rewrite to the final template).
+   - `N > 1`: squash all cycle commits into one.
+
+4. **Soft-reset to the base commit.**
+   ```bash
+   git reset --soft <pre_work_commit>
+   ```
+   This moves HEAD back to the base but leaves all changes staged, ready to be committed as one.
+
+5. **Synthesize the final commit message.** Do not use the intermediate step labels (`core-cycle: implementation`, `core-cycle: fix-1`, etc.). Instead, compose a message that describes the work as if it were written after the fact:
+
+   - **First line**: fill in the `squash_commit_message_template` from config.
+     - `{task_id}`: the task identifier (e.g. `TASK-1.4`, a Jira ticket, a GitHub issue number — whatever the project uses). Use the backlog task ID when available; fall back to the task title if no ID exists.
+     - `{summary}`: a concise, present-tense description of what was delivered (e.g. `"add LoggerPlugin with console capture and explicit logging"`).
+     - Any other placeholders from the project commit conventions (ticket numbers, scope tags, etc.) must be preserved — do not drop required fields just because they are not in the template.
+   - **Body**: write 3–8 bullet points describing:
+     - What was implemented (the substance of the feature or fix).
+     - Non-obvious design decisions or tradeoffs that were made during the review cycle (e.g. "async Func<bool> delegate chosen over void so the plugin can detect transport failures and requeue").
+     - Any issues raised and resolved during review, summarised at the level of "what changed and why" rather than repeating the reviewer's exact wording.
+   - **Do not** include boilerplate like "approved after N review rounds" or a list of intermediate commit hashes.
+   - **Do** follow all project commit conventions that apply to production commits: scope, ticket prefix, line length limits, sign-off lines, co-author trailers, etc.
+
+6. **Create the squash commit** using the synthesized message.
+
+7. **Verify.** Run `git log --oneline -5` and confirm the squashed commit appears at HEAD with only one new entry above `pre_work_commit`.
+
+### Follow-up cycles on existing branches
+
+When continuing work on a branch that already has a ticket commit (possibly pushed):
+
+| Remote state | On approval |
+|---|---|
+| Ticket commit **not** pushed | Squash cycle commits; optional full-ticket squash into one commit |
+| Ticket commit **already** pushed | Squash **only** new unpushed `core-cycle:*` commits above the remote tip; **never** rewrite the pushed ticket commit |
+| No upstream configured | Squash cycle commits locally; warn before first push if history was rewritten |
+
+### Example
+
+Before squash (intermediate commits, all unpushed):
+```
+3ea2b51 core-cycle: fix-3
+eae9a0e core-cycle: fix-2
+82e7b50 core-cycle: fix-1
+dbc9d14 core-cycle: implementation
+<pre_work_commit> ...previous work...
+```
+
+After squash (single final commit):
+```
+f91c3a0 TASK-1.4: add LoggerPlugin with console capture and explicit logging
+<pre_work_commit> ...previous work...
+```
+
+### Edge Cases
+
+- If `commit_after_each_step` is `false` but `squash_on_approval` is `true`, there are no intermediate commits to squash. In this case, create the final commit normally (all changes are already unstaged) using the squash message template instead of the step template.
+- If the soft reset fails (e.g. due to merge commits or a dirty worktree), abort, restore HEAD to its pre-squash state, and surface the error to the user.
+- If squash would rewrite commits already on `origin`, skip squash and keep new fix commits on top. **Never force-push** unless the user explicitly requests it.
+- If the user explicitly asks to keep the intermediate commits, skip the squash for that run only — do not change the config.
+
+## Stop Conditions
+
+Stop the loop when one of these is true:
+
+- Agent B returns `approved`.
+- The configured maximum review rounds is reached.
+- The user explicitly stops the workflow.
+
+If the maximum rounds are reached without approval, surface the unresolved issues and ask the user whether to continue, change models/tools, or take over manually.
+<!-- AI_SKILLS_CURSOR_MANAGED_END -->

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "project_root": ".",
+  "project_config_path": ".core-cycle/config.json",
+  "implementation": {
+    "runner": "current-harness",
+    "model": "current",
+    "thinking_level": null,
+    "model_parameters": {},
+    "command_template": null
+  },
+  "review": {
+    "runner": "current-harness-subagent",
+    "model": "current",
+    "thinking_level": "high",
+    "model_parameters": {}
+  },
+  "workflow": {
+    "max_review_rounds": 10,
+    "require_structured_review": true,
+    "issue_severities": [
+      "critical",
+      "high",
+      "medium",
+      "low"
+    ],
+    "commit_after_each_step": false,
+    "commit_message_template": "core-cycle: {step}",
+    "squash_on_approval": false,
+    "squash_only_unpushed": true,
+    "squash_commit_message_template": "{task_id}: {summary}"
+  }
+}

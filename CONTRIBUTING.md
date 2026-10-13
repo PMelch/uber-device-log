@@ -17,7 +17,7 @@ Bun and checks a packed installation, both one-off launchers, and a temporary
 global `udl` installation. Keep `package-lock.json` and `bun.lock` synchronized
 when changing dependencies.
 
-Every new or changed website string must include all six translations and context
+Every new or changed website string must include all seven translations and context
 for translators. Follow [the localization workflow](docs/localization.md) and
 [AGENTS.md](AGENTS.md). Preserve original log content and technical values.
 

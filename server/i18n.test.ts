@@ -19,8 +19,8 @@ test('every translated message has location, meaning and descriptions for exactl
     }
   }
 });
-test('all six catalogs contain every key and preserve interpolation parameters', () => {
-  assert.equal(languages.length, 6);
+test('all seven catalogs contain every key and preserve interpolation parameters', () => {
+  assert.equal(languages.length, 7);
   for (const [locale, messages] of Object.entries(catalogs)) {
     assert.deepEqual(Object.keys(messages).sort(), Object.keys(en).sort(), locale);
     for (const key of Object.keys(en) as MessageKey[]) {
@@ -38,7 +38,10 @@ test('saved language wins, regional preferences resolve in order, unsupported la
   assert.equal(resolveLocale(null, ['it-CH']), 'it');
   assert.equal(resolveLocale(null, ['fr-CA']), 'fr');
   assert.equal(resolveLocale(null, ['en-US']), 'en');
-  assert.equal(resolveLocale(null, ['ja-JP']), 'en');
+  assert.equal(resolveLocale(null, ['ja-JP']), 'ja');
+  assert.equal(resolveLocale(null, ['ko-KR']), 'en');
+  assert.equal(resolveLocale('ja', ['en-US']), 'ja');
+  assert.equal(languages.find(language => language.code === 'ja')?.name, '日本語');
   assert.equal(resolveLocale('constructor', []), 'en');
 });
 test('status descriptors can change language after receipt without changing diagnostic details', () => {
@@ -51,6 +54,10 @@ test('status descriptors can change language after receipt without changing diag
   assert.equal(translateMessage('de', { code: 'future-code', message: 'Original diagnostic' }), 'Original diagnostic');
   assert.equal(translateMessage('de', 'Legacy diagnostic'), 'Legacy diagnostic');
   assert.equal(translate('es', 'copyCount', { count: 0 }), 'Copiar (0)');
+  for (const count of [0, 1, 12000]) {
+    assert.equal(translate('ja', 'copyCount', { count }), `コピー（${new Intl.NumberFormat('ja').format(count)} 件）`);
+  }
+  assert.ok(translateMessage('ja', notification('streamError', { platform: 'iOS', detail })).includes(detail));
 });
 test('language changes update existing translations, HTML language and persisted preference; blocked storage is harmless', () => {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');

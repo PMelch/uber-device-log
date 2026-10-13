@@ -1,8 +1,17 @@
-import type { Device } from '../shared/types';
+import type { Device, WebView } from '../shared/types';
 import { readPreference, savePreference } from './preferences';
 
 export const lastDeviceKey = 'uber-device-log.lastDevice';
 export const deviceKey = (device: Device) => `${device.platform}:${device.id}`;
+
+export const webViewKey = (device: Device, view: WebView) => `${deviceKey(device)}:webview:${encodeURIComponent(view.socket)}:${encodeURIComponent(view.id)}`;
+export function selectedLogSource(devices: Device[], key: string): Device | undefined {
+  for (const device of devices) {
+    if (deviceKey(device) === key) return device;
+    const webview = device.webviews?.find(view => webViewKey(device, view) === key);
+    if (webview) return { ...device, webview };
+  }
+}
 
 /** Restore only on initial successful discovery; polling must not start capture later. */
 export function createRememberedDevice(read = readPreference, save = savePreference) {

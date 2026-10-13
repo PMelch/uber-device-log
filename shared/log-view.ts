@@ -9,6 +9,20 @@ export function filterLogLevels<T extends LogMessage>(messages: T[], platform: P
   if (platform !== 'android' || logLevels.every(level => levels.includes(level))) return messages;
   return messages.filter(message => levels.includes(logLevel(message.level) as LogLevel));
 }
+export function isLogPidFilterValid(value: string): boolean {
+  const pid = value.trim();
+  return !pid || (/^[0-9]+$/.test(pid) && Number.isSafeInteger(Number(pid)));
+}
+/** Android fields only: never infer metadata from text or neighboring records. */
+export function filterLogMetadata<T extends LogMessage>(messages: T[], platform: Platform | undefined, tag: string, pid: string): T[] {
+  if (platform !== 'android') return messages;
+  const source = tag.trim();
+  const process = pid.trim();
+  if (!isLogPidFilterValid(process)) return [];
+  if (!source && !process) return messages;
+  return messages.filter(message => (!source || message.tag === source)
+    && (!process || message.pid === Number(process)));
+}
 export function formatLogMessages(messages: readonly LogMessage[]): string {
   return messages.map(entry => {
     const tag = `${entry.tag ?? ''}${entry.pid !== undefined ? `[${entry.pid}]` : ''}`;

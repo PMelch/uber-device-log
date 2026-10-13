@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { websiteCatalogs } from '../src/i18n/website';
+import { websiteCatalogs, websiteLanguages, websiteLocale } from '../src/i18n/website';
 import { websiteTranslationContext } from '../src/i18n/context';
 test('landing page copy is localized with context and remains outside the application bundle', () => {
   const keys = Object.keys(websiteCatalogs.en).sort();
@@ -30,4 +30,10 @@ test('landing page exposes log sources and platform requirements without JavaScr
     assert.match(catalog.siteHeroAccent, /iOS syslog/);
     for (const platform of ['macOS', 'Windows', 'Linux']) assert.ok(catalog.sitePlatforms.includes(platform));
   }
+});
+
+test('landing page offers Japanese and resolves saved and regional Japanese preferences', () => {
+  assert.equal(websiteLocale(null, ['ja-JP']), 'ja');
+  assert.equal(websiteLocale('ja', ['en-US']), 'ja');
+  assert.equal(websiteLanguages.find(language => language.code === 'ja')?.name, '日本語');
 });

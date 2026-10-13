@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { Device, DeviceList, LogMessage } from '../shared/types';
-import { createLogSearch } from '../shared/search';
-import { filterLogLevels, logLevel, logLevels, type LogLevel } from '../shared/log-view';
+import { createLogSearch, type LogSearchMode } from '../shared/search';
+import { filterLogLevels, filterLogMetadata, isLogPidFilterValid, logLevel, logLevels, type LogLevel } from '../shared/log-view';
 import { rangeKeys, selectedEntries } from '../shared/log-selection';
 import { serializeLogExport, type LogExportFormat } from '../shared/log-export';
 import { useI18n, uiMessage, type UiMessage } from './i18n';
 import UserSettings from './components/UserSettings.vue';
-import { createRememberedDevice, deviceKey } from './remembered-device';
+import { createRememberedDevice, deviceKey, webViewKey, selectedLogSource } from './remembered-device';
 import { usePreferences } from './composables/usePreferences';
 import PrecisionMenu from './components/PrecisionMenu.vue';
 import LogMessageText from './components/LogMessageText.vue';
@@ -25,9 +25,16 @@ const pausedMessages = ref<typeof messages.value>();
 const paused = computed(() => pausedMessages.value !== undefined);
 const visibleMessages = computed(() => pausedMessages.value ?? messages.value);
 const filter = ref('');
+const searchMode = ref<LogSearchMode>('fuzzy');
+const tagFilter = ref('');
+const pidFilter = ref('');
+const pidFilterInvalid = computed(() => logDevice.value?.platform === 'android' && !isLogPidFilterValid(pidFilter.value));
 const search = computed(() => createLogSearch(visibleMessages.value));
 const selectedLevels = ref<LogLevel[]>([...logLevels]);
-const filteredMessages = computed(() => filterLogLevels(filter.value.trim() ? search.value(filter.value) : visibleMessages.value, logDevice.value?.platform, selectedLevels.value));
+const filtersActive = computed(() => !!(filter.value || tagFilter.value || pidFilter.value) || selectedLevels.value.length !== logLevels.length);
+const filteredMessages = computed(() => filterLogLevels(filterLogMetadata(
+  filter.value.trim() ? search.value(filter.value, searchMode.value) : visibleMessages.value,
+  logDevice.value?.platform, tagFilter.value, pidFilter.value), logDevice.value?.platform, selectedLevels.value));
 const capturing = ref(false);
 const exportStatus = ref<UiMessage>();
 const exportFormat = ref<LogExportFormat>('text');
@@ -54,7 +61,7 @@ const details = useLogDetails(() => viewport.value?.focus({ preventScroll: true 
 const { record: detailRecord, pinned: detailPinned, position: detailPosition } = details;
 const keyOf = deviceKey;
 const rememberedDevice = createRememberedDevice();
-const currentDevice = computed(() => devices.value.find(d => keyOf(d) === selected.value));
+const currentDevice = computed(() => selectedLogSource(devices.value, selected.value));
 let source: EventSource | undefined;
 let poll: ReturnType<typeof setInterval>;
 let nextKey = 0;
@@ -75,9 +82,10 @@ async function refresh() {
     const restored = rememberedDevice.restoreOnce(result.devices);
     if (!selected.value && restored) selected.value = restored;
     if (selected.value && currentDevice.value?.state !== 'connected') {
+      const wasWebView = !!logDevice.value?.webview;
       stop();
       selected.value = '';
-      status.value = uiMessage('disconnected');
+      status.value = uiMessage(wasWebView ? 'webviewEnded' : 'disconnected');
     }
   } catch (error) {
     if (!disposed) warnings.value = [uiMessage('discoveryFailed', { detail: error instanceof Error ? error.message : String(error) })];
@@ -113,6 +121,10 @@ function start() {
   following.value = true;
   status.value = uiMessage('connecting');
   const query = new URLSearchParams({ platform: device.platform, id: device.id });
+  if (device.webview) {
+    query.set('webviewSocket', device.webview.socket);
+    query.set('webviewId', device.webview.id);
+  }
   const stream = new EventSource(`/api/logs?${query}`);
   source = stream;
   stream.addEventListener('logs', async event => {
@@ -216,10 +228,16 @@ watch(newestPosition, async () => {
   await nextTick();
   scrollToLatest();
 });
-watch([filter, selectedLevels], async () => {
+watch([filter, searchMode, selectedLevels, tagFilter, pidFilter], async () => {
   await nextTick();
   if (following.value) scrollToLatest();
 });
+function resetLogFilters() {
+  filter.value = '';
+  tagFilter.value = '';
+  pidFilter.value = '';
+  selectedLevels.value = [...logLevels];
+}
 function toggleLevel(level: LogLevel) {
   selectedLevels.value = selectedLevels.value.includes(level)
     ? selectedLevels.value.filter(value => value !== level) : [...selectedLevels.value, level];
@@ -342,11 +360,16 @@ onUnmounted(() => {
         <div class="device-sidebar-heading"><h2>{{ t('availableDevices') }}</h2><button class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button></div>
         <p v-if="!devices.length" class="device-sidebar-empty">{{ t('authorizeDevice') }}</p>
         <div class="device-sidebar-list">
-          <button v-for="device in devices" :key="keyOf(device)" type="button" class="device-sidebar-item" :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device)" @click="selected = keyOf(device)">
+          <template v-for="device in devices" :key="keyOf(device)">
+          <button type="button" class="device-sidebar-item" :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device)" @click="selected = keyOf(device)">
             <span class="precision-platform" :class="'precision-' + device.platform" aria-hidden="true"></span>
             <span class="device-sidebar-label"><strong>{{ device.name }}</strong><span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }}</span><span class="precision-sub">{{ deviceState(device.state) }}</span></span>
             <span class="device-sidebar-dot" :data-connected="device.state === 'connected'" aria-hidden="true"></span>
           </button>
+          <button v-for="view in device.webviews" :key="webViewKey(device, view)" type="button" class="device-sidebar-item device-webview-item" :disabled="device.state !== 'connected'" :aria-pressed="selected === webViewKey(device, view)" :aria-label="t('webviewSelect', { title: view.title || view.url || view.id, device: device.name })" @click="selected = webViewKey(device, view)">
+            <span class="device-webview-icon" aria-hidden="true">↳</span><span class="device-sidebar-label"><span class="precision-sub">{{ t('webviewConsole') }}</span><strong>{{ view.title || view.url || view.id }}</strong><span class="precision-sub">{{ view.url }}</span></span>
+          </button>
+          </template>
         </div>
         <button type="button" class="precision-action precision-disconnect" :disabled="!selected" @click="disconnect">{{ t('disconnectDevice') }}</button>
       </aside>
@@ -354,10 +377,13 @@ onUnmounted(() => {
       <div class="precision-controls">
         <div class="precision-field precision-device"><label>{{ t('connectedDevice') }}</label>
           <PrecisionMenu :label="t('chooseDevice')" :disabled="!devices.length">
-            <template #selected><span v-if="currentDevice" class="precision-platform" :class="'precision-' + currentDevice.platform" aria-hidden="true"></span><span class="device-label">{{ currentDevice?.name ?? (devices.length ? t('selectDevice') : t('noDevices')) }}<span class="precision-sub">{{ currentDevice ? `${currentDevice.platform === 'ios' ? 'iOS' : 'Android'} · ${currentDevice.id}` : 'Android & iOS' }}</span></span></template>
+            <template #selected><span v-if="currentDevice" class="precision-platform" :class="'precision-' + currentDevice.platform" aria-hidden="true"></span><span class="device-label">{{ currentDevice?.webview ? t('webviewSelected', { device: currentDevice.name, title: currentDevice.webview.title || currentDevice.webview.url || currentDevice.webview.id }) : currentDevice?.name ?? (devices.length ? t('selectDevice') : t('noDevices')) }}<span class="precision-sub">{{ currentDevice ? `${currentDevice.platform === 'ios' ? 'iOS' : 'Android'} · ${currentDevice.id}` : 'Android & iOS' }}</span></span></template>
             <div class="precision-menuhead">{{ t('availableDevices') }}</div>
             <p v-if="!devices.length" class="precision-menuhead">{{ t('authorizeDevice') }}</p>
-            <button v-for="device in devices" :key="keyOf(device)" :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device)" @click="selected = keyOf(device)"><span class="precision-platform" :class="'precision-' + device.platform" aria-hidden="true"></span><span class="device-label">{{ device.name }}<span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }} · {{ deviceState(device.state) }}</span></span></button>
+            <template v-for="device in devices" :key="keyOf(device)">
+            <button :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device)" @click="selected = keyOf(device)"><span class="precision-platform" :class="'precision-' + device.platform" aria-hidden="true"></span><span class="device-label">{{ device.name }}<span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }} · {{ deviceState(device.state) }}</span></span></button>
+            <button v-for="view in device.webviews" :key="webViewKey(device, view)" class="device-webview-option" :disabled="device.state !== 'connected'" :aria-pressed="selected === webViewKey(device, view)" :aria-label="t('webviewSelect', { title: view.title || view.url || view.id, device: device.name })" @click="selected = webViewKey(device, view)"><span aria-hidden="true">↳</span><span class="device-label">{{ view.title || view.url || view.id }}<span class="precision-sub">{{ t('webviewConsole') }} · {{ view.url }}</span></span></button>
+            </template>
           </PrecisionMenu>
         </div>
         <button type="button" class="precision-action precision-disconnect" :disabled="!selected" @click="disconnect">{{ t('disconnectDevice') }}</button>
@@ -365,8 +391,24 @@ onUnmounted(() => {
       </div>
       <p v-for="(warning, index) in warnings" :key="index" class="warning" role="status">{{ localizeMessage(warning) }}</p>
       <section class="precision-console" :aria-label="t('deviceMessages')">
-        <div class="precision-searchbar" role="search"><span aria-hidden="true">⌕</span><input v-model="filter" type="search" :aria-label="t('filterLogs')" :placeholder="t('searchPlaceholder')" @keydown.esc="filter = ''" /><span class="precision-fuzzy">{{ t('fuzzySearch') }}</span><button v-if="filter" class="precision-searchclear" @click="filter = ''">{{ t('clearFilter') }}</button></div>
-        <div class="precision-consolebar"><div class="precision-caption"><strong>{{ t('logStream') }}</strong><span>·</span><span>{{ t('messageCount', { count: displayedMessages.length }) }}</span><span class="precision-live" :data-active="capturing"><span class="precision-dot"></span>{{ t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing') }}</span></div><div class="precision-actions">
+        <p v-if="logDevice?.webview" class="precision-webview-source">{{ t('webviewSelected', { device: logDevice.name, title: logDevice.webview.title || logDevice.webview.url || logDevice.webview.id }) }}<span class="precision-sub">{{ t('webviewCaptureHint') }}</span></p>
+        <div class="precision-searchbar" role="search">
+          <span aria-hidden="true">⌕</span><input v-model="filter" type="search" :aria-label="t('filterLogs')" :placeholder="t('searchPlaceholder')" @keydown.esc="filter = ''" />
+          <PrecisionMenu :label="t('searchMode')">
+            <template #selected>{{ t(searchMode === 'fuzzy' ? 'approximateSearch' : 'literalSearch') }}</template>
+            <button :aria-pressed="searchMode === 'fuzzy'" @click="searchMode = 'fuzzy'">{{ t('approximateSearch') }}</button>
+            <button :aria-pressed="searchMode === 'literal'" @click="searchMode = 'literal'">{{ t('literalSearch') }}</button>
+          </PrecisionMenu>
+          <button v-if="filter" class="precision-searchclear" @click="filter = ''">{{ t('clearFilter') }}</button>
+        </div>
+        <div class="precision-metadata-filters">
+          <div class="precision-field"><label for="tag-filter">{{ t('tagFilter') }}</label><input id="tag-filter" v-model="tagFilter" type="text" :disabled="logDevice?.platform !== 'android'" aria-describedby="metadata-filter-hint" spellcheck="false" @keydown.esc="tagFilter = ''" /></div>
+          <div class="precision-field"><label for="pid-filter">{{ t('pidFilter') }}</label><input id="pid-filter" v-model="pidFilter" type="text" inputmode="numeric" :disabled="logDevice?.platform !== 'android'" :aria-invalid="pidFilterInvalid" :aria-describedby="pidFilterInvalid ? 'pid-filter-error metadata-filter-hint' : 'metadata-filter-hint'" @keydown.esc="pidFilter = ''" /></div>
+          <button class="precision-action" :disabled="!filtersActive" @click="resetLogFilters">{{ t('resetLogFilters') }}</button>
+          <p id="metadata-filter-hint">{{ t('metadataFilterHint') }}</p>
+          <p v-if="pidFilterInvalid" id="pid-filter-error" class="precision-filter-error" role="status">{{ t('pidFilterInvalid') }}</p>
+        </div>
+        <div class="precision-consolebar"><div class="precision-caption"><strong>{{ t(logDevice?.webview ? 'webviewConsole' : 'logStream') }}</strong><span>·</span><span>{{ t('messageCount', { count: displayedMessages.length }) }}</span><span class="precision-live" :data-active="capturing"><span class="precision-dot"></span>{{ t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing') }}</span></div><div class="precision-actions">
           <button class="precision-action" :disabled="!currentDevice" @click="start">↻ {{ t('reconnect') }}</button>
           <button class="precision-action" :disabled="!messages.length && !visibleMessages.length" @click="clearView">{{ t('clear') }}</button>
           <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" @click="togglePause">{{ paused ? '▷' : 'Ⅱ' }} {{ t(paused ? 'backToLive' : 'pause') }}</button>

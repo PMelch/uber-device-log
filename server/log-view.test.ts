@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { filterLogLevels, formatLogMessages, logExportText, logLevel, parseLogStack } from '../shared/log-view';
 import { createLogSearch } from '../shared/search';
+import * as logView from '../shared/log-view';
 const entries = [
   { timestamp: 't1', level: 'I', tag: 'Unity', pid: 0, message: 'hello' },
   { timestamp: 't2', level: 'E', tag: 'Unity', pid: 12, message: 'failed\n  stack' },
@@ -17,6 +18,34 @@ test('Android levels normalize letters and combine with search without mutating 
 test('iOS bypasses Android selection and all levels retain unknown records', () => {
   assert.deepEqual(filterLogLevels(entries, 'ios', []), entries);
   assert.deepEqual(filterLogLevels(entries, 'android', ['VERBOSE','DEBUG','INFO','WARN','ERROR','FATAL']), entries);
+});
+test('metadata filters match whole case-sensitive tags and numeric PIDs, never message text', () => {
+  const records = [...entries, { timestamp: 't4', tag: 'UnityAds', pid: 123, message: 'Unity PID 12 failed' }];
+  assert.deepEqual(logView.filterLogMetadata(records, 'android', ' Unity ', ''), [entries[0], entries[1]]);
+  assert.deepEqual(logView.filterLogMetadata(records, 'android', 'unity', ''), []);
+  assert.deepEqual(logView.filterLogMetadata(records, 'android', '', '12'), [entries[1]]);
+  assert.deepEqual(logView.filterLogMetadata(records, 'android', '', ' 00012 '), [entries[1]]);
+  assert.deepEqual(logView.filterLogMetadata(records, 'android', 'UnityAds', '12'), []);
+  assert.deepEqual(logView.filterLogMetadata(records, 'android', '', '0'), [entries[0]]);
+  assert.deepEqual(logView.filterLogMetadata(records, 'android', '', ''), records);
+  assert.equal(records[3]?.message, 'Unity PID 12 failed');
+});
+test('invalid PID filters match no Android rows but are ignored for other platforms', () => {
+  for (const pid of ['abc', '-1', '1.2', '1e2', '12 3', '１２', '9007199254740992']) {
+    assert.equal(logView.isLogPidFilterValid(pid), false, pid);
+    assert.deepEqual(logView.filterLogMetadata(entries, 'android', '', pid), [], pid);
+    assert.deepEqual(logView.filterLogMetadata(entries, 'ios', 'Unity', pid), entries, pid);
+    assert.deepEqual(logView.filterLogMetadata(entries, undefined, 'Unity', pid), entries, pid);
+  }
+  for (const pid of ['', ' ', '0', '0012', '9007199254740991']) assert.equal(logView.isLogPidFilterValid(pid), true, pid);
+});
+test('search, metadata and severity combine while preserving export order and multiline messages', () => {
+  const searched = createLogSearch(entries)('FAILED', 'literal');
+  const metadata = logView.filterLogMetadata(searched, 'android', 'Unity', '12');
+  const result = filterLogLevels(metadata, 'android', ['ERROR']);
+  assert.deepEqual(result, [entries[1]]);
+  assert.equal(formatLogMessages(result), 't2 E Unity[12]: failed\n  stack');
+  assert.deepEqual(filterLogLevels(metadata, 'android', ['INFO']), []);
 });
 test('export preserves displayed order, zero PID, multiline text and iOS originals', () => {
   assert.equal(formatLogMessages([entries[1]!, entries[0]!]), 't2 E Unity[12]: failed\n  stack\nt1 I Unity[0]: hello');

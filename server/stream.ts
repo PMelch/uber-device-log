@@ -64,7 +64,7 @@ export function streamLogs(response: ServerResponse, device: Device, open: OpenL
     if (closed) stop();
     else {
       stopCollector = stop;
-      send('status', notification('streamLive'));
+      send('status', notification(device.webview ? 'webviewLive' : 'streamLive'));
     }
   }).catch(error => finish(notification('streamCannotRead', { detail: error instanceof Error ? error.message : String(error) })));
   return close;

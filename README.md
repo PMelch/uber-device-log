@@ -10,7 +10,7 @@ and share the relevant entries as plain text or structured JSON.
 
 [Website](https://pmelch.github.io/uber-device-log/) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
 
-**Android + iOS** · **Runs locally** · **Six languages** · **Apache-2.0**
+**Android + iOS** · **Runs locally** · **Seven languages** · **Apache-2.0**
 
 </div>
 
@@ -127,6 +127,16 @@ Type in **Filter logs** to search message text and metadata. Use Android's sever
 buttons to narrow the view further. Change **Message order** in **Settings** to show newest entries
 first or last. Scrolling away stops automatic following; **Follow latest** resumes it.
 
+Choose **Fuzzy search** for typo-tolerant matching or **Literal search** for a
+case-insensitive, contiguous phrase in a single message or metadata field.
+Literal search treats punctuation as text, without regular expressions.
+For Android, **Exact Android tag** matches the entire tag with case sensitivity;
+**Exact Android PID** matches the numeric process ID. Combine these with search
+and severity filters. Invalid PIDs show a validation message and no results.
+**Reset filters** clears search, tag, PID and severity restrictions while keeping
+the chosen search mode. These controls only filter the view; capture continues,
+and Copy/Save use the displayed filtered entries.
+
 ### Pause, inspect, resume
 
 **Pause** freezes the view while capture continues. **Back to live** is gently
@@ -209,7 +219,7 @@ The legacy relay does not guarantee parity with unified logging. See the
 | --- | --- |
 | [Technical documentation](docs/technical.md) | Development setup, architecture, API, export schema and capture limits |
 | [Contributing](CONTRIBUTING.md) | Local checks, translation requirements and change guidelines |
-| [Localization](docs/localization.md) | Six-language workflow and translation context |
+| [Localization](docs/localization.md) | Seven-language workflow and translation context |
 | [Publishing](docs/publishing.md) | Package verification and release steps |
 | [Design reference](docs/design/README.md) | Visual design and interface conventions |
 | [Crash-format research](docs/crash-format-research.md) | Recognized diagnostic formats and their limits |

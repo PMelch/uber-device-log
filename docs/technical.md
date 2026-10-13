@@ -85,7 +85,7 @@ Discovery refreshes every three seconds and has a manual refresh button. A failu
 ## Languages
 
 The language selector in the header Settings popover offers **English, Español, Deutsch, Français,
-Italiano and 简体中文 (Simplified Chinese)**. On the first visit, the app uses the
+Italiano, 日本語 (Japanese) and 简体中文 (Simplified Chinese)**. On the first visit, the app uses the
 first supported browser language, falling back to English. Regional variants
 such as `de-AT` and `es-MX` use their base language; Chinese browser preferences
 use Simplified Chinese. A manual choice is stored locally for subsequent visits.
@@ -104,7 +104,7 @@ stable `code` and `params` fields plus an English `message` fallback; the browse
 translates the code when displaying it. Older or unknown notifications retain
 their fallback text. The CLI and developer documentation remain in English.
 
-Every new or changed website text must ship in all six languages with translation
+Every new or changed website text must ship in all seven languages with translation
 context describing its UI location, intended meaning and every placeholder.
 This requirement is in [AGENTS.md](../AGENTS.md) and the
 [localization workflow](localization.md). Translator briefs for every key
@@ -120,6 +120,8 @@ UI prose that bypasses the catalogs.
 - Scroll away from the newest end to stop following new messages; use **Follow latest** to resume. Incoming messages preserve your reading position while following is paused, as long as those messages remain in the configured buffer.
 - **Clear view** clears browser messages only; it never clears device logs.
 - **Filter logs** searches message text, timestamps, tags, levels and PIDs with case-insensitive fuzzy matching (Fuse.js). All whitespace-separated terms must match; results retain the selected chronological order. Filtering only affects the view, including while paused. **Clear filter** or Escape restores all retained messages.
+- **Search mode** defaults to fuzzy matching. **Literal search** matches the trimmed query as one case-insensitive contiguous substring within a single original field, with no regular-expression or query-language interpretation. It does not join metadata boundaries to create matches.
+- **Exact Android tag / PID** combine with text search and severity filters. Tags are trimmed whole-field, case-sensitive matches. PID accepts ASCII digits for a nonnegative safe integer (including zero and leading zeros) and matches the structured numeric field only. Invalid PID input yields no Android results and a linked validation message. Metadata filters are disabled and ignored for iOS and before a capture device is known; their values survive device changes. **Reset filters** clears text, tag, PID and severity restrictions, keeping search mode, pause and capture state. These filter settings last for this session only.
 - **Android levels** toggle Verbose, Debug, Info, Warn, Error and Fatal independently and combine with fuzzy search. All restores all levels. Selections survive device changes; iOS disables these filters.
 - **Copy / Save** export whole selected log entries (including metadata and multiline stack traces) in display order. Desktop: click a row, drag for a range, Shift-click to extend, Ctrl/Cmd-click to toggle. Mobile: tap **Select**, then checkboxes; swiping always scrolls. Select a start entry, tap **Range to…**, then the end checkbox for an inclusive range. **Select all filtered** selects the current view. Selected entries are highlighted and counted. Without a selection, Copy is disabled and **Save all displayed logs** exports the filtered view. Choose **Plain text** or **Structured JSON** in the shared Copy/Save format selector. Copy has a manual-copy fallback in either format; Save downloads `.log` or `.json`.
 - **Pause** or starting a selection freezes the displayed snapshot while capture continues in the bounded live buffer. **Back to live** clears selection and resumes following. **Clear selection** / Escape removes marks but keeps the snapshot frozen. Filters and buffer reductions remove hidden/discarded entries from the selection; reconnecting, clearing logs or changing devices clears it. Checkbox selection also works with keyboard Space.
@@ -154,7 +156,7 @@ Local rules provide cautious explanations for observed audio, brightness,
 GetLuxInfo, Wi-Fi DNS, AppleSPU power-state and MobileAsset type-error messages,
 plus existing stack/diagnostic patterns and structured file-read failures. Unknown messages get an explicit fallback;
 these explanations are not root-cause diagnoses. `<private>` stays redacted.
-All interface text and explanations have six translations and translator context.
+All interface text and explanations have seven translations and translator context.
 Only the open record is interpreted; original records, search and full-log exports
 remain unchanged. The overlay JSON is a single-record diagnostic view containing
 `original` and `parsed`, separate from the versioned Copy/Save export format below.
@@ -198,7 +200,7 @@ Vue 3 and Vite provide the frontend; Express runs the TypeScript backend on Node
 | `shared/log-export.ts` | Shared plain-text/JSON serialization and export schema |
 | `shared/log-view.ts` | Severity normalization/filtering and plain-text export |
 | `src/main.ts` | Vue entry point |
-| `src/i18n/` | Six complete language catalogs, locale selection, persistence and formatting |
+| `src/i18n/` | Seven complete language catalogs, locale selection, persistence and formatting |
 | `shared/notifications.ts` | Translatable server notification codes and English fallbacks |
 | `shared/types.ts` | Device, discovery and log-message types |
 | `shared/search.ts` | Fuse.js full-text search, preserving arrival order |

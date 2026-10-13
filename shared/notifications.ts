@@ -1,5 +1,9 @@
 /** Stable codes keep server events translatable without reconnecting a stream. */
 export const notificationMessages = {
+  webviewEnded: "WebView closed or console connection ended. Select an available source to resume.",
+  webviewDiscoveryUnavailable: "WebView discovery unavailable on {device}: {detail}",
+  webviewLive: "Live \u2014 reading WebView console.",
+
   discoveryUnavailable: '{platform} discovery unavailable: {detail}',
   streamError: '{platform} log error: {detail}',
   streamEnded: '{platform} device disconnected or log stream ended. Reconnect to resume.',

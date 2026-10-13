@@ -6,6 +6,7 @@ import { getDefaultSocket } from 'appium-ios-device/build/lib/usbmux/index.js';
 import type { Socket } from 'node:net';
 import type { Device, DeviceList, LogMessage } from '../shared/types.js';
 
+import { discoverWebViews, openWebViewLogs } from './webviews.js';
 import { notification, type Notification } from '../shared/notifications.js';
 
 // Load CJS explicitly: Node 22 cannot infer Adb as an ESM named export,
@@ -43,13 +44,17 @@ async function iosDevices(): Promise<Device[]> {
 let pendingDiscovery: Promise<DeviceList> | undefined;
 export function listDevices(): Promise<DeviceList> {
   // Coalesce simultaneous refreshes from multiple tabs.
-  pendingDiscovery ??= Promise.allSettled([androidDevices(), iosDevices()]).then(results => {
+  pendingDiscovery ??= Promise.allSettled([androidDevices(), iosDevices()]).then(async results => {
     const devices: Device[] = [];
     const warnings: DeviceList['warnings'] = [];
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') devices.push(...result.value);
       else warnings.push(notification('discoveryUnavailable', { platform: index === 0 ? 'Android' : 'iOS', detail: errorText(result.reason) }));
     });
+    await Promise.all(devices.filter(device => device.platform === 'android' && device.state === 'connected').map(async device => {
+      try { device.webviews = await discoverWebViews(adb.getDevice(device.id)); }
+      catch (error) { warnings.push(notification('webviewDiscoveryUnavailable', { device: device.name, detail: errorText(error) })); }
+    }));
     return { devices, warnings };
   }).finally(() => { pendingDiscovery = undefined; });
   return pendingDiscovery;
@@ -64,6 +69,7 @@ export type OpenLogs = (
 
 export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
   if (device.platform === 'android') {
+    if (device.webview) return openWebViewLogs(adb.getDevice(device.id), device.webview, onMessage, onEnd);
     // Own the socket for deterministic cleanup; openLogcat() returns a transformed
     // stream and hard-codes an info-level filter in the current adbkit release.
     const socket = await adb.getDevice(device.id).shell('logcat -B *:V');

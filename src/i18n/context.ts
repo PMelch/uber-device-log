@@ -12,6 +12,14 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  webviewConsole: c("Console heading and WebView child source badge in desktop sidebar and mobile menu.", "JavaScript console of one Android WebView, distinct from the parent device's Logcat stream. Keep WebView as technical name."),
+  webviewSelected: c("Selected source in device menu and console source banner.", "Whole label combining parent device name and selected WebView page title.", {"device": "Original device name; retain verbatim.", "title": "Original page title, URL, or page ID if no title exists; retain verbatim."}),
+  webviewSelect: c("Accessible name of WebView child buttons in sidebar and mobile menu.", "Select this WebView console instead of parent device logs. Device and page names may be long.", {"device": "Original parent device name; retain verbatim.", "title": "Original page title, URL, or page ID if no title exists; retain verbatim."}),
+  webviewCaptureHint: c("Help text below selected WebView source banner.", "Capture console events and uncaught JavaScript errors; objects use protocol descriptions rather than interactive expansion. App must enable debugging."),
+  webviewEnded: c("Stream stopped notification and footer when selected WebView disappears.", "Selected WebView closed or its debug connection ended. No automatic switch to phone logs. Select an available source to resume."),
+  webviewDiscoveryUnavailable: c("Device-discovery warning above the console.", "Failed to enumerate inspectable WebViews on one Android device. Parent device Logcat is still usable.", {"device": "Original device name; retain verbatim.", "detail": "Original technical error message; retain verbatim."}),
+  webviewLive: c("Footer status when the WebView Runtime event subscription is enabled.", "Console capture is active; includes console calls and uncaught JavaScript errors."),
+
   language: c('Language selector label in the Settings popover.', 'The language of the application interface, not of captured logs.'),
   tagline: c('Header beside the product name.', 'The viewer brings Android and iOS logs into one interface. Retain platform names.'),
   connectedDevice: c('Label above the device picker.', 'The device whose logs the user wants to view.'),
@@ -32,6 +40,14 @@ export const translationContext = {
   filterLogs: c('Search field accessible name.', 'Filter the visible device log records.'),
   searchPlaceholder: c('Placeholder in the log search field.', 'Search message content or technical metadata; tag means a log source label, not a social hashtag.'),
   fuzzySearch: c('Small badge beside the search input on desktop.', 'Search tolerates approximate spellings; use a concise label.'),
+  searchMode: c('Accessible name of the menu beside the log search field.', 'Choose approximate matching or literal substring matching. Changing mode only filters the view; capture continues.'),
+  literalSearch: c('Search-mode menu option and selected value.', 'Match the entire trimmed query as a contiguous substring, case-insensitively, in one message or metadata field. No typo tolerance, regular expressions or query syntax.'),
+  approximateSearch: c('Search-mode menu option and selected value.', 'Existing fuzzy search: tolerate approximate spellings and require every whitespace-separated term to match somewhere in the record.'),
+  tagFilter: c('Label for the Android tag filter below search.', 'Match the entire structured Android logcat tag, case-sensitively. Leading/trailing input whitespace is ignored. Empty means any tag; never search the message body for this filter.'),
+  pidFilter: c('Label for the Android PID filter below search.', 'Match an exact numeric process identifier in structured Android metadata, not a number in message text. Empty means any PID. PID remains the technical abbreviation; entered digits remain verbatim.'),
+  metadataFilterHint: c('Help below Android tag and PID fields.', 'Tag and PID filters combine with search and severity. Tags are case-sensitive whole-field matches. These fields are disabled and ignored for iOS because this capture source lacks structured Android metadata.'),
+  pidFilterInvalid: c('Validation text linked to the PID filter.', 'A non-empty PID must contain only ASCII digits and represent a nonnegative safe integer. Invalid input matches no entries; do not silently ignore it.'),
+  resetLogFilters: c('Button beside Android tag and PID fields.', 'Clear search text and both metadata fields and restore every severity level. Keep the chosen search mode, logs, pause and capture state.'),
   clearFilter: c('Button next to a non-empty search field.', 'Remove search text and restore the unsearched view, without clearing logs or severity filters.'),
   logStream: c('Console heading.', 'Continuous flow of diagnostic log records from the selected device.'),
   pausedActive: c('Console capture indicator while paused.', 'The displayed snapshot is frozen, but new logs continue to be collected.'),
@@ -315,7 +331,7 @@ export const websiteTranslationContext = {
   },
   "siteClosingBody": {
     "location": "Public landing page: ClosingBody",
-    "meaning": "Local capture. Six interface languages. Open source. No account, no cloud upload."
+    "meaning": "Local capture. Seven interface languages, including Japanese. Open source. No account, no cloud upload."
   },
   "siteGithub": {
     "location": "Public landing page: Github",
