@@ -25,6 +25,7 @@ export const translationContext = {
   includeSources: c("Combined stream source selection.", "Heading for sources whose capture is included in the merged stream."),
   includeSource: c("Source inclusion checkbox accessible label.", "Include this source in the combined stream.", {"source": "Original device or WebView name; retain verbatim."}),
   sourceColumn: c("Log table source column.", "Identifies the device or WebView that produced each record."),
+  advancedSourceFilters: c("Disclosure heading inside native Android source filters.", "Expand or collapse exact tag and PID filters. Collapsed initially; closing does not clear the filters."),
   sourceFilter: c("Per-source search field accessible label.", "Filter text only within this source.", {"source": "Original device or WebView name; retain verbatim."}),
   sourceLevels: c("Per-source severity group accessible label.", "Choose severity levels for this source only.", {"source": "Original device or WebView name; retain verbatim."}),
   sourceStopped: c("Per-source capture status notification.", "One source stopped; other sources may remain active.", {"source": "Original device or WebView name; retain verbatim.", "detail": "Technical diagnostic describing why capture stopped; retain verbatim."}),

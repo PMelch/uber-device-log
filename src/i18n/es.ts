@@ -14,6 +14,7 @@ export const es = {
   includeSources: "Fuentes de este flujo",
   includeSource: "Incluir {source}",
   sourceColumn: "Fuente",
+  advancedSourceFilters: "Filtros avanzados",
   sourceFilter: "Filtrar {source}",
   sourceLevels: "Niveles de {source}",
   sourceStopped: "Captura detenida para {source}: {detail}",

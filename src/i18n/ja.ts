@@ -14,6 +14,7 @@ export const ja = {
   includeSources: "このストリームのソース",
   includeSource: "{source} を含める",
   sourceColumn: "ソース",
+  advancedSourceFilters: "詳細フィルター",
   sourceFilter: "{source} を絞り込む",
   sourceLevels: "{source} のレベル",
   sourceStopped: "{source} の取得が停止しました: {detail}",

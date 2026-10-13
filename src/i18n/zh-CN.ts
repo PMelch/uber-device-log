@@ -14,6 +14,7 @@ export const zhCN = {
   includeSources: "此流中的来源",
   includeSource: "包含 {source}",
   sourceColumn: "来源",
+  advancedSourceFilters: "高级筛选",
   sourceFilter: "筛选 {source}",
   sourceLevels: "{source} 的级别",
   sourceStopped: "{source} 的捕获已停止：{detail}",

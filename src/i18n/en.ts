@@ -14,6 +14,7 @@ export const en = {
   includeSources: "Sources in this stream",
   includeSource: "Include {source}",
   sourceColumn: "Source",
+  advancedSourceFilters: "Advanced filters",
   sourceFilter: "Filter {source}",
   sourceLevels: "Levels for {source}",
   sourceStopped: "Capture stopped for {source}: {detail}",

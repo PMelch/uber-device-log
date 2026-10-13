@@ -12,6 +12,7 @@ const props = defineProps<{
   t: (key: MessageKey, params?: MessageParams) => string;
   levelLabel: (level: string) => string;
 }>();
+const displayName = computed(() => props.source.webview ? props.source.name : props.source.name.replace(/^model:\s*/, ''));
 const emit = defineEmits<{ 'update:modelValue': [value: SourceFilter] }>();
 const update = (patch: Partial<SourceFilter>) => emit('update:modelValue', { ...props.modelValue, ...patch });
 const invalidPid = computed(() => !isLogPidFilterValid(props.modelValue.pid));
@@ -25,12 +26,12 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 </script>
 
 <template>
-  <section class="source-filters" :aria-label="t('sourceFilter', { source: source.name })">
+  <section class="source-filters" :aria-label="t('sourceFilter', { source: displayName })">
     <div class="source-filter-main">
-      <span class="source-filter-name" :title="source.name"><span class="precision-platform" :class="source.webview ? 'precision-web' : `precision-${source.platform}`" aria-hidden="true"></span>{{ source.name }}</span>
+      <span class="source-filter-name" :title="displayName"><span class="precision-platform" :class="source.webview ? 'precision-web' : `precision-${source.platform}`" aria-hidden="true"></span>{{ displayName }}</span>
       <div class="precision-searchbar source-search">
         <span aria-hidden="true">⌕</span>
-        <input :value="modelValue.text" type="search" :aria-label="t('sourceFilter', { source: source.name })" :placeholder="t('searchPlaceholder')" @input="update({ text: input($event) })" @keydown.esc="update({ text: '' })" />
+        <input :value="modelValue.text" type="search" :aria-label="t('sourceFilter', { source: displayName })" :placeholder="t('searchPlaceholder')" @input="update({ text: input($event) })" @keydown.esc="update({ text: '' })" />
         <PrecisionMenu :label="t('searchMode')">
           <template #selected>{{ t(modelValue.mode === 'fuzzy' ? 'approximateSearch' : 'literalSearch') }}</template>
           <button :aria-pressed="modelValue.mode === 'fuzzy'" @click="update({ mode: 'fuzzy' })">{{ t('approximateSearch') }}</button>
@@ -40,13 +41,16 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
       </div>
       <button class="precision-action" :disabled="!active" @click="update({ text: '', tag: '', pid: '', levels: [...logLevels] })">{{ t('resetLogFilters') }}</button>
     </div>
-    <div v-if="nativeAndroid" class="precision-metadata-filters source-metadata">
+    <details v-if="nativeAndroid" class="source-advanced">
+      <summary>{{ t('advancedSourceFilters') }}</summary>
+      <div class="precision-metadata-filters source-metadata">
       <div class="precision-field"><label :for="`${id}-tag`">{{ t('tagFilter') }}</label><input :id="`${id}-tag`" :value="modelValue.tag" :aria-describedby="`${id}-hint`" type="text" spellcheck="false" @input="update({ tag: input($event) })" @keydown.esc="update({ tag: '' })" /></div>
       <div class="precision-field"><label :for="`${id}-pid`">{{ t('pidFilter') }}</label><input :id="`${id}-pid`" :value="modelValue.pid" :aria-invalid="invalidPid" :aria-describedby="invalidPid ? `${id}-error ${id}-hint` : `${id}-hint`" type="text" inputmode="numeric" @input="update({ pid: input($event) })" @keydown.esc="update({ pid: '' })" /></div>
       <p :id="`${id}-hint`">{{ t('metadataFilterHint') }}</p>
       <p v-if="invalidPid" :id="`${id}-error`" class="precision-filter-error" role="status">{{ t('pidFilterInvalid') }}</p>
     </div>
-    <div class="precision-severitybar source-levels" role="group" :aria-label="t('sourceLevels', { source: source.name })" :aria-describedby="source.platform === 'ios' ? `${id}-ios` : undefined">
+    </details>
+    <div class="precision-severitybar source-levels" role="group" :aria-label="t('sourceLevels', { source: displayName })" :aria-describedby="source.platform === 'ios' ? `${id}-ios` : undefined">
       <span class="precision-severitylabel">{{ t('levels') }}</span>
       <button class="precision-severity" :disabled="source.platform === 'ios'" :aria-pressed="source.platform !== 'ios' && modelValue.levels.length === logLevels.length" @click="update({ levels: [...logLevels] })">{{ t('all') }}</button>
       <button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="source.platform === 'ios'" :aria-pressed="source.platform !== 'ios' && modelValue.levels.includes(level)" @click="toggle(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button>
@@ -56,12 +60,103 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 </template>
 
 <style scoped>
-.source-filters { margin: 8px; padding: 12px; border: 1px solid color-mix(in srgb, var(--pl-accent) 20%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--pl-accent) 10%, transparent); min-width: 0; }
-.source-filter-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.source-filter-name { display: flex; align-items: center; gap: 8px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
-.source-filter-name .precision-platform { flex: 0 0 18px; pointer-events: none; user-select: none; }
-#precision-design .source-search { flex: 1 1 300px; min-width: 0; border: 1px solid var(--pl-line); border-radius: 8px; padding: 6px 10px; }
-.source-metadata { margin-top: 8px; }
-.source-levels { flex-wrap: wrap; margin-top: 8px; }
-@media (max-width: 620px) { .source-filter-name { width: 100%; max-width: 100%; } .source-search { flex-basis: 100%; } }
+#precision-design .source-filters {
+  margin: 6px 8px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--pl-accent) 20%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pl-accent) 10%, transparent);
+  min-width: 0;
+}
+
+.source-filter-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.source-filter-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.source-filter-name .precision-platform {
+  flex: 0 0 18px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#precision-design .source-search {
+  padding: 3px 8px;
+  gap: 8px;
+  flex: 1 1 300px;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--pl-text) 35%, var(--pl-panel));
+  background: var(--pl-panel);
+  border-radius: 8px;
+}
+
+#precision-design .source-search :deep(.precision-menu-trigger),
+#precision-design .source-search :deep(summary) { min-height: 28px; padding: 3px 8px; font-size: 12px; }
+
+#precision-design .source-metadata input {
+  background: var(--pl-panel);
+  border-color: color-mix(in srgb, var(--pl-text) 35%, var(--pl-panel));
+}
+
+#precision-design .source-metadata input[aria-invalid=true] {
+  border-color: var(--pl-error);
+}
+
+.source-advanced {
+  margin-top: 4px;
+}
+
+#precision-design .source-advanced > summary {
+  display: flex;
+  min-height: 28px;
+  padding: 3px 6px;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  white-space: normal;
+}
+
+.source-advanced > summary::before {
+  content: '▸';
+  display: inline-block;
+}
+
+.source-advanced[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.source-metadata {
+  margin-top: 4px;
+}
+
+#precision-design .source-levels {
+  padding: 4px 0 0;
+  border-bottom: 0;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+@media (max-width: 620px) {
+  .source-filter-name {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .source-search {
+    flex-basis: 100%;
+  }
+}
 </style>

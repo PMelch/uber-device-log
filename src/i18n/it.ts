@@ -14,6 +14,7 @@ export const it = {
   includeSources: "Sorgenti di questo flusso",
   includeSource: "Includi {source}",
   sourceColumn: "Sorgente",
+  advancedSourceFilters: "Filtri avanzati",
   sourceFilter: "Filtra {source}",
   sourceLevels: "Livelli per {source}",
   sourceStopped: "Acquisizione interrotta per {source}: {detail}",
