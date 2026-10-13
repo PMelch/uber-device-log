@@ -623,7 +623,7 @@ onUnmounted(() => {
         </div>
         <p class="performance-hint">{{ t('performanceHint') }}</p>
       </section>
-      <footer class="precision-footer"><span>{{ t('localPrivacy') }}</span><span role="status">{{ localizeMessage(exportStatus || status) }}</span></footer>
+      <footer class="precision-footer"><span role="status">{{ localizeMessage(exportStatus || status) }}</span></footer>
       <p class="setup-hint">{{ t('setupHint') }}</p>
     </main>
     </div>

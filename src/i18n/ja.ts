@@ -117,7 +117,6 @@ export const ja = {
   frozenActive: '表示は一時停止中 · 取得は継続中',
   frozenStopped: '表示は一時停止中 · 取得は停止済み',
   followingNewest: '最新のメッセージを追従中',
-  localPrivacy: 'このコンピュータで動作し、ログは外部に送信されません。',
   setupHint: 'Android：USB デバッグを有効にし、このコンピュータを許可してください。iOS：ロックを解除し、このコンピュータを信頼してください。iOS のタイムスタンプは受信時刻です。',
   initialStatus: 'デバイスを選択するとログの読み取りが始まります。',
   disconnected: '選択したデバイスが切断されました。接続し直して、再度選択してください。',
