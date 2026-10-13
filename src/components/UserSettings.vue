@@ -3,8 +3,8 @@ import { ref } from 'vue';
 import { useDisclosureDismissal } from '../composables/useDisclosureDismissal';
 import { languages, translate, type Locale } from '../i18n';
 import { bufferSizes, resolveBufferSize, resolveMessageOrder, resolveTheme, type Theme, type MessageOrder } from '../preferences';
-const props = defineProps<{ locale: Locale; theme: Theme; order: MessageOrder; bufferSize: number }>();
-const emit = defineEmits<{ order: [value: MessageOrder]; locale: [value: Locale]; theme: [value: Theme]; bufferSize: [value: number] }>();
+const props = defineProps<{ locale: Locale; theme: Theme; order: MessageOrder; bufferSize: number; performance: boolean }>();
+const emit = defineEmits<{ order: [value: MessageOrder]; locale: [value: Locale]; theme: [value: Theme]; bufferSize: [value: number]; performance: [value: boolean] }>();
 const root = ref<HTMLDetailsElement>();
 const trigger = ref<HTMLElement>();
 const t = (key: Parameters<typeof translate>[1]) => translate(props.locale, key);
@@ -35,6 +35,7 @@ function languageChanged(event: Event) {
       <select id="settings-order" :value="order" @change="emit('order', resolveMessageOrder(($event.target as HTMLSelectElement).value))"><option value="top">{{ t('newestFirst') }}</option><option value="bottom">{{ t('oldestFirst') }}</option></select>
       <label for="settings-buffer">{{ t('bufferCapacity') }}</label>
       <select id="settings-buffer" :value="bufferSize" @change="emit('bufferSize', resolveBufferSize(($event.target as HTMLSelectElement).value))"><option v-for="size in bufferSizes" :key="size" :value="size">{{ translate(locale, 'messageCount', { count: size }) }}</option></select>
+      <label class="settings-performance-toggle" for="settings-performance"><input id="settings-performance" type="checkbox" :checked="performance" @change="emit('performance', ($event.target as HTMLInputElement).checked)" />{{ t('performanceToggle') }}</label>
       <p>{{ t('settingsStorage') }}</p>
     </section>
   </details>

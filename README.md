@@ -137,6 +137,18 @@ and severity filters. Invalid PIDs show a validation message and no results.
 the chosen search mode. These controls only filter the view; capture continues,
 and Copy/Save use the displayed filtered entries.
 
+### Combine device and WebView logs
+
+Select a device or WebView, then enable the desired sources above the stream.
+Each source has independent search and severity controls; native Android logs
+also have exact tag and PID filters. Entries merge by timestamp and show the
+platform or WebView icon beside their source. A stopped WebView does not stop
+the other sources. Re-enabling a source replaces its previous buffer with the
+new capture, since collectors can replay their history.
+
+Exports retain source identity: plain text prefixes each entry with its source
+name, and structured JSON uses schema version 2 with source metadata per entry.
+
 ### Pause, inspect, resume
 
 **Pause** freezes the view while capture continues. **Back to live** is gently
@@ -151,8 +163,11 @@ Explanations describe patterns in the message; they are not definitive diagnoses
 
 ### Copy or save
 
-1. Select entries: click, drag a range, **Shift-click** to extend, or **Ctrl/Cmd-click**
-   to toggle. On mobile, tap **Select** and use the checkboxes.
+Drag directly over message text for native text selection. This freezes the
+view while capture continues, including on touch devices.
+
+1. Select whole entries using **Select**, checkboxes, **Shift-click** to extend,
+   or **Ctrl/Cmd-click** to toggle. Drag outside message text to select a range.
 2. Choose **Plain text** or **Structured JSON**.
 3. Click **Copy** or **Save**.
 

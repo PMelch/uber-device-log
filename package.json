@@ -17,6 +17,7 @@
   "dependencies": {
     "@devicefarmer/adbkit": "^3.3.9",
     "@devicefarmer/adbkit-logcat": "2.1.3",
+    "@tanstack/vue-virtual": "^3.13.44",
     "appium-ios-device": "^3.1.24",
     "express": "^5.2.1"
   },
@@ -24,12 +25,12 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.3",
     "@vitejs/plugin-vue": "^6.0.9",
+    "fuse.js": "^7.5.0",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "vite": "^8.3.1",
-    "vue-tsc": "^3.3.11",
     "vue": "^3.5.43",
-    "fuse.js": "^7.5.0"
+    "vue-tsc": "^3.3.11"
   },
   "description": "Local Android and iOS device log viewer with search, severity filters and export.",
   "license": "Apache-2.0",

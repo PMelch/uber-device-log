@@ -26,9 +26,24 @@ export interface DeviceList {
 }
 
 export interface LogMessage {
+  source?: LogSourceMetadata;
   timestamp: string;
   message: string;
   level?: string;
   tag?: string;
   pid?: number;
+}
+
+/** A selectable capture stream on a physical device. */
+export interface LogSource {
+  key: string;
+  device: Device;
+}
+
+export interface LogSourceMetadata {
+  key: string;
+  name: string;
+  platform: Platform;
+  deviceId: string;
+  webview?: WebView;
 }

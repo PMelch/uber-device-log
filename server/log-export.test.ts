@@ -37,3 +37,18 @@ test('plain text retains existing formatting for both platforms and correct down
   assert.deepEqual(android, { text: 'time E App[42]: error\n  frame', mimeType: 'text/plain;charset=utf-8', extension: 'log' });
   assert.equal(serializeLogExport([{ timestamp: 'receipt', message: 'original syslog' }], { ...device, platform: 'ios' }, 'text').text, 'receipt original syslog');
 });
+
+test('interleaved JSON preserves source metadata and selection order, excluding UI selection keys', () => {
+  const phone = { key: 'phone', name: device.name, platform: device.platform, deviceId: device.id };
+  const web = { ...phone, key: 'web', name: 'Slot', webview: { id: 'target', socket: 'socket', title: 'Slot', url: 'https://example.org' } };
+  const rows = [
+    { key: 8, timestamp: 'time2', message: 'web\n  original', source: web },
+    { key: 5, timestamp: 'time1', message: 'native', source: phone },
+  ];
+  const parsed = JSON.parse(serializeLogExport(selectedEntries(rows, new Set([5, 8])), device, 'json').text);
+  assert.equal(parsed.schemaVersion, 2);
+  assert.deepEqual(parsed.sources, [web, phone]);
+  assert.deepEqual(parsed.entries, rows.map(({ key, ...entry }) => entry));
+  assert.equal(serializeLogExport(rows, device, 'text').text, '[Slot] time2 web\n  original\n[Test phone] time1 native');
+  assert.equal(JSON.parse(serializeLogExport(rows.slice(0, 1), device, 'json').text).schemaVersion, 2);
+});
