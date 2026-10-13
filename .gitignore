@@ -1,6 +1,9 @@
 # Jetbrains project files
 .idea
 
+# Local Codex configuration
+/.codex/config.toml
+
 # Logs
 logs
 *.log
