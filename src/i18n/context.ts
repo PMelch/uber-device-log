@@ -204,8 +204,15 @@ export const translationContext = {
 
 /** Public website copy is separate from the application catalogs and npm bundle. */
 export const websiteTranslationContext = {
-  "siteMetaTitle": {"location": "Public landing page: document title and social preview title", "meaning": "Android Logcat & iOS syslog viewer | Über Device Log Preserve product names, platform names and the qualification about validation where present."},
-  "siteMetaDescription": {"location": "Public landing page: search and social preview description", "meaning": "Android Logcat and iOS syslog viewer with setup guidance for macOS, Windows and Linux. Search, filter and export device logs with Über Device Log. Preserve product names, platform names and the qualification about validation where present."},
+  "siteWebviewDocs": {"location": "Public landing page: WebView showcase", "meaning": "Link to README WebView setup section. Invites reading capture requirements. No placeholders."},
+  "siteWebviewAlt": {"location": "Public landing page: WebView showcase", "meaning": "Accessible description of the existing iPhone WebView console screenshot showing JavaScript messages, warnings and an exception. No placeholders."},
+  "siteWebviewSetup": {"location": "Public landing page: WebView showcase", "meaning": "WebView prerequisites: Android app must enable WebView debugging; iOS needs Safari Web Inspector and an inspectable WKWebView. No additional proxy, extension or Appium server. Preserve technical names. No placeholders."},
+  "siteWebviewFilters": {"location": "Public landing page: WebView showcase", "meaning": "WebView section benefit: independent search and severity per source, except no severity filter for native iOS syslog. Export preserves source identity. No placeholders."},
+  "siteWebviewBody": {"location": "Public landing page: WebView showcase", "meaning": "WebView section: capture console calls and uncaught JavaScript exceptions on Android/iOS, merge native logs and multiple inspectable WebViews from the SAME device by timestamp. No placeholders."},
+  "siteWebviewTitle": {"location": "Public landing page: WebView showcase", "meaning": "Prominent WebView feature heading: native logs and JavaScript console output in a shared workspace. Does not imply exact causal order. No placeholders."},
+  "siteCombined": {"location": "Public landing page: hero and WebView showcase", "meaning": "Hero badge: combined Device Log Viewer and integrated WebView logger as the core product benefit. WebView is a technical name. No placeholders."},
+  "siteMetaTitle": {"location": "Public landing page: document title and social preview title", "meaning": "Search/social title lists Android Logcat, iOS syslog and WebView console capture. Preserve \u00dcber Device Log and technical source names. No placeholders."},
+  "siteMetaDescription": {"location": "Public landing page: search and social preview description", "meaning": "Search/social description highlights combined device and WebView console capture, search, filters and export. No exclusivity claim. No placeholders."},
   "sitePlatforms": {"location": "Public landing page: platform requirements heading", "meaning": "Android Logcat and iOS syslog on macOS, Windows and Linux Preserve product names, platform names and the qualification about validation where present."},
   "sitePlatformBody": {"location": "Public landing page: platform requirements paragraph", "meaning": "Android Logcat uses ADB from Android SDK Platform Tools on macOS, Windows and Linux. For iPhone and iPad syslog, macOS uses Apple’s device service; Linux needs usbmuxd, and Windows needs compatible Apple mobile-device support. macOS is the primary validation environment; Windows and Linux still need validation. Preserve product names, platform names and the qualification about validation where present."},
   "siteSkip": {
@@ -230,7 +237,7 @@ export const websiteTranslationContext = {
   },
   "siteLead": {
     "location": "Public landing page: Lead",
-    "meaning": "Android Logcat and iOS syslog, in one browser workspace. Search, inspect and export device logs. See setup requirements for macOS, Windows and Linux below."
+    "meaning": "Introduce native Android Logcat, iOS syslog and inspectable WebView console capture in one browser workspace. Sources are from one selected device, not multiple devices. No placeholders."
   },
   "siteStart": {
     "location": "Public landing page: Start",
@@ -254,11 +261,11 @@ export const websiteTranslationContext = {
   },
   "siteScreenshot": {
     "location": "Public landing page: Screenshot",
-    "meaning": "Log viewer with search, severity filters and formatted exceptions"
+    "meaning": "Accessible image description of Android Logcat and WebView console entries with separate source filters. No placeholders."
   },
   "siteCaption": {
     "location": "Public landing page: Caption",
-    "meaning": "A familiar interface. A much calmer debugging session."
+    "meaning": "Caption for the combined native Android and WebView screenshot: device and JavaScript context in one view. No placeholders."
   },
   "siteFeatureTitle": {
     "location": "Public landing page: FeatureTitle",
@@ -270,7 +277,7 @@ export const websiteTranslationContext = {
   },
   "siteFindBody": {
     "location": "Public landing page: FindBody",
-    "meaning": "Find messages across text, tags, timestamps and PIDs. Combine fuzzy search with Android severity filters to narrow the view."
+    "meaning": "Feature card: fuzzy and literal search per source; severity filters apply to Android and WebView, never native iOS syslog. No placeholders."
   },
   "sitePause": {
     "location": "Public landing page: Pause",
