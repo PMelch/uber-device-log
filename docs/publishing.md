@@ -43,7 +43,7 @@ or committed configuration. No registry credentials are needed at runtime.
 
 ## Publish
 
-For the initial release (currently 0.1.0):
+After choosing and verifying the version in `package.json`:
 
 ```sh
 npm publish --access public
@@ -70,11 +70,13 @@ After publishing, verify the registry version and both remote launchers:
 
 ```sh
 npm view uber-device-log version
-npx --yes uber-device-log@0.1.0 --help
-bunx uber-device-log@0.1.0 --help
+# Set this to the version just published (example matches this checkout).
+RELEASE_VERSION=0.7.0
+npx --yes "uber-device-log@$RELEASE_VERSION" --help
+bunx "uber-device-log@$RELEASE_VERSION" --help
 ```
 
-Substitute the released version on subsequent releases. The local tarball smoke
+Set `RELEASE_VERSION` to the version just published before running these POSIX-shell commands. The local tarball smoke
 test proves package execution, not registry publication or account permissions.
 
 ### Minimum Node version regression check

@@ -20,6 +20,11 @@ export interface InterleavedLogExport {
   entries: LogMessage[];
 }
 
+/**
+ * Serialize in caller-supplied display order, excluding private UI selection keys.
+ * Any source-aware entry selects JSON v2; no source metadata selects legacy v1.
+ * Source names prefix text output; message strings are never interpreted/translated.
+ */
 export function serializeLogExport(messages: readonly LogMessage[], device: Device, format: LogExportFormat) {
   if (format === 'text') {
     return { text: messages.map(entry => `${entry.source ? `[${entry.source.name}] ` : ''}${formatLogMessages([entry])}`).join('\n'), mimeType: 'text/plain;charset=utf-8', extension: 'log' };

@@ -19,7 +19,9 @@ python3 -m http.server 4314 --directory site-dist
 The GitHub Pages workflow builds and uploads **only `site-dist/`**. Configure
 Settings → Pages → Source as GitHub Actions. Pushes affecting the website on
 `main` deploy automatically; `workflow_dispatch` also allows a manual deployment.
-The expected project URL is https://pmelch.github.io/uber-device-log/.
+The source HTML uses `https://uber-device-log.app/` as its canonical and social
+sharing origin. DNS and GitHub Pages custom-domain settings are managed outside
+this build; verify those settings when changing hosting.
 
 The page is a product showcase, not the device-capture application. Installation
 commands launch the application locally. The website has no analytics, API calls,
@@ -37,8 +39,8 @@ language switcher updates the document title, search description and social titl
 and description using the website catalog. All languages currently share one URL;
 there are no separate localized URLs to advertise with `hreflang`.
 
-The canonical URL and Open Graph/Twitter image URLs use the GitHub Pages project
-URL. Update them if the site moves to a custom domain. Build and run the website
+The canonical URL and Open Graph/Twitter image URLs use `https://uber-device-log.app/`.
+Update them together if the public origin changes. Build and run the website
 tests before deploying changes.
 
 ## npm boundary

@@ -282,6 +282,10 @@ sources continue capturing when one WebView stops.
 | Guide | What's inside |
 | --- | --- |
 | [Technical documentation](docs/technical.md) | Development setup, architecture, API, export schema and capture limits |
+| [Architecture and code map](docs/architecture.md) | Data flow, module ownership, resource cleanup and state invariants |
+| [API and exports](docs/api.md) | HTTP/SSE contracts, source metadata, JSON versions and limits |
+| [Testing](docs/testing.md) | Coverage map, focused tests, browser fixtures and hardware checks |
+| [Public website](docs/website.md) | Separate static build and deployment |
 | [Contributing](CONTRIBUTING.md) | Local checks, translation requirements and change guidelines |
 | [Localization](docs/localization.md) | Seven-language workflow and translation context |
 | [Publishing](docs/publishing.md) | Package verification and release steps |

@@ -3,7 +3,12 @@ import type { UiMessage } from './i18n';
 export interface LogStream { addEventListener(type: string, callback: (event: { data: string }) => void): void; onerror: (() => void) | null; close(): void }
 export interface StreamSource { key: string; device: Device }
 
-/** A failed source stays stopped until explicitly removed/readded or reconnected. */
+/**
+ * Reconcile one EventSource per enabled source without restarting unaffected ones.
+ * Failed records remain registered but closed until removed/readded or reconnecting;
+ * explicitly closing EventSource suppresses its native automatic retry. Identity
+ * guards prevent stale callbacks from an old connection reaching current state.
+ */
 export function createLogStreams(callbacks: {
   logs: (source: StreamSource, messages: LogMessage[]) => void;
   status: (source: StreamSource, message: UiMessage, live: boolean) => void;
@@ -54,7 +59,11 @@ export function createLogStreams(callbacks: {
   };
 }
 
-/** Coalesce transport deliveries. Flush before snapshots/stop; clear before resetting the viewer. */
+/**
+ * Coalesce deliveries for 50 ms; optionally compact when pending exceeds 2× capacity.
+ * Capture the displayed snapshot before flushing arrivals into the live buffer.
+ * Flush before stop/source toggles; clear when discarding the view or unmounting.
+ */
 export function createLogBatcher<T>(commit: (rows: T[]) => void,
   limit?: { capacity: () => number; compact: (rows: T[], capacity: number) => T[] }) {
   let pending: T[] = [];

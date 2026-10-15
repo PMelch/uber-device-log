@@ -63,7 +63,13 @@ export function listDevices(): Promise<DeviceList> {
   return pendingDiscovery;
 }
 
+/** Release the collector's owned sockets/decoders. Stream orchestration calls this once. */
 export type Stop = () => void;
+/**
+ * Open one native or WebView source. Resolve only when initialized, returning cleanup.
+ * onEnd reports terminal failure/end; callers must tolerate it during initialization.
+ * The promise can resolve after the consumer closes, so cleanup must remain usable.
+ */
 export type OpenLogs = (
   device: Device,
   onMessage: (message: LogMessage) => void,

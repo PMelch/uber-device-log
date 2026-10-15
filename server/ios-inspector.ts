@@ -3,8 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { services } from 'appium-ios-device';
 import type { Inspector } from './ios-webviews.js';
 
-// webinspectord can stop responding when independent USB clients compete.
-// Discovery and all page collectors therefore share one physical connection.
+/**
+ * Lease one physical WebInspector connection per device to discovery/page consumers.
+ * Each facade owns its listeners and sender identity; destroying its socket releases
+ * only that lease. The shared transport closes after the last lease and idle delay.
+ * Hung opens are evicted and late results destroyed so a later acquisition can retry.
+ */
 export function createInspectorPool(open: (id: string) => Promise<Inspector>, idleMs = 0, connectTimeoutMs = 5000) {
   const sessions = new Map<string, Promise<Session>>();
   interface Lease { socket: EventEmitter; decoder: EventEmitter; callback?: (message: any) => void; sender?: string; app?: string; page?: number }

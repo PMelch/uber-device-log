@@ -35,7 +35,11 @@ export function filterSourceMessages<T extends LogMessage>(messages: T[], filter
   return messages.filter(message => !message.source || !filters[message.source.key] || matched.has(message));
 }
 
-/** Cache per-source matches; only newly arrived records are searched while filters stay unchanged. */
+/**
+ * Cache matches by immutable record identity and source filter signature.
+ * Reuse this function's result across batches; replacing filters invalidates only
+ * changed signatures. Records without a matching filter pass through unchanged.
+ */
 export function createSourceFilterer() {
   const caches = new Map<string, { signature: string; matches: WeakMap<LogMessage, boolean> }>();
   return <T extends LogMessage>(messages: T[], filters: Record<string, SourceFilter>): T[] => {
@@ -84,7 +88,12 @@ function compareMessages<T extends LogMessage & { key: number }>(left: T, right:
   return (a === b ? 0 : a < b ? -1 : 1) || left.key - right.key;
 }
 
-/** Existing records are sorted. Sort just the batch and merge backwards, retaining only capacity records. */
+/**
+ * Merge immutable records into ascending timestamp/key order, retaining capacity.
+ * Existing records must already be sorted; incoming records may arrive out of order.
+ * Invalid timestamps precede valid ones and unique UI keys break ties. The newest
+ * timestamps survive retention, which need not be the most recently received logs.
+ */
 export function mergeSourceMessages<T extends LogMessage & { key: number }>(existing: T[], incoming: T[], capacity: number): T[] {
   if (capacity <= 0) return [];
   if (!incoming.length) return existing.length <= capacity ? existing : existing.slice(-capacity);

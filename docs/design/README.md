@@ -10,17 +10,17 @@ Open [precision.html](precision.html) in a browser to explore the approved desig
 - Quiet typography, generous spacing around controls, and a compact monospace log list.
 - Distinct colored severity badges: purple verbose, blue debug, green info, amber warning, red error and pink fatal.
 - Custom device, message-order and buffer menus; platform icons distinguish Android and iOS.
-- A single workspace without a sidebar. Search and log actions sit directly above the stream.
+- The original reference uses a single workspace without a sidebar. The current app adds a device/WebView sidebar on wide screens and a compact device menu on narrow screens, with per-source filters above the combined stream.
 
 ## Behavior to preserve during implementation
 
 - Newest messages default to the top, with a bottom option and follow-latest behavior.
 - Buffer choices: 1,000, 2,000 (default), 10,000, 50,000 and 100,000.
-- Full-text fuzzy search combines with selectable Android severity filters. Android selections are retained when switching devices; severity filters are disabled for the current iOS text-only collector.
+- Full-text fuzzy search combines with selectable Android severity filters. Filters are independent per source; severity filters are disabled for native iOS syslog and available for WebView consoles on either platform.
 - Pause freezes the visible snapshot while capture continues. Resume shows the retained messages.
 - **Copy / Save** export whole selected log entries (including metadata and multiline stack traces) in display order. Desktop: click a row, drag for a range, Shift-click to extend, Ctrl/Cmd-click to toggle. Mobile: tap **Select**, then checkboxes; swiping always scrolls. Select a start entry, tap **Range to…**, then the end checkbox for an inclusive range. **Select all filtered** selects the current view. Selected entries are highlighted and counted. Without a selection, Copy is disabled and **Save all displayed logs** exports the filtered view. Choose **Plain text** or **Structured JSON** in the shared Copy/Save format selector. Copy has a manual-copy fallback in either format; Save downloads `.log` or `.json`.
 - Message details: hover or focus an info button for a preview; click/tap toggles that entry’s card. Page/list scrolling and row selection dismiss the card, including pinned cards. Show parsed fields with cautious interpretation, Original and JSON views. Escape closes without clearing selection; use a bottom card on mobile. Never infer missing iOS metadata from adjacent records.
-- Header language menu: English, Spanish, German, French, Italian, Japanese and Simplified Chinese, shown with native language names. Browser-language default and locally persisted manual choice. UI text and accessibility labels switch immediately; original logs and exports retain their source content.
+- Header Settings language selector: English, Spanish, German, French, Italian, Japanese and Simplified Chinese, shown with native language names. Browser-language default and locally persisted manual choice. UI text and accessibility labels switch immediately; original logs and exports retain their source content.
 - Keep keyboard access, clear focus states, responsive controls and readable light/dark contrast. Localized controls must wrap on narrow screens.
 
 ## Reference scope

@@ -2,11 +2,15 @@
 
 For installation and everyday usage, see the [project README](../README.md).
 
+For module ownership and data flow, see [Architecture](architecture.md). For exact
+HTTP/SSE and JSON contracts, see [API and exports](api.md). Verification commands
+and their coverage are in [Testing](testing.md).
+
 The approved **Über Device Log** visual direction is [Precision](design/README.md). The interactive design reference is stored there separately from the current prototype UI.
 
 The Vue interface implements **Precision**, including responsive light/dark styling, keyboard-accessible custom selectors, locally bundled platform icons, Android severity filters and Copy/Save actions.
 
-Minimal Vue 3 + TypeScript frontend with a Node.js/TypeScript backend. One selector lists Android and iOS devices; selecting a device opens a scrollable live message list. No Appium server, Python runtime, or `idevicesyslog` installation is needed for this implementation.
+Vue 3 + TypeScript frontend with a Node.js/TypeScript backend. Select an Android or iOS device, then combine native logs and inspectable WebView consoles from that device in one virtualized list. No Appium server, Python runtime, or `idevicesyslog` installation is needed for this implementation.
 
 ## Package entry points
 
@@ -71,16 +75,40 @@ npm start
 npm test
 ```
 
-`build` checks frontend/backend types, builds the frontend and compiles the server to JavaScript. `start` runs the production CLI and serves the built frontend. Only development uses `tsx`; published installations need runtime dependencies only. TypeScript is pinned to 5.9 because the currently resolved Vue type checker does not support TypeScript 7.
+`build` checks frontend/backend types, builds the frontend and compiles the server to JavaScript. `start` runs the production CLI and serves the built frontend. Only development uses `tsx`; published installations need runtime dependencies only. The checked-in TypeScript version is in `package.json`; use the lockfile when reproducing a build.
 
 Both `package-lock.json` and `bun.lock` are maintained. Keep them consistent when changing dependencies. Running scripts through Bun has been verified; running the backend directly on the Bun runtime has not.
+
+## Commands and configuration
+
+| Command | Purpose / output |
+| --- | --- |
+| `npm run dev` | tsx watch backend with Vite middleware; loopback port 4310 by default |
+| `npm run build` | Type-check app/server, build `dist/`, compile backend/shared imports to `build/` |
+| `npm start -- --port 4311` | Run the compiled production CLI; build first in a source checkout |
+| `npm test` | Node unit/component/protocol tests under `server/*.test.ts` |
+| `npm run build:debug` | Development-mode frontend in `dist-debug/`, including opt-in diagnostics; not a compiled production backend |
+| `npm run test:package` | Build, pack and test a temporary installed archive with npm and Bun |
+| `node scripts/build-site.mjs` | Build the independent public website into `site-dist/` |
+
+`PORT` sets the HTTP port (default `4310`); the production CLI validates 1–65535
+and lets `--port`/`-p` override it. Development starts `server/index.ts` directly,
+so use the environment variable instead of a CLI port flag. `ADB_PATH` chooses the
+ADB executable (default `adb`). Set variables in the process environment; no `.env`
+loader is configured. There is no bind-address setting for LAN access.
+
+`vite.config.ts` enables the Vue plugin for the app. `tsconfig.json` checks strict
+TypeScript for app, shared and server sources; `tsconfig.server.json` emits backend
+JavaScript and its imported shared modules, excluding tests/fixtures. Generated
+outputs are ignored by Git. The npm `files` allowlist and package smoke test limit
+what ships; see [Publishing](publishing.md).
 
 ## Device setup
 
 - **Android:** install Android SDK Platform Tools and put `adb` on `PATH` (or set `ADB_PATH` to its executable). Enable USB debugging and accept the authorization prompt. The npm library talks to the local ADB server and can start it if necessary. Unauthorized/offline devices remain visible but cannot be selected.
 - **iOS:** connect and unlock the device, establish host pairing, and accept “Trust This Computer.” On macOS, the existing Apple usbmuxd service is used. Linux needs usbmuxd; Windows needs compatible Apple mobile-device support. The npm package is primarily tested on macOS; other hosts need separate validation. A device may be discoverable before it is trusted; opening logs will then show an error.
 
-Discovery refreshes every three seconds and has a manual refresh button. A failure on one platform does not hide devices from the other. Existing Android emulators and network devices visible to the host services may also appear. This prototype does not establish wireless pairing or list iOS simulators.
+Discovery refreshes every three seconds and has a manual refresh button. A failure on one platform does not hide devices from the other. Existing Android emulators and network devices visible to the host services may also appear. The app does not establish wireless pairing or list iOS simulators.
 
 ## Languages
 
@@ -115,14 +143,14 @@ UI prose that bypasses the catalogs.
 ## Behavior and limits
 
 - The selector contains both platforms and includes IDs to distinguish similarly named phones.
-- One stream is opened per browser selection. Changing selection or closing the page disposes it, including connections that finish opening late.
-- Newest messages appear on top by default; choose **On bottom** in the **Newest messages** selector to reverse the display. Changing order resumes following at the newest end.
+- Each enabled native/WebView source opens one SSE stream and collector. Sources belong to one parent device; tabs have independent collectors. iOS WebInspector leases share a physical connection per device within the server. Changing selection or closing the page disposes streams, including collectors that finish opening late.
+- Newest messages appear on top by default; choose the oldest-first option under **Message order** in Settings to reverse the display. Changing order resumes following at the newest end.
 - Scroll away from the newest end to stop following new messages; use **Follow latest** to resume. Incoming messages preserve your reading position while following is paused, as long as those messages remain in the configured buffer.
 - **Clear view** clears browser messages only; it never clears device logs.
 - **Filter logs** searches message text, timestamps, tags, levels and PIDs with case-insensitive fuzzy matching (Fuse.js). All whitespace-separated terms must match; results retain the selected chronological order. Filtering only affects the view, including while paused. **Clear filter** or Escape restores all retained messages.
 - **Search mode** defaults to fuzzy matching. **Literal search** matches the trimmed query as one case-insensitive contiguous substring within a single original field, with no regular-expression or query-language interpretation. It does not join metadata boundaries to create matches.
-- **Exact Android tag / PID** combine with text search and severity filters. Tags are trimmed whole-field, case-sensitive matches. PID accepts ASCII digits for a nonnegative safe integer (including zero and leading zeros) and matches the structured numeric field only. Invalid PID input yields no Android results and a linked validation message. Metadata filters are disabled and ignored for iOS and before a capture device is known; their values survive device changes. **Reset filters** clears text, tag, PID and severity restrictions, keeping search mode, pause and capture state. These filter settings last for this session only.
-- **Android levels** toggle Verbose, Debug, Info, Warn, Error and Fatal independently and combine with fuzzy search. All restores all levels. Selections survive device changes; iOS disables these filters.
+- **Exact Android tag / PID** combine with text search and severity filters. Tags are trimmed whole-field, case-sensitive matches. PID accepts ASCII digits for a nonnegative safe integer (including zero and leading zeros) and matches the structured numeric field only. Invalid PID input yields no Android results and a linked validation message. Metadata filters are disabled and ignored for iOS and before a capture device is known; their values survive device changes. **Reset filters** clears text, tag, PID and severity restrictions, keeping search mode, pause and capture state. Filters are independent per source and last for the session; they are not persisted across reloads.
+- **Android levels** toggle Verbose, Debug, Info, Warn, Error and Fatal independently and combine with fuzzy search. All restores all levels. Native iOS disables these filters; WebView consoles on either platform have severity controls. Filters are scoped to source identity.
 - **Copy / Save** export whole selected log entries (including metadata and multiline stack traces) in display order. Desktop: click a row, drag for a range, Shift-click to extend, Ctrl/Cmd-click to toggle. Mobile: tap **Select**, then checkboxes; swiping always scrolls. Select a start entry, tap **Range to…**, then the end checkbox for an inclusive range. **Select all filtered** selects the current view. Selected entries are highlighted and counted. Without a selection, Copy is disabled and **Save all displayed logs** exports the filtered view. Choose **Plain text** or **Structured JSON** in the shared Copy/Save format selector. Copy has a manual-copy fallback in either format; Save downloads `.log` or `.json`.
 - **Pause** or starting a selection freezes the displayed snapshot while capture continues in the bounded live buffer. **Back to live** clears selection and resumes following. **Clear selection** / Escape removes marks but keeps the snapshot frozen. Filters and buffer reductions remove hidden/discarded entries from the selection; reconnecting, clearing logs or changing devices clears it. Checkbox selection also works with keyboard Space.
 - **Buffer size** selects 1,000, 2,000 (default), 10,000, 50,000 or 100,000 messages for the browser. Reducing it immediately removes the oldest entries from both the live buffer and any paused snapshot. Increasing it allows more future messages; discarded entries cannot be recovered. The setting is saved locally and restored on reload.
@@ -163,58 +191,27 @@ remain unchanged. The overlay JSON is a single-record diagnostic view containing
 
 ## JSON export
 
-Copy and Save use the same JSON structure, preserving display order and original
-message strings (including multiline traces). Each export contains one device:
+The current UI adds source metadata to every record, so nonempty Copy/Save JSON
+exports use **schemaVersion 2**, including captures with one source. They contain
+`device`, unique `sources`, and ordered `entries` with per-record source metadata.
+Plain text prefixes source-aware entries with the source name. The serializer
+retains version 1 for records without source metadata. Original message strings
+and optional captured fields are retained; UI selection keys are excluded.
 
-```json
-{
-  "schemaVersion": 1,
-  "device": { "id": "device-id", "name": "Phone", "platform": "android" },
-  "source": "android-logcat",
-  "timestampSource": "device",
-  "entries": [
-    { "timestamp": "2026-09-30T12:00:00.000Z", "message": "Hello", "level": "I", "tag": "App", "pid": 42 }
-  ]
-}
-```
-
-For iOS, `platform` is `ios`, `source` is `ios-syslog`, and `timestampSource` is
-`host-receipt`. Its `message` retains the original syslog text, including any
-device timestamp. `level`, `tag` and `pid` are optional and omitted when unavailable;
-no metadata is inferred from iOS text. Device identity is retained with the captured
-logs even after disconnecting. UI selection keys are excluded. Both formats remain
-subject to the capture and buffer limits above.
+See [API and export contracts](api.md#copysave-formats) for both schemas, examples,
+timestamp caveats and the distinction from single-message diagnostic JSON.
 
 ## Architecture
 
-Vue 3 and Vite provide the frontend; Express runs the TypeScript backend on Node.js. Frontend and API share one loopback HTTP server. Logs use Server-Sent Events (`EventSource`), with one collector per browser selection; collectors are not shared across tabs.
+The frontend and API share one loopback HTTP server. Express serves Vite middleware
+in development and compiled frontend assets in production. Each enabled source
+uses SSE; sources merge chronologically in a bounded browser buffer. A frozen
+snapshot supports pause and selection while capture continues. Source filters and
+export operate on complete retained data, while the viewport renders virtual rows.
 
-| File | Purpose |
-| --- | --- |
-| `src/App.vue` | Device selection, polling, streaming, filtering, pause, ordering and buffer controls |
-| `src/style.css` | Responsive Precision light/dark styling |
-| `src/components/PrecisionMenu.vue` | Custom keyboard-accessible selector |
-| `shared/log-details.ts` | Single-record metadata parsing and interpretation rules |
-| `src/components/LogDetails.vue` | Localized, accessible message detail card |
-| `src/composables/useLogDetails.ts` | Preview/pin lifecycle, placement and focus handling |
-| `shared/log-export.ts` | Shared plain-text/JSON serialization and export schema |
-| `shared/log-view.ts` | Severity normalization/filtering and plain-text export |
-| `src/main.ts` | Vue entry point |
-| `src/i18n/` | Seven complete language catalogs, locale selection, persistence and formatting |
-| `shared/notifications.ts` | Translatable server notification codes and English fallbacks |
-| `shared/types.ts` | Device, discovery and log-message types |
-| `shared/search.ts` | Fuse.js full-text search, preserving arrival order |
-| `server/index.ts` | API routes, local access checks, Vite/static serving and shutdown |
-| `server/devices.ts` | Android/iOS discovery and log adapters |
-| `server/stream.ts` | SSE batching, backpressure, timeouts and collector cleanup |
-| `server/ios-types.d.ts` | Bridge to the iOS package's shipped module declarations |
-| `server/stream.test.ts` | Stream lifecycle, framing and backpressure tests |
-| `server/search.test.ts` | Fuzzy-search regression tests |
-| `docs/design/README.md` | Approved Precision design and implementation expectations |
-
-`GET /api/devices` returns `{ devices, warnings }`; warnings are notification objects with `code`, `params` and an English `message` fallback. `GET /api/logs?platform=android|ios&id=...` emits `logs`, `status` and `stopped` events. Concurrent discovery requests are coalesced; a discovery failure on one platform does not discard the other platform's results.
-
-Messages stay in arrival order internally so trimming always removes the oldest records. Search indexes are cached until the visible buffer changes; while paused, filtering uses the frozen snapshot.
+See [Architecture and code map](architecture.md) for every runtime module, source
+identity, resource ownership, iOS transport pooling, caches and state invariants.
+See [HTTP and streaming](api.md) for query parameters, failures and transport limits.
 
 ## npm research (2026-09-29)
 
@@ -244,28 +241,18 @@ symbolication. See [research, examples and capture limits](crash-format-research
 
 ## Verification
 
-`npm test` (or `bun run test`) checks collector cleanup, device-switch races, connection errors, safe stream framing, bounded slow-client behavior, and fuzzy matching across metadata and long messages. `npm run build` (or `bun run build`) checks frontend/backend types and produces the Vue bundle and compiled server. `npm run test:package` builds and packs the application, checks the archive allowlist, installs it without development dependencies into a temporary directory, and tests npx/bunx startup, global `udl` installation, and frontend/API serving. Both npm and Bun must be installed to run that packaging check.
+Run `npm test` and `npm run build` for every change. Package/CLI changes also need
+`npm run test:package`. The [testing guide](testing.md) maps tests to modules and
+explains focused runs, package checks, synthetic browser fixtures and hardware QA.
+Development-only diagnostics and the committed browser regression are described
+in [log-performance.md](log-performance.md).
 
-The current local verification includes 51 automated tests, a production build,
-and packed-package smoke checks through npx, bunx and a temporary global `udl`
-installation. Browser checks with synthetic records cover selection, pause/resume,
-search, export, message details and desktop/mobile layouts. These browser checks
-are manual automation, not a committed end-to-end suite. Run the commands above
-for current results rather than relying on this recorded test count.
-
-Physical Android/iOS log capture remains unverified. Windows/Linux compatibility and rendering/search performance at 100,000 records have not been validated.
-
-## Next validation and implementation work
-
-- Keep the implemented [Precision design](design/README.md) aligned with its reference while validating real-device capture.
-- Connect authorized Android and iOS devices and verify discovery, trust errors and real message delivery.
-- Compare Unity `Debug.Log`, warnings, exceptions, long stack traces and native-plugin messages against logcat and Apple Console in relevant debug/release builds.
-- Exercise switching during connection, app restarts, locking, unplug/replug and noisy streams; verify cleanup and usable scrolling at larger buffer sizes.
-- If iOS coverage is incomplete, compare alternative collectors before promising parity with unified logging. Prioritize trustworthy capture and actionable errors.
-
-### Whole-entry selection verification (30 September 2026)
-
-29 automated tests and the production build pass. Browser checks with synthetic logs verified desktop click, Shift/Ctrl-click, real mouse range dragging, frozen selection during incoming batches, metadata and multiline clipboard exports, Escape, return to live and filter pruning. A 390px touch-emulated browser verified checkbox taps, inclusive start/end range selection and a CDP touch swipe that scrolls without changing selection; no physical-phone test was performed. The packed archive also passed npx and bunx startup checks. These browser checks are manual automation, not a committed end-to-end suite.
+Physical Android WebView capture was recorded for one Pixel 9 Pro XL setup on
+13 October 2026; see the [validation record](webview-prototype.md#physical-android-validation-2026-10-13).
+That does not establish all native/console sources, iOS capture, other devices or
+Windows/Linux compatibility. Real-device throughput and Safari selection behavior
+still need separate validation. Synthetic Chrome performance results are in the
+[performance guide](log-performance.md#validation-on-2026-10-13).
 
 ## User preferences
 
@@ -276,7 +263,7 @@ capacity. Preferences are stored separately under `uber-device-log.language`,
 Invalid values fall back to browser language, System appearance, newest first and
 2,000 messages. Blocked storage leaves the controls usable for the current session.
 System appearance tracks `prefers-color-scheme` changes; Light and Dark override
-it. Only preferences persist, not captured records or selection. Reducing the
+it. Only preferences and the remembered parent device persist, not captured records or selection. Reducing the
 buffer still immediately trims live and paused records.
 
 The last selected connected device is stored as `platform:id` under
@@ -286,3 +273,6 @@ offline device leaves the selection empty without erasing the saved key. Later
 polling does not restore it automatically; a new page load retries. Selecting a
 different connected device replaces the saved key. Discovery errors do not consume
 the initial restoration attempt.
+
+Development diagnostics use `uber-device-log.performance`; release builds ignore
+that preference and omit the toggle/panel. See [diagnostics](log-performance.md#optional-diagnostics).

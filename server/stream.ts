@@ -4,8 +4,12 @@ import type { OpenLogs, Stop } from './devices.js';
 
 import { notification, type Notification } from '../shared/notifications.js';
 
-// A connection owns one collector. Closing the tab or changing selection closes
-// the collector, including one that resolves after the browser has gone away.
+/**
+ * Own one source collector and its bounded SSE queue for this HTTP response.
+ * Backpressure pauses writes while capture continues into the dropping queue.
+ * The returned stop is idempotent; it also disposes a collector that opens late.
+ * Terminal events close immediately, so queued logs are not a guaranteed final flush.
+ */
 export function streamLogs(response: ServerResponse, device: Device, open: OpenLogs): Stop {
   let closed = false;
   let stopCollector: Stop | undefined;
