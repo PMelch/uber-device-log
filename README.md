@@ -8,7 +8,7 @@ A browser-based **Android Logcat, iOS syslog and WebView console viewer**,
 with setup guidance for **macOS, Windows and Linux**. Connect a phone, find the message that matters,
 and share the relevant entries as plain text or structured JSON.
 
-[Website](https://pmelch.github.io/uber-device-log/) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
+[Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
 
 **Android + iOS** · **Seven languages** · **Apache-2.0**
 

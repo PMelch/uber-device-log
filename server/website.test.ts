@@ -19,7 +19,7 @@ test('landing page copy is localized with context and remains outside the applic
 test('landing page exposes log sources and platform requirements without JavaScript', () => {
   const html = readFileSync(new URL('../website/index.html', import.meta.url), 'utf8');
   assert.match(html, /<title>[^<]*Android Logcat[^<]*iOS syslog/);
-  assert.match(html, /<link rel="canonical" href="https:\/\/pmelch.github.io\/uber-device-log\/"/);
+  assert.match(html, /<link rel="canonical" href="https:\/\/uber-device-log\.app\/"/);
   assert.match(html, /property="og:description"/);
   assert.match(html, /name="twitter:card"/);
   for (const [, key, text] of html.matchAll(/data-t="([^"]+)"[^>]*>([^<]*)</g)) {
