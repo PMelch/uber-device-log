@@ -29,9 +29,15 @@ or remote fonts. Its language preference is saved under `udl.website.language`.
 
 ## Search and sharing metadata
 
-The page targets Android Logcat and iOS syslog searches, with macOS, Windows and
-Linux setup guidance. Keep the host validation caveat and legacy iOS syslog-relay
-limitations alongside the platform copy.
+The page targets hybrid app logging, WebView device logging and combined native /
+JavaScript logging, while retaining Android Logcat and iOS syslog source terms.
+The WebView use case focuses on web app logging in a WebView alongside native
+code on one selected device. Support for multiple inspectable WebViews is an
+additional option, not the main positioning. It does not advertise standalone
+browser capture. English search phrases belong in useful
+visible copy and metadata; translate their meaning naturally in other languages.
+Keep macOS, Windows and Linux setup guidance, the host validation caveat and legacy
+iOS syslog-relay limitations alongside the platform copy.
 
 `website/index.html` contains English text and image descriptions before JavaScript
 runs. When changing website translations, update this English fallback too. The

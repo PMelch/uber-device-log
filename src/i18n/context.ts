@@ -204,15 +204,16 @@ export const translationContext = {
 
 /** Public website copy is separate from the application catalogs and npm bundle. */
 export const websiteTranslationContext = {
+  "siteHybridBody": {"location": "Public landing page: hybrid app use case in WebView showcase", "meaning": "WebView showcase use case: a hybrid app embeds a web app in a WebView with surrounding native code. Focus on combining JavaScript console output and native logs from the same device, sorted by timestamp with source identity. Mention support for multiple inspectable WebViews only as an optional final sentence. Do not claim statistics about app architecture, arbitrary browser capture, cross-device merging or causal tracing. No placeholders."},
   "siteWebviewDocs": {"location": "Public landing page: WebView showcase", "meaning": "Link to README WebView setup section. Invites reading capture requirements. No placeholders."},
   "siteWebviewAlt": {"location": "Public landing page: WebView showcase", "meaning": "Accessible description of the existing iPhone WebView console screenshot showing JavaScript messages, warnings and an exception. No placeholders."},
   "siteWebviewSetup": {"location": "Public landing page: WebView showcase", "meaning": "WebView prerequisites: Android app must enable WebView debugging; iOS needs Safari Web Inspector and an inspectable WKWebView. No additional proxy, extension or Appium server. Preserve technical names. No placeholders."},
   "siteWebviewFilters": {"location": "Public landing page: WebView showcase", "meaning": "WebView section benefit: independent search and severity per source, except no severity filter for native iOS syslog. Export preserves source identity. No placeholders."},
-  "siteWebviewBody": {"location": "Public landing page: WebView showcase", "meaning": "WebView section: capture console calls and uncaught JavaScript exceptions on Android/iOS, merge native logs and multiple inspectable WebViews from the SAME device by timestamp. No placeholders."},
-  "siteWebviewTitle": {"location": "Public landing page: WebView showcase", "meaning": "Prominent WebView feature heading: native logs and JavaScript console output in a shared workspace. Does not imply exact causal order. No placeholders."},
-  "siteCombined": {"location": "Public landing page: hero and WebView showcase", "meaning": "Hero badge: combined Device Log Viewer and integrated WebView logger as the core product benefit. WebView is a technical name. No placeholders."},
-  "siteMetaTitle": {"location": "Public landing page: document title and social preview title", "meaning": "Search/social title lists Android Logcat, iOS syslog and WebView console capture. Preserve \u00dcber Device Log and technical source names. No placeholders."},
-  "siteMetaDescription": {"location": "Public landing page: search and social preview description", "meaning": "Search/social description highlights combined device and WebView console capture, search, filters and export. No exclusivity claim. No placeholders."},
+  "siteWebviewBody": {"location": "Public landing page: WebView showcase", "meaning": "WebView section: capture console calls and uncaught JavaScript exceptions on Android/iOS and merge with native logs from the SAME selected device by timestamp. Explain native plus WebView logging without emphasizing WebView count. No placeholders."},
+  "siteWebviewTitle": {"location": "Public landing page: WebView showcase", "meaning": "WebView showcase heading positions combined native and WebView device logging as hybrid app logging. No exact causal ordering claim. No placeholders."},
+  "siteCombined": {"location": "Public landing page: hero and WebView showcase", "meaning": "Hero badge positions the product as combined native and WebView logging for hybrid apps. WebView remains a technical name. No placeholders."},
+  "siteMetaTitle": {"location": "Public landing page: document title and social preview title", "meaning": "Search and social title prioritizes hybrid app logging while retaining Android Logcat and iOS syslog source names and \u00dcber Device Log verbatim. No placeholders."},
+  "siteMetaDescription": {"location": "Public landing page: search and social preview description", "meaning": "Search and social summary: hybrid app logging combines native device logs and inspectable WebView console output on Android or iOS. Do not emphasize multiple WebViews. No placeholders."},
   "sitePlatforms": {"location": "Public landing page: platform requirements heading", "meaning": "Android Logcat and iOS syslog on macOS, Windows and Linux Preserve product names, platform names and the qualification about validation where present."},
   "sitePlatformBody": {"location": "Public landing page: platform requirements paragraph", "meaning": "Android Logcat uses ADB from Android SDK Platform Tools on macOS, Windows and Linux. For iPhone and iPad syslog, macOS uses Apple’s device service; Linux needs usbmuxd, and Windows needs compatible Apple mobile-device support. macOS is the primary validation environment; Windows and Linux still need validation. Preserve product names, platform names and the qualification about validation where present."},
   "siteSkip": {
@@ -237,7 +238,7 @@ export const websiteTranslationContext = {
   },
   "siteLead": {
     "location": "Public landing page: Lead",
-    "meaning": "Introduce native Android Logcat, iOS syslog and inspectable WebView console capture in one browser workspace. Sources are from one selected device, not multiple devices. No placeholders."
+    "meaning": "Hero introduction for hybrid app developers: combine Android Logcat or iOS syslog with inspectable WebView console output on ONE selected device. Focus on native plus JavaScript logging, not WebView count. No standalone browser capture claim. No placeholders."
   },
   "siteStart": {
     "location": "Public landing page: Start",
