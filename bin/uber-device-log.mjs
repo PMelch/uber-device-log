@@ -14,6 +14,8 @@ Usage: udl [options]
 
 Options:
   -p, --port <number>  HTTP port (default: PORT environment variable or 4310)
+      --project <dir> Project containing .flowsrc (Semantic Flows)
+      --flows <dir>   Alias for --project
   -h, --help           Show this help
   -v, --version        Show package version
 

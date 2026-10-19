@@ -45,6 +45,7 @@ Some tests use Node mock timers and emit an experimental-API warning.
 | UI interaction | `log-details-interaction.test.ts`, `disclosure-dismissal.test.ts`, `device-picker.test.ts`, `source-filters.test.ts`: controlled DOM/event simulations and Vue SSR contracts |
 | Preferences/diagnostics | `preferences.test.ts`, `remembered-device.test.ts`, `performance.test.ts`: storage fallback, initial restoration, elapsed-time sampling and lifecycle cleanup |
 | Localization/website | `i18n.test.ts`, `website.test.ts`: catalog/context coverage, placeholders, locale resolution, live status translation, static HTML and package boundary |
+| Semantic Flows | `flow-blueprints.test.ts`, `flow-engine.test.ts`, `flow-project.test.ts`, `flow-analysis.test.ts`, `flow-workspace.test.ts`, `flow-sample.test.ts`: schema/dependency validation, per-instance correlation and branches, filesystem/API boundaries, worker lifecycle, UI contracts and example project recognition |
 | CLI | `cli-options.test.ts`: defaults, environment/flag precedence, help/version and argument rejection |
 
 UI unit/SSR tests do not replace actual keyboard, touch, layout or screen-reader
@@ -94,6 +95,47 @@ PERFORMANCE_RELEASE_CHECK=true node scripts/test-log-performance.mjs
 See [log-performance.md](log-performance.md) for optional module/executable paths,
 screenshots, measured metrics, assertions and limitations. This is a committed
 synthetic browser regression; broader manual UI checks are not an automated E2E suite.
+
+## Semantic Flows checks
+
+Focused checks use the same Node test runner:
+
+```sh
+node --import tsx --test server/flow-blueprints.test.ts server/flow-engine.test.ts server/flow-project.test.ts server/flow-analysis.test.ts server/flow-workspace.test.ts server/flow-sample.test.ts
+```
+
+For an actual project launch from the checkout root:
+
+```sh
+npm run dev -- --project=./test_flow_project
+# Or after building:
+npm run build
+node bin/uber-device-log.mjs --flows=./test_flow_project
+```
+
+Choose the intended device/WebView sources, then emit matching application logs
+as described in [the test project README](../test_flow_project/README.md). Its
+`.flowsrc` and `.flows/` directory are ordinary project inputs. Selecting this
+project does not fabricate capture traffic. The example HTML emitter must run in
+the inspected WebView, or equivalent lines must be emitted by the tested app.
+
+For isolated synthetic testing without hardware, explicitly launch the
+[Semantic Flows browser fixture/regression](semantic-flows-browser-tests.md).
+It uses a temporary project copy for editor writes and shortened deadlines, never
+the committed example files. Keep this distinction when reporting results:
+synthetic recognition checks do not prove real device log formats or correlation.
+
+Exercise simultaneous operations with distinct IDs, later steps identified only
+by extracted payload values, alternative and optional paths, expected error codes,
+missing-start evidence, out-of-order evidence and timeouts. Check that log filters,
+pause and selection leave analysis active; changing source inclusion/reconnecting
+interrupts the prior epoch. Verify Flows Clear leaves raw Logs intact and Logs
+Clear leaves flow history intact. Confirm search, explicitly revealed sensitive
+values, pinned blueprint revisions, validation, save conflicts and draft recovery.
+Check keyboard access, language switching with existing statuses, long translations,
+and mobile overflow. Use the [agent extraction guide](semantic-flows-agent-guide.md)
+when adding blueprints derived from application code, and retain representative
+log fixtures to demonstrate their actual matching and identifier dependencies.
 
 ## Manual checks by change type
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, existsSync, cpSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -19,9 +19,9 @@ async function freePort() {
   await new Promise(resolve => server.close(resolve));
   return port;
 }
-async function smoke(command, args) {
+async function smoke(command, args, withFlows = false) {
   const port = await freePort();
-  const child = spawn(command, [...args, '--port', String(port)], { cwd: temporary, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(command, [...args, '--port', String(port), ...(withFlows ? ['--project=fixture-project'] : [])], { cwd: temporary, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
   child.stdout.on('data', data => { output += data; });
   child.stderr.on('data', data => { output += data; });
@@ -45,7 +45,10 @@ async function smoke(command, args) {
     assert.equal(devices.status, 200);
     assert.ok(Array.isArray((await devices.json()).devices));
     assert.equal((await fetch(`http://127.0.0.1:${port}/api/devices`, { headers: { Origin: 'https://untrusted.example' } })).status, 403);
-    console.log(`PASS ${command}: installed archive starts; UI, assets, discovery and origin guard work`);
+    const snapshot = await (await fetch(`http://127.0.0.1:${port}/api/flows/snapshot`)).json();
+    assert.equal(snapshot.enabled, withFlows);
+    if (withFlows) { assert.equal(snapshot.blueprints.length, 3); assert.equal(snapshot.diagnostics.length, 0); assert.ok(snapshot.blueprints.some(item => item.id === 'purchase')); }
+    console.log(`PASS ${command}: installed archive starts; UI, assets, discovery, origin guard and ${withFlows ? 'project blueprints' : 'log-only mode'} work`);
   } finally {
     if (child.exitCode === null && !spawnError) {
       if (process.platform === 'win32') execFileSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
@@ -76,6 +79,8 @@ try {
   assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help'], temporary), /Usage: udl/);
   assert.equal(run('node', [join(installed, manifest.bin['uber-device-log']), '--version'], temporary).trim(), manifest.version);
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log']);
+  cpSync(join(root, 'test_flow_project'), join(temporary, 'fixture-project'), { recursive: true });
+  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], true);
   await smoke('bunx', ['--no-install', 'uber-device-log']);
   const prefix = join(temporary, 'global');
   run('npm', ['install', '--global', '--prefix', prefix, '--omit=dev', '--no-audit', '--no-fund', join(temporary, pack.filename)], temporary);

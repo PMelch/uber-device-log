@@ -217,6 +217,47 @@ moving the selection. **Select all filtered** selects the current results.
 Without a selection, **Save all displayed logs** saves the filtered view.
 Exports preserve whole entries, metadata and multiline messages in display order.
 
+### Semantic Flows
+
+Open **Flows** to recognize multistep operations from the same selected device
+and WebView sources used by **Logs**. Each flow card shows observed and expected
+steps, outcome and elapsed time. **Timeline** inspects evidence and extracted
+payloads; **Info** describes the blueprint's possible routes and known errors.
+Values marked sensitive and original log evidence require an explicit reveal.
+Search narrows the flow list. **Clear** in Flows clears only flow results; capture
+and the raw log viewer continue. Log filters, pause and selection do not pause
+flow analysis. Changing included sources or reconnecting starts a new analysis
+epoch and interrupts active flows, preserving their history.
+
+Enable a project containing `.flowsrc` and a blueprint directory. The included
+`test_flow_project` has configuration, YAML blueprints and sample application
+messages. From the checkout root:
+
+```sh
+npm run dev -- --project=./test_flow_project
+# Or after building:
+npm run build
+node bin/uber-device-log.mjs --flows=./test_flow_project
+```
+
+`--project` and `--flows` are aliases for the project directory, resolved relative
+to your shell's working directory. Use either once. For your own project, create
+`.flowsrc` containing `blueprints: .flows` and put `.yaml` or `.yml` definitions in
+`.flows`. An empty configuration also defaults to `.flows`. Without a project,
+Logs remains available and Flows explains how to enable it.
+
+The **Blueprints** editor loads project files, validates drafts and saves them to
+disk. Existing flows retain their original blueprint version. Captured application
+logs must actually match your definitions; selecting a project does not inject
+sample events. See [the test project](test_flow_project/README.md) for emitting the
+examples through a real inspected WebView, or explicitly start the isolated
+[synthetic browser fixture](docs/semantic-flows-browser-tests.md) without hardware.
+
+Use the [agent extraction guide](docs/semantic-flows-agent-guide.md) to derive
+blueprints from application code, including payload identifiers reused by later
+steps. [Semantic Flows design](docs/semantic-flows.md) records the broader design
+and implementation scope.
+
 ### Choose your language
 
 **English · Español · Deutsch · Français · Italiano · 日本語 · 简体中文**
@@ -285,6 +326,8 @@ sources continue capturing when one WebView stops.
 | [Architecture and code map](docs/architecture.md) | Data flow, module ownership, resource cleanup and state invariants |
 | [API and exports](docs/api.md) | HTTP/SSE contracts, source metadata, JSON versions and limits |
 | [Testing](docs/testing.md) | Coverage map, focused tests, browser fixtures and hardware checks |
+| [Flow blueprint extraction](docs/semantic-flows-agent-guide.md) | Agent workflow for deriving evidence-backed YAML from application code |
+| [Flow browser regression](docs/semantic-flows-browser-tests.md) | Isolated synthetic fixture and desktop/mobile browser checks |
 | [Public website](docs/website.md) | Separate static build and deployment |
 | [Contributing](CONTRIBUTING.md) | Local checks, translation requirements and change guidelines |
 | [Localization](docs/localization.md) | Seven-language workflow and translation context |

@@ -1,4 +1,6 @@
 import express from 'express';
+import { parseCliOptions } from './cli-options.js';
+import { FlowProject } from './flow-project.js';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { listDevices, openLogs, type Stop } from './devices.js';
@@ -7,7 +9,9 @@ import { streamLogs } from './stream.js';
 const root = fileURLToPath(new URL(process.argv.includes('--production') ? '../..' : '..', import.meta.url));
 const app = express();
 const server = createServer(app);
-const port = Number(process.env.PORT || 4310);
+const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
+const port = options.port;
+const flowProject = await FlowProject.create(options.project);
 const active = new Set<Stop>();
 
 // Local development utility: neither discovery nor logs are exposed to the LAN.
@@ -20,6 +24,8 @@ app.use((request, response, next) => {
   }
   next();
 });
+
+app.use('/api/flows', flowProject.router());
 
 app.get('/api/devices', async (_request, response) => {
   response.setHeader('Cache-Control', 'no-store');

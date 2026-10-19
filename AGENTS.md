@@ -14,6 +14,10 @@
 See `docs/localization.md` for the contributor and translation checklist.
 
 
+## Semantic Flows blueprint extraction
+
+When deriving a Flow Blueprint from application code, follow [the agent extraction guide](docs/semantic-flows-agent-guide.md). Verify emitted log formats and payload identifier dependencies against source evidence. The version 1 DSL is validated by `shared/flow-blueprints.ts`; keep unvalidated drafts outside the active blueprint directory. Executable examples are in `test_flow_project/.flows`.
+
 <!-- SKILLS_ACTIVATION_START -->
 # Project Instructions
 - Active skills: `context-hunter`, `core-cycle`, `product-development`, `tdd-protocol`.

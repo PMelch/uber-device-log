@@ -26,6 +26,8 @@ export interface DeviceList {
 }
 
 export interface LogMessage {
+  /** Capture adapter/server truncated the original message; analysis is incomplete. */
+  truncated?: boolean;
   source?: LogSourceMetadata;
   timestamp: string;
   message: string;
