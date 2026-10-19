@@ -1,5 +1,13 @@
 import type { Messages } from './en';
 export const zhCN = {
+  filterSummaryAllLevels: "级别：全部",
+  filterSummaryFuzzy: "模糊：{value}",
+  filterSummaryLiteral: "文本：{value}",
+  filterSummaryTag: "标签：{value}",
+  filterSummaryPid: "PID：{value}",
+  filterSummaryLevels: "级别：{value}",
+  filterSummaryNoLevels: "未选择级别",
+
   webviewDetails: "{title} 的详情",
   webviewUrl: "完整 URL",
   webviewIdentifier: "目标 ID",

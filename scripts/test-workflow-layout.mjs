@@ -70,6 +70,7 @@ try {
     await page.goto(url);
     await page.waitForSelector('.entry'); await page.waitForTimeout(250);
     const baseline = await geometry();
+    const sourceHeight = await page.locator('.source-filters').evaluate(el => el.getBoundingClientRect().height);
     await page.locator('.source-filters .overlay-trigger').click();
     await page.waitForTimeout(200);
     await unchanged(baseline, `${width}: open filters`);
@@ -78,8 +79,21 @@ try {
     await overlay().locator('input[inputmode=numeric]').fill('invalid');
     assert.equal(await page.locator('.entry').count(), 0);
     assert.equal(await overlay().locator('[aria-invalid=true]').count(), 1);
+    await overlay().locator('input[type=search]').fill('A deliberately very long search query with spaces and punctuation');
+    await overlay().locator('input[id$="-tag"]').fill('LongAndroidTagForSummary');
+    await overlay().locator('.source-levels button').last().click();
+    assert.equal(await page.locator('.source-filter-chip').count(), 4);
+    assert.match(await page.locator('.source-filter-summary').getAttribute('aria-label'), /invalid/);
+    assert.equal(await page.locator('.source-filters').evaluate(el => el.getBoundingClientRect().height), sourceHeight);
+    const sourceFits = await page.locator('.source-filter-main').evaluate(el => {
+      const row = el.getBoundingClientRect(), button = el.querySelector('.overlay-trigger').getBoundingClientRect();
+      return el.scrollWidth <= el.clientWidth && button.right <= row.right + 1 && button.height <= row.height;
+    });
+    assert.equal(sourceFits, true, `${width}: inline summaries preserve row and button bounds`);
+    if (process.env.WORKFLOW_SCREENSHOT) await page.locator('.source-filters').screenshot({path: process.env.WORKFLOW_SCREENSHOT.replace(/\.png$/, `-summary-${width}.png`)});
     await overlay().getByRole('button', { name: 'Reset filters', exact: true }).click();
     await page.waitForSelector('.entry');
+    assert.equal(await page.locator('.source-filter-summary').innerText(), 'Levels: All');
     await page.keyboard.press('Escape');
     assert.equal(await overlay().count(), 0);
     assert.equal(await page.locator('.source-filters .overlay-trigger').evaluate(el => el === document.activeElement), true);
@@ -134,6 +148,7 @@ try {
     await page.goto(url); await page.waitForSelector('.entry'); await page.waitForTimeout(200);
     await page.locator('.entry input').first().click();
     await page.locator('.precision-commandbar .command-primary').click();
+    const sourceHeight = await page.locator('.source-filters').evaluate(el => el.getBoundingClientRect().height);
     for (const locale of ['de', 'fr', 'it', 'es', 'ja', 'zh-CN', 'en']) {
       await page.locator('.precision-settings summary').click();
       await page.locator('#settings-language').selectOption(locale);
@@ -146,6 +161,11 @@ try {
       const clips = await page.locator('.precision-commandbar button, .command-context, .precision-consolebar').evaluateAll(els => els.filter(el => el.clientHeight && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1)).map(el => el.textContent));
       assert.deepEqual(clips, [], `${locale}: clipped toolbar labels`);
       await page.locator('.source-filters .overlay-trigger').click();
+      await overlay().locator('input[type=search]').fill('Record');
+      await page.waitForTimeout(200); // Allow ResizeObserver to clamp the resized popover.
+      assert.equal(await page.locator('.source-filter-chip').count(), 2);
+      assert.equal(await page.locator('.source-filters').evaluate(el => el.getBoundingClientRect().height), sourceHeight);
+      assert.ok((await page.locator('.source-filter-summary').getAttribute('aria-label')).includes('Record'));
       assert.equal(await overlay().evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight; }), true);
       await page.keyboard.press('Escape');
       await unchanged(localized, `${width}: localized filter ${locale}`);

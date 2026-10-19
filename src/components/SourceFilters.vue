@@ -23,6 +23,19 @@ const nativeAndroid = computed(() => props.source.platform === 'android' && !pro
 const id = computed(() => `source-${encodeURIComponent(props.source.key)}`);
 const activeCount = computed(() => Number(!!props.modelValue.text) + Number(nativeAndroid.value && !!props.modelValue.tag) + Number(nativeAndroid.value && !!props.modelValue.pid) + Number(!nativeIos.value && props.modelValue.levels.length !== logLevels.length));
 const active = computed(() => activeCount.value > 0);
+const summary = computed(() => {
+  const filter = props.modelValue;
+  const items: string[] = [];
+  if (filter.text) items.push(props.t(filter.mode === 'fuzzy' ? 'filterSummaryFuzzy' : 'filterSummaryLiteral', { value: filter.text }));
+  if (nativeAndroid.value && filter.tag) items.push(props.t('filterSummaryTag', { value: filter.tag }));
+  if (nativeAndroid.value && filter.pid) items.push(props.t('filterSummaryPid', { value: filter.pid }));
+  if (!nativeIos.value && filter.levels.length !== logLevels.length) {
+    const levels = logLevels.filter(level => filter.levels.includes(level));
+    items.unshift(levels.length ? props.t('filterSummaryLevels', { value: levels.map(props.levelLabel).join(', ') }) : props.t('filterSummaryNoLevels'));
+  }
+  if (!nativeIos.value && filter.levels.length === logLevels.length) items.unshift(props.t('filterSummaryAllLevels'));
+  return items;
+});
 function toggle(level: LogLevel) {
   update({ levels: props.modelValue.levels.includes(level) ? props.modelValue.levels.filter(value => value !== level) : [...props.modelValue.levels, level] });
 }
@@ -32,7 +45,8 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 <template>
   <section class="source-filters" :aria-label="t('sourceFilterPanel', { source: displayName })">
     <div class="source-filter-main">
-      <span class="source-filter-name" :title="displayName"><span class="precision-platform" :class="source.webview ? 'precision-web' : `precision-${source.platform}`" aria-hidden="true"></span>{{ displayName }}</span>
+      <span class="source-filter-name" :title="displayName"><span class="precision-platform" :class="source.webview ? 'precision-web' : `precision-${source.platform}`" aria-hidden="true"></span><span class="source-filter-title">{{ displayName }}</span></span>
+      <span v-if="summary.length" class="source-filter-summary" role="group" :title="summary.join(' · ')" :aria-label="summary.join(' · ')"><span v-for="item in summary" :key="item" class="source-filter-chip" aria-hidden="true">{{ item }}</span></span>
       <OverlayPanel :label="t('sourceFilterPanel', { source: displayName })">
         <template #trigger><span :class="{ 'source-filter-active': active }">{{ active ? t('activeFilters', { count: activeCount }) : t('filters') }}</span><span aria-hidden="true">⌄</span></template>
         <template #default="{ close }">
@@ -73,8 +87,14 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 #precision-design .source-filters { margin: 6px 8px; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--pl-text) 22%, var(--pl-panel)); border-radius: 9px; background: color-mix(in srgb, var(--pl-text) 6%, var(--pl-panel)); box-shadow: 0 1px 2px #0000000a; min-width: 0; }
 .source-filter-main { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 48px; }
 .source-filter-name { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 12px; font-weight: 600; }
+.source-filter-name { flex: 0 1 auto; max-width: 30%; }
+.source-filter-title { overflow: hidden; text-overflow: ellipsis; }
+.source-filter-main:not(:has(.source-filter-summary)) .source-filter-name { flex: 1; max-width: none; }
+.source-filter-summary { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
+.source-filter-chip { flex: 0 0 auto; max-width: 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 3px 7px; border-radius: 5px; background: var(--pl-panel); border: 1px solid var(--pl-line); color: var(--pl-soft); font-size: 11px; }
 .source-filter-name .precision-platform { flex: 0 0 18px; }
 .source-filter-active { color: var(--pl-accent); }
+@media(max-width:700px) { #precision-design .source-filter-main :deep(> .overlay-trigger) { width: auto; max-width: 42%; } .source-filter-main { gap: 6px; } }
 #precision-design .source-search { padding: 8px; gap: 8px; min-width: 0; border: 1px solid var(--pl-line); background: var(--pl-panel); border-radius: 8px; margin-bottom: 8px; }
 #precision-design .source-search input { flex: 1 1 180px; width: 100%; }
 #precision-design .source-search :deep(summary) { min-height: 36px; padding: 6px 8px; font-size: 12px; }

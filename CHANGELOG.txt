@@ -10,6 +10,10 @@ Unreleased
 ----------
 
 Added
+- Show a compact summary of active search, tag, PID and severity filters in each
+  source row without increasing its height; retain full values in accessible labels
+  and tooltips when space is limited. Explicitly show all levels when severity
+  filtering is unrestricted.
 - Show the number of log records received while the view is paused, including
   records that have since left the live buffer.
 - Confirm successful copying directly on the Copy button.

@@ -1,5 +1,13 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  filterSummaryAllLevels: "Levels: All",
+  filterSummaryFuzzy: "Fuzzy: {value}",
+  filterSummaryLiteral: "Text: {value}",
+  filterSummaryTag: "Tag: {value}",
+  filterSummaryPid: "PID: {value}",
+  filterSummaryLevels: "Levels: {value}",
+  filterSummaryNoLevels: "No levels",
+
   webviewDetails: "Details for {title}",
   webviewUrl: "Full URL",
   webviewIdentifier: "Target ID",

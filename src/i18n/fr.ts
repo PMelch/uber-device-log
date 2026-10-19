@@ -1,5 +1,13 @@
 import type { Messages } from './en';
 export const fr = {
+  filterSummaryAllLevels: "Niveaux : Tous",
+  filterSummaryFuzzy: "Approximatif : {value}",
+  filterSummaryLiteral: "Texte : {value}",
+  filterSummaryTag: "Tag : {value}",
+  filterSummaryPid: "PID : {value}",
+  filterSummaryLevels: "Niveaux : {value}",
+  filterSummaryNoLevels: "Aucun niveau",
+
   webviewDetails: "Détails de {title}",
   webviewUrl: "URL complète",
   webviewIdentifier: "Identifiant de la cible",

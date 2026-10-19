@@ -12,6 +12,14 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  filterSummaryAllLevels: c('Compact source row severity summary.', 'All severity levels are enabled; no severity restriction is active. Show this explicitly so users do not mistake an absent summary for no levels selected. Keep short.'),
+  filterSummaryFuzzy: c("Compact active filter summary in the fixed-height source row.", "Active fuzzy message/metadata search query. Keep short; text may be visually truncated, with the full value available in the tooltip and accessibility label.", { value: "Original search query, kept verbatim." }),
+  filterSummaryLiteral: c("Compact active filter summary in the fixed-height source row.", "Active literal message/metadata search query. Keep short; text may be visually truncated, with the full value available in the tooltip and accessibility label.", { value: "Original search query, kept verbatim." }),
+  filterSummaryTag: c("Compact active filter summary in the fixed-height source row.", "Active exact Android tag restriction. Keep short; text may be visually truncated, with the full value available in the tooltip and accessibility label.", { value: "Original tag, kept verbatim." }),
+  filterSummaryPid: c("Compact active filter summary in the fixed-height source row.", "Active exact Android process ID restriction; preserve invalid input too. Keep short; text may be visually truncated, with the full value available in the tooltip and accessibility label.", { value: "Original process ID input, kept verbatim; not a count." }),
+  filterSummaryLevels: c("Compact active filter summary in the fixed-height source row.", "Selected severity levels when fewer than all are enabled. Keep short; text may be visually truncated, with the full value available in the tooltip and accessibility label.", { value: "List of localized severity labels in canonical order." }),
+  filterSummaryNoLevels: c("Compact active filter summary in the fixed-height source row.", "Severity filtering with no levels selected; no records will match. Keep short; text may be visually truncated, with the full value available in the tooltip and accessibility label."),
+
   webviewDetails: c('WebView selection row info button and details popup.', 'Open technical details without selecting the WebView.', { title: 'Page title or domain, kept verbatim; a localized WebView console fallback is used when absent.' }),
   webviewUrl: c('WebView details popup read-only selectable field.', 'Label for the complete original page URL. The URL itself is never translated.'),
   webviewIdentifier: c('WebView details popup.', 'Label for the technical target identifier; its value remains verbatim.'),

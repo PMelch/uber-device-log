@@ -1,5 +1,13 @@
 import type { Messages } from './en';
 export const ja = {
+  filterSummaryAllLevels: "レベル: すべて",
+  filterSummaryFuzzy: "あいまい: {value}",
+  filterSummaryLiteral: "テキスト: {value}",
+  filterSummaryTag: "タグ: {value}",
+  filterSummaryPid: "PID: {value}",
+  filterSummaryLevels: "レベル: {value}",
+  filterSummaryNoLevels: "レベル未選択",
+
   webviewDetails: "{title} の詳細",
   webviewUrl: "完全な URL",
   webviewIdentifier: "ターゲット ID",
