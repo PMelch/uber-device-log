@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const ja = {
+  webviewDetails: "{title} の詳細",
+  webviewUrl: "完全な URL",
+  webviewIdentifier: "ターゲット ID",
+
   actionExport: "エクスポート",
   actionSelection: "選択",
   actionSession: "セッション",

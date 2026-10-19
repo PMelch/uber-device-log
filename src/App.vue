@@ -5,6 +5,8 @@ import type { Device, DeviceList, LogMessage, LogSourceMetadata } from '../share
 import { logLevel } from '../shared/log-view';
 import { defaultSourceFilter, createSourceFilterer, mergeSourceMessages, type SourceFilter } from '../shared/log-sources';
 import { createLogStreams, createLogBatcher, type StreamSource, type LogStream } from './log-streams';
+import WebViewOption from './components/WebViewOption.vue';
+import { webViewLabel } from './webview-label';
 import SourceFilters from './components/SourceFilters.vue';
 import { rangeKeys, selectedEntries } from '../shared/log-selection';
 import { serializeLogExport, type LogExportFormat } from '../shared/log-export';
@@ -168,7 +170,11 @@ function metadata(source: StreamSource): LogSourceMetadata {
   return { key: source.key, name: device.webview ? device.webview.title || device.webview.url || device.webview.id : device.name,
     platform: device.platform, deviceId: device.id, ...(device.webview ? {webview:device.webview} : {}) };
 }
-function sourceLabel(source: StreamSource) { return source.device.webview ? metadata(source).name : t('sourceDeviceLogs'); }
+function sourceLabel(source: StreamSource) {
+  if (!source.device.webview) return t('sourceDeviceLogs');
+  const label = webViewLabel(source.device.webview, source.device.webviews);
+  return [label.name || t('webviewConsole'), label.subtitle].filter(Boolean).join(' · ');
+}
 function entryDevice(entry: LogMessage): Device | undefined {
   return entry.source ? capturedSources.value[entry.source.key] : logDevice.value;
 }
@@ -569,9 +575,7 @@ onUnmounted(() => {
             <span class="device-sidebar-label"><strong>{{ device.name }}</strong><span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }}</span><span class="precision-sub">{{ deviceState(device.state) }}</span></span>
             <span class="device-sidebar-dot" :data-connected="device.state === 'connected'" aria-hidden="true"></span>
           </button>
-          <button v-for="view in device.webviews" :key="webViewKey(device, view)" type="button" class="device-sidebar-item device-webview-item" :disabled="device.state !== 'connected'" :aria-pressed="includedKeys.includes(webViewKey(device, view))" :aria-label="t('webviewSelect', { title: view.title || view.url || view.id, device: device.name })" @click="chooseSource(device, webViewKey(device, view))">
-            <span class="precision-platform precision-web" aria-hidden="true"></span><span class="device-sidebar-label"><span class="precision-sub">{{ t('webviewConsole') }}</span><strong>{{ view.title || view.url || view.id }}</strong><span class="precision-sub">{{ view.url }}</span></span>
-          </button>
+          <WebViewOption v-for="view in device.webviews" :key="webViewKey(device, view)" :view="view" :siblings="device.webviews ?? []" :device="device.name" :disabled="device.state !== 'connected'" :selected="includedKeys.includes(webViewKey(device, view))" @select="chooseSource(device, webViewKey(device, view))" />
           </template>
         </div>
         <button type="button" class="precision-action precision-disconnect" :disabled="!selected" @click="disconnect">{{ t('disconnectDevice') }}</button>
@@ -580,12 +584,12 @@ onUnmounted(() => {
       <div class="precision-controls">
         <div class="precision-field precision-device"><label>{{ t('connectedDevice') }}</label>
           <PrecisionMenu :label="t('chooseDevice')" :disabled="!devices.length">
-            <template #selected><span v-if="currentDevice" class="precision-platform" :class="'precision-' + currentDevice.platform" aria-hidden="true"></span><span class="device-label">{{ currentDevice?.webview ? t('webviewSelected', { device: currentDevice.name, title: currentDevice.webview.title || currentDevice.webview.url || currentDevice.webview.id }) : currentDevice?.name ?? (devices.length ? t('selectDevice') : t('noDevices')) }}<span class="precision-sub">{{ currentDevice ? `${currentDevice.platform === 'ios' ? 'iOS' : 'Android'} · ${currentDevice.id}` : 'Android & iOS' }}</span></span></template>
+            <template #selected><span v-if="currentDevice" class="precision-platform" :class="'precision-' + currentDevice.platform" aria-hidden="true"></span><span class="device-label">{{ currentDevice?.webview ? t('webviewSelected', { device: currentDevice.name, title: webViewLabel(currentDevice.webview, currentDevice.webviews).name || t('webviewConsole') }) : currentDevice?.name ?? (devices.length ? t('selectDevice') : t('noDevices')) }}<span class="precision-sub">{{ currentDevice ? `${currentDevice.platform === 'ios' ? 'iOS' : 'Android'} · ${currentDevice.id}` : 'Android & iOS' }}</span></span></template>
             <div class="precision-menuhead">{{ t('availableDevices') }}</div>
             <p v-if="!devices.length" class="precision-menuhead">{{ t('authorizeDevice') }}</p>
             <template v-for="device in devices" :key="keyOf(device)">
             <button :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device) && includedKeys.includes(keyOf(device))" @click="chooseSource(device)"><span class="precision-platform" :class="'precision-' + device.platform" aria-hidden="true"></span><span class="device-label">{{ device.name }}<span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }} · {{ deviceState(device.state) }}</span></span></button>
-            <button v-for="view in device.webviews" :key="webViewKey(device, view)" class="device-webview-option" :disabled="device.state !== 'connected'" :aria-pressed="includedKeys.includes(webViewKey(device, view))" :aria-label="t('webviewSelect', { title: view.title || view.url || view.id, device: device.name })" @click="chooseSource(device, webViewKey(device, view))"><span class="precision-platform precision-web" aria-hidden="true"></span><span class="device-label">{{ view.title || view.url || view.id }}<span class="precision-sub">{{ t('webviewConsole') }} · {{ view.url }}</span></span></button>
+            <WebViewOption v-for="view in device.webviews" :key="webViewKey(device, view)" :view="view" :siblings="device.webviews ?? []" :device="device.name" :disabled="device.state !== 'connected'" :selected="includedKeys.includes(webViewKey(device, view))" @select="chooseSource(device, webViewKey(device, view))" />
             </template>
           </PrecisionMenu>
         </div>

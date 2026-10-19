@@ -12,6 +12,9 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  webviewDetails: c('WebView selection row info button and details popup.', 'Open technical details without selecting the WebView.', { title: 'Page title or domain, kept verbatim; a localized WebView console fallback is used when absent.' }),
+  webviewUrl: c('WebView details popup read-only selectable field.', 'Label for the complete original page URL. The URL itself is never translated.'),
+  webviewIdentifier: c('WebView details popup.', 'Label for the technical target identifier; its value remains verbatim.'),
   actionExport: c("Actions popover section heading.", "Group download and export-format controls."),
   actionSelection: c("Actions popover section heading.", "Group actions for selecting whole log records."),
   actionSession: c("Actions popover section heading.", "Group reconnect, clear-view and resume actions. These act on the current viewing session."),

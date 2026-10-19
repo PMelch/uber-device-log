@@ -136,3 +136,10 @@ manual clipboard fallback, action menus and arrivals during pause. It also check
 JSON export of offscreen selections, arrivals exceeding buffer capacity, all seven
 languages with selection retained, keyboard Escape/focus restoration, horizontal
 overflow and reduced motion. It does not establish physical-device compatibility.
+
+### Compact WebView selection
+
+After building, run `node scripts/test-webview-selection.mjs` with the same
+`PLAYWRIGHT_MODULE` and `CHROME_EXECUTABLE` overrides as the workflow layout check.
+It checks all seven languages at desktop and touch widths, URL details, selection,
+keyboard focus restoration and stationary rows. Fixtures use synthetic page URLs.

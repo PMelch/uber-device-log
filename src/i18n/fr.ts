@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const fr = {
+  webviewDetails: "Détails de {title}",
+  webviewUrl: "URL complète",
+  webviewIdentifier: "Identifiant de la cible",
+
   actionExport: "Exportation",
   actionSelection: "Sélection",
   actionSession: "Session",

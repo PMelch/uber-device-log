@@ -6,6 +6,7 @@ import { isLogPidFilterValid, logLevels, type LogLevel } from '../../shared/log-
 import type { MessageParams } from '../../shared/notifications';
 import type { MessageKey } from '../i18n/en';
 import PrecisionMenu from './PrecisionMenu.vue';
+import { webViewLabel } from '../webview-label';
 import OverlayPanel from './OverlayPanel.vue';
 const props = defineProps<{
   source: LogSourceMetadata;
@@ -13,7 +14,7 @@ const props = defineProps<{
   t: (key: MessageKey, params?: MessageParams) => string;
   levelLabel: (level: string) => string;
 }>();
-const displayName = computed(() => props.source.webview ? props.source.name : props.source.name.replace(/^model:\s*/, ''));
+const displayName = computed(() => props.source.webview ? webViewLabel(props.source.webview).name || props.t('webviewConsole') : props.source.name.replace(/^model:\s*/, ''));
 const emit = defineEmits<{ 'update:modelValue': [value: SourceFilter] }>();
 const update = (patch: Partial<SourceFilter>) => emit('update:modelValue', { ...props.modelValue, ...patch });
 const invalidPid = computed(() => !isLogPidFilterValid(props.modelValue.pid));

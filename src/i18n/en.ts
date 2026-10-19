@@ -1,5 +1,9 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  webviewDetails: "Details for {title}",
+  webviewUrl: "Full URL",
+  webviewIdentifier: "Target ID",
+
   actionExport: "Export",
   actionSelection: "Selection",
   actionSession: "Session",

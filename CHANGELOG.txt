@@ -15,6 +15,9 @@ Added
 - Confirm successful copying directly on the Copy button.
 
 Changed
+- Use compact WebView titles and domains with clear selection marks; show full
+  URLs and target identifiers in accessible details popovers. Disambiguate
+  matching pages with paths and identifiers only when needed.
 - Show the Select button only for touch-style primary pointers. Desktop users
   select entries directly through rows or checkboxes; keyboard selection remains
   available. Finishing selection restores focus to a visible control.

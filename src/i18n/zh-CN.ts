@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const zhCN = {
+  webviewDetails: "{title} 的详情",
+  webviewUrl: "完整 URL",
+  webviewIdentifier: "目标 ID",
+
   actionExport: "导出",
   actionSelection: "选择",
   actionSession: "会话",
