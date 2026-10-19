@@ -9,7 +9,23 @@ including changes in the current working tree, not an already published version.
 Unreleased
 ----------
 
+Added
+- Show the number of log records received while the view is paused, including
+  records that have since left the live buffer.
+- Confirm successful copying directly on the Copy button.
+
 Changed
+- Show the Select button only for touch-style primary pointers. Desktop users
+  select entries directly through rows or checkboxes; keyboard selection remains
+  available. Finishing selection restores focus to a visible control.
+- Keep the log viewport stationary when entering selection mode, opening filters
+  or additional actions, and pausing the view. Use compact source filter rows,
+  overlay panels and a fixed-height toolbar on desktop and mobile.
+- Group additional selection/export actions and the export-format selector in
+  More actions, using compact grouped menu rows and collapsible help instead
+  of stacked full-width buttons. Open the manual-copy fallback as a dialog.
+- Replace the continuous pause pulse with restrained transitions that honor
+  reduced-motion preferences. Localize new controls in all seven UI languages.
 - Update the public website to emphasize combined native and WebView logging
   for hybrid apps, and use uber-device-log.app as the website domain.
 - Expand contributor, architecture, API/export, testing and release documentation.

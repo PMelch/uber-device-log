@@ -146,7 +146,7 @@ service; no additional proxy, browser extension or Appium server is required.
 
 ### Find a message
 
-Type in a source's search field to search message text and metadata. Use Android
+Open **Filters** on a source and type in its search field to search message text and metadata. Use Android
 and WebView severity buttons to narrow the view further. Native iOS syslog does
 not provide severity filtering. Change **Message order** in **Settings** to show
 newest entries first or last. Scrolling away stops automatic following;
@@ -155,7 +155,7 @@ newest entries first or last. Scrolling away stops automatic following;
 Choose **Fuzzy search** for typo-tolerant matching or **Literal search** for a
 case-insensitive, contiguous phrase in a single message or metadata field.
 Literal search treats punctuation as text, without regular expressions.
-For native Android logs, expand **Advanced filters**. **Exact Android tag** matches
+For native Android logs, open **Filters** and expand **Advanced filters**. **Exact Android tag** matches
 the entire tag with case sensitivity;
 **Exact Android PID** matches the numeric process ID. Combine these with search
 and severity filters. Invalid PIDs show a validation message and no results.
@@ -193,7 +193,9 @@ name, and structured JSON uses schema version 2 with source metadata per entry.
 ### Pause, inspect, resume
 
 **Pause** freezes the view while capture continues. **Back to live** is gently
-highlighted while paused; click it to resume and clear your selection.
+highlighted while paused; click it to resume and clear your selection. The paused
+arrival counter includes all incoming records, even those already evicted from the
+buffer. Resuming displays only the retained records.
 
 Hover over an entry's **ⓘ** button to inspect its metadata and interpretation.
 The card offers **Details**, **Original**, and **JSON** views. Click the info button
@@ -207,13 +209,13 @@ Explanations describe patterns in the message; they are not definitive diagnoses
 Drag directly over message text for native text selection. This freezes the
 view while capture continues, including on touch devices.
 
-1. Select whole entries using **Select**, checkboxes, **Shift-click** to extend,
+1. On touchscreens, tap **Select** first. On desktop, use checkboxes, **Shift-click** to extend,
    or **Ctrl/Cmd-click** to toggle. Drag outside message text to select a range.
-2. Choose **Plain text** or **Structured JSON**.
-3. Click **Copy** or **Save**.
+2. Open **More actions** (•••) and choose **Plain text** or **Structured JSON**.
+3. Click **Copy** in the toolbar or **Save** in the actions menu.
 
 Selecting entries freezes the view so you can work without incoming messages
-moving the selection. **Select all filtered** selects the current results.
+moving the selection. **Select all filtered** in **More actions** selects the current results.
 Without a selection, **Save all displayed logs** saves the filtered view.
 Exports preserve whole entries, metadata and multiline messages, always oldest first regardless of the display order.
 
@@ -278,6 +280,8 @@ sources continue capturing when one WebView stops.
 </details>
 
 ## Documentation
+
+Release notes and upcoming changes: [CHANGELOG.txt](CHANGELOG.txt).
 
 | Guide | What's inside |
 | --- | --- |

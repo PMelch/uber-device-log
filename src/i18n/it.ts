@@ -1,5 +1,26 @@
 import type { Messages } from './en';
 export const it = {
+  actionExport: "Esportazione",
+  actionSelection: "Selezione",
+  actionSession: "Sessione",
+  actionHelp: "Guida e comandi",
+  actionFormat: "Formato",
+
+  selectionCountCompact: "Scelti: {count}",
+  rangeEndCompact: "Scegli fine",
+
+  sourceFilterPanel: "Filtri per {source}",
+  filters: "Filtri",
+  activeFilters: "Filtri ({count})",
+  closeFilters: "Chiudi filtri",
+  moreActions: "Altre azioni",
+  copyAction: "Copia",
+  copiedAction: "Copiato",
+  saveAction: "Salva log",
+  newSincePause: "Nuovi: {count}",
+  newSincePauseHint: "Conta tutte le voci ricevute dalla pausa, incluse quelle non più nel buffer. Alla ripresa vengono mostrate le voci conservate.",
+  resumeSelection: "Torna in diretta (annulla la selezione)",
+
   performanceIncoming: "In ingresso: {rate} log/s",
   performanceRows: "Buffer live: {retained} · Vista filtrata: {matching} · Righe renderizzate: {rendered}",
   performanceClose: "Disattiva la diagnostica delle prestazioni",
@@ -26,7 +47,7 @@ export const it = {
   noSources: "Seleziona una sorgente per avviare l’acquisizione.",
   sourceDeviceLogs: "Log del dispositivo",
   combinedHint: "Messaggi delle sorgenti selezionate, ordinati per data e ora.",
-  selectionHint: "Trascina sul testo del messaggio per selezionarlo. Usa Seleziona, le caselle di controllo o Maiusc-clic per selezionare le righe.",
+  selectionHint: "Trascina sul messaggio per selezionare il testo. Usa le caselle o Maiusc-clic per selezionare voci intere. Sugli schermi touch, tocca prima Seleziona.",
 
   webviewConsole: "Console WebView",
   webviewSelected: "{device} — {title}",

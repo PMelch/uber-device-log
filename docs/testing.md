@@ -122,3 +122,17 @@ iOS WebViews and Windows/Linux require their own evidence. Preserve dated result
 as historical evidence rather than describing them as current guarantees. Report
 commands, environment, failures and hardware limitations with each change; avoid
 maintaining an undated hard-coded test count in general guides.
+
+## Stable workflow layout regression
+
+After `npm run build`, run `node scripts/test-workflow-layout.mjs` with Playwright
+available separately. `PLAYWRIGHT_MODULE` can point to its `index.mjs` and
+`CHROME_EXECUTABLE` can point to an installed Chrome executable. Optionally set
+`WORKFLOW_SCREENSHOT` to save the final dark/mobile filter state.
+
+The synthetic fixture checks 1440, 900, 390 and 320px widths. It measures actual
+log-row positions across filter/advanced-filter overlays, selection, copy success,
+manual clipboard fallback, action menus and arrivals during pause. It also checks
+JSON export of offscreen selections, arrivals exceeding buffer capacity, all seven
+languages with selection retained, keyboard Escape/focus restoration, horizontal
+overflow and reduced motion. It does not establish physical-device compatibility.

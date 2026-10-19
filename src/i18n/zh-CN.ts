@@ -1,5 +1,26 @@
 import type { Messages } from './en';
 export const zhCN = {
+  actionExport: "导出",
+  actionSelection: "选择",
+  actionSession: "会话",
+  actionHelp: "帮助与操作",
+  actionFormat: "格式",
+
+  selectionCountCompact: "已选：{count}",
+  rangeEndCompact: "选择终点",
+
+  sourceFilterPanel: "{source} 的筛选",
+  filters: "筛选",
+  activeFilters: "筛选 ({count})",
+  closeFilters: "关闭筛选",
+  moreActions: "更多操作",
+  copyAction: "复制",
+  copiedAction: "已复制",
+  saveAction: "保存日志",
+  newSincePause: "新条目：{count}",
+  newSincePauseHint: "统计暂停后收到的所有日志，包括已从缓冲区移除的条目。恢复后仅显示仍保留的条目。",
+  resumeSelection: "返回实时视图（清除选择）",
+
   performanceIncoming: "接收：{rate} 条日志/秒",
   performanceRows: "实时缓冲区：{retained} 条 · 筛选后视图：{matching} 条 · 渲染行数：{rendered}",
   performanceClose: "关闭性能诊断",
@@ -26,7 +47,7 @@ export const zhCN = {
   noSources: "选择来源以开始捕获。",
   sourceDeviceLogs: "设备日志",
   combinedHint: "所选来源的消息，按时间戳排序。",
-  selectionHint: "拖动消息文本可选择文本。使用“选择”、复选框或按住 Shift 单击可选择行。",
+  selectionHint: "拖动消息文本可选择文字。使用复选框或按住 Shift 单击可选择完整条目。在触摸屏上，请先点按“选择”。",
 
   webviewConsole: "WebView 控制台",
   webviewSelected: "{device} — {title}",

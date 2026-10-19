@@ -1,5 +1,26 @@
 import type { Messages } from './en';
 export const fr = {
+  actionExport: "Exportation",
+  actionSelection: "Sélection",
+  actionSession: "Session",
+  actionHelp: "Aide et commandes",
+  actionFormat: "Format",
+
+  selectionCountCompact: "Choisis : {count}",
+  rangeEndCompact: "Choisir la fin",
+
+  sourceFilterPanel: "Filtres pour {source}",
+  filters: "Filtres",
+  activeFilters: "Filtres ({count})",
+  closeFilters: "Fermer les filtres",
+  moreActions: "Autres actions",
+  copyAction: "Copier",
+  copiedAction: "Copié",
+  saveAction: "Enregistrer",
+  newSincePause: "Reçus : {count}",
+  newSincePauseHint: "Compte toutes les entrées reçues depuis la pause, y compris celles qui ne sont plus dans le tampon. La reprise affiche les entrées conservées.",
+  resumeSelection: "Revenir au direct (efface la sélection)",
+
   performanceIncoming: "Entrée : {rate} logs/s",
   performanceRows: "Tampon en direct : {retained} · Vue filtrée : {matching} · Lignes affichées : {rendered}",
   performanceClose: "Désactiver le diagnostic des performances",
@@ -26,7 +47,7 @@ export const fr = {
   noSources: "Sélectionnez une source pour démarrer la capture.",
   sourceDeviceLogs: "Journaux de l’appareil",
   combinedHint: "Messages des sources sélectionnées, triés par horodatage.",
-  selectionHint: "Faites glisser sur le texte du message pour le sélectionner. Utilisez Sélectionner, les cases à cocher ou Maj-clic pour sélectionner des lignes.",
+  selectionHint: "Faites glisser sur le message pour sélectionner du texte. Utilisez les cases à cocher ou Maj-clic pour sélectionner des entrées entières. Sur écran tactile, appuyez d’abord sur Sélectionner.",
 
   webviewConsole: "Console WebView",
   webviewSelected: "{device} — {title}",

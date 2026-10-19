@@ -1,5 +1,26 @@
 import type { Messages } from './en';
 export const es = {
+  actionExport: "Exportación",
+  actionSelection: "Selección",
+  actionSession: "Sesión",
+  actionHelp: "Ayuda y controles",
+  actionFormat: "Formato",
+
+  selectionCountCompact: "Selección: {count}",
+  rangeEndCompact: "Elegir fin",
+
+  sourceFilterPanel: "Filtros de {source}",
+  filters: "Filtros",
+  activeFilters: "Filtros ({count})",
+  closeFilters: "Cerrar filtros",
+  moreActions: "Más acciones",
+  copyAction: "Copiar",
+  copiedAction: "Copiado",
+  saveAction: "Guardar registros",
+  newSincePause: "Nuevos: {count}",
+  newSincePauseHint: "Cuenta todo lo recibido desde la pausa, incluso los registros que ya no están en el búfer. Al reanudar se muestran los registros conservados.",
+  resumeSelection: "Volver al directo (borra la selección)",
+
   performanceIncoming: "Entrada: {rate} logs/s",
   performanceRows: "Búfer en vivo: {retained} · Vista filtrada: {matching} · Filas renderizadas: {rendered}",
   performanceClose: "Desactivar el diagnóstico de rendimiento",
@@ -26,7 +47,7 @@ export const es = {
   noSources: "Selecciona una fuente para iniciar la captura.",
   sourceDeviceLogs: "Registros del dispositivo",
   combinedHint: "Mensajes de las fuentes seleccionadas, ordenados por marca de tiempo.",
-  selectionHint: "Arrastra sobre el texto del mensaje para seleccionarlo. Usa Seleccionar, las casillas o Mayús-clic para seleccionar filas.",
+  selectionHint: "Arrastra sobre el mensaje para seleccionar texto. Usa las casillas o Mayús-clic para seleccionar entradas completas. En pantallas táctiles, toca primero Seleccionar.",
 
   webviewConsole: "Consola de WebView",
   webviewSelected: "{device} — {title}",

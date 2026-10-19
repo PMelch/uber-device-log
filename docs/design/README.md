@@ -28,3 +28,20 @@ Open [precision.html](precision.html) in a browser to explore the approved desig
 This is an interactive visual reference with sample data, not a live device connection. The production Vue interface now implements this design; it uses locally bundled platform icons, compatible light/dark color rules, and a viewport-sized scrolling log area instead of the preview’s fixed minimum heights. The preview's lightweight search demonstrates the interaction; retain the application's Fuse.js implementation. Clipboard and downloads may be restricted by the exported preview's sandbox; Copy provides a manual-text fallback.
 
 Use **Precision** as the design name in project documentation and implementation notes. This reference supersedes the earlier design explorations.
+
+## Stable reading controls
+
+Source rows now expose their filters in a top-layer popover, with a count of active
+filter groups on the trigger. On narrow screens the popover sits near the bottom
+of the viewport. Opening controls never pushes the log list down. Search, severity,
+Android tag/PID and iOS limitations retain their existing semantics.
+
+The status row and command row have fixed heights. Selection replaces the primary
+action with Copy; additional actions and the shared export-format selector live in
+More actions. Finishing selection clears the marks but leaves the snapshot paused.
+Returning to live clears selection and displays the current retained buffer.
+The paused counter counts all received records since freezing, before filtering
+or retention; it is not a promise that every incoming record is still available.
+Clipboard denial opens a modal manual-copy dialog instead of inserting a panel
+into the list layout. Transitions use opacity, translation in overlays and color;
+there is no continuous pause pulse, and reduced-motion preferences are honored.

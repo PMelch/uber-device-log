@@ -1,5 +1,26 @@
 import type { Messages } from './en';
 export const de = {
+  actionExport: "Export",
+  actionSelection: "Auswahl",
+  actionSession: "Sitzung",
+  actionHelp: "Hilfe & Bedienung",
+  actionFormat: "Format",
+
+  selectionCountCompact: "Markiert: {count}",
+  rangeEndCompact: "Ende wählen",
+
+  sourceFilterPanel: "Filter für {source}",
+  filters: "Filter",
+  activeFilters: "Filter ({count})",
+  closeFilters: "Filter schließen",
+  moreActions: "Weitere Aktionen",
+  copyAction: "Kopieren",
+  copiedAction: "Kopiert",
+  saveAction: "Logs speichern",
+  newSincePause: "Neu: {count}",
+  newSincePauseHint: "Zählt alle Eingänge seit der Pause, auch nicht mehr im Puffer enthaltene Einträge. Beim Fortsetzen werden die noch gespeicherten Einträge angezeigt.",
+  resumeSelection: "Zurück zu Live (Auswahl wird aufgehoben)",
+
   performanceIncoming: "Eingang: {rate} Logs/s",
   performanceRows: "Live-Puffer: {retained} · Gefilterte Ansicht: {matching} · Gerenderte Zeilen: {rendered}",
   performanceClose: "Performance-Diagnose ausschalten",
@@ -26,7 +47,7 @@ export const de = {
   noSources: "Wähle eine Quelle, um die Erfassung zu starten.",
   sourceDeviceLogs: "Gerätelogs",
   combinedHint: "Meldungen der ausgewählten Quellen, nach Zeitstempel sortiert.",
-  selectionHint: "Ziehe über den Meldungstext, um Text zu markieren. Verwende „Auswählen“, Kontrollkästchen oder Umschalt-Klick, um Zeilen auszuwählen.",
+  selectionHint: "Ziehe über den Meldungstext, um Text zu markieren. Wähle ganze Einträge über Kontrollkästchen oder Umschalt-Klick aus. Tippe auf Touchscreens zuerst auf „Auswählen“.",
 
   webviewConsole: "WebView-Konsole",
   webviewSelected: "{device} — {title}",

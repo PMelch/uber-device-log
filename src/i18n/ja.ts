@@ -1,5 +1,26 @@
 import type { Messages } from './en';
 export const ja = {
+  actionExport: "エクスポート",
+  actionSelection: "選択",
+  actionSession: "セッション",
+  actionHelp: "ヘルプと操作方法",
+  actionFormat: "形式",
+
+  selectionCountCompact: "選択数: {count}",
+  rangeEndCompact: "終点を選択",
+
+  sourceFilterPanel: "{source} のフィルター",
+  filters: "フィルター",
+  activeFilters: "フィルター ({count})",
+  closeFilters: "フィルターを閉じる",
+  moreActions: "その他の操作",
+  copyAction: "コピー",
+  copiedAction: "コピー済み",
+  saveAction: "ログを保存",
+  newSincePause: "受信数: {count}",
+  newSincePauseHint: "一時停止後に受信したすべてのログを数えます。バッファーから削除されたログも含まれます。再開時には保持されているログが表示されます。",
+  resumeSelection: "ライブに戻る（選択を解除）",
+
   performanceIncoming: "受信：{rate} 件/秒",
   performanceRows: "ライブバッファ：{retained} 件 · フィルター後の表示：{matching} 件 · 描画中の行：{rendered} 行",
   performanceClose: "パフォーマンス診断をオフにする",
@@ -26,7 +47,7 @@ export const ja = {
   noSources: "ソースを選択して取得を開始してください。",
   sourceDeviceLogs: "デバイスログ",
   combinedHint: "選択したソースのメッセージをタイムスタンプ順に表示します。",
-  selectionHint: "メッセージのテキストをドラッグするとテキストを選択できます。行を選択するには「選択」、チェックボックス、または Shift キーを押しながらクリックしてください。",
+  selectionHint: "メッセージをドラッグするとテキストを選択できます。チェックボックスまたは Shift キーを押しながらクリックすると、ログ全体を選択できます。タッチスクリーンでは、先に「選択」をタップしてください。",
 
   webviewConsole: "WebView コンソール",
   webviewSelected: "{device} — {title}",

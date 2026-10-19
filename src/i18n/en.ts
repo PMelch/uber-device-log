@@ -1,5 +1,26 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  actionExport: "Export",
+  actionSelection: "Selection",
+  actionSession: "Session",
+  actionHelp: "Help & shortcuts",
+  actionFormat: "Format",
+
+  selectionCountCompact: "Selected: {count}",
+  rangeEndCompact: "Choose end",
+
+  sourceFilterPanel: "Filters for {source}",
+  filters: "Filters",
+  activeFilters: "Filters ({count})",
+  closeFilters: "Close filters",
+  moreActions: "More actions",
+  copyAction: "Copy",
+  copiedAction: "Copied",
+  saveAction: "Save logs",
+  newSincePause: "New: {count}",
+  newSincePauseHint: "Counts all arrivals since pause, including records no longer retained in the buffer. Resuming shows retained records.",
+  resumeSelection: "Back to live (clears selection)",
+
   performanceIncoming: "Incoming: {rate} logs/s",
   performanceRows: "Live buffer: {retained} · Filtered view: {matching} · Rendered rows: {rendered}",
   performanceClose: "Turn off performance diagnostics",
@@ -26,7 +47,7 @@ export const en = {
   noSources: "Select a source to start capture.",
   sourceDeviceLogs: "Device logs",
   combinedHint: "Messages from selected sources, ordered by timestamp.",
-  selectionHint: "Drag message text to select text. Use Select, checkboxes or Shift-click to select rows.",
+  selectionHint: "Drag message text to select text. Use checkboxes or Shift-click to select whole entries. On touchscreens, tap Select first.",
 
   ...notificationMessages,
   webviewConsole: "WebView console",
