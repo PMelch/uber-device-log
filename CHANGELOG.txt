@@ -16,3 +16,6 @@ Changed
 
 Fixed
 - Copy and save logs oldest first regardless of the selected display order.
+- Discover Android WebViews even when the device's socket table exceeds 1 MiB.
+  Filter socket records incrementally with bounded memory instead of rejecting
+  the complete table. Preserve timeouts, deduplication and the 32-socket limit.

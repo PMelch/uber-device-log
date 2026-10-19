@@ -3,7 +3,7 @@ import test from 'node:test';
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
 import { connect, type Socket } from 'node:net';
-import { PassThrough } from 'node:stream';
+import { Duplex, PassThrough } from 'node:stream';
 import { setTimeout as delay } from 'node:timers/promises';
 import { discoverWebViews, openWebViewLogs, webViewMessage, webViewSockets, webViewTunnel } from './webviews';
 import type { LogMessage } from '../shared/types';
@@ -62,6 +62,7 @@ async function fixture(options: { commandError?: boolean; invalidHost?: boolean 
 
 test('discovery finds only unique WebView sockets, preserving process-specific names', () => {
   assert.deepEqual(webViewSockets('x @webview_devtools_remote_42\nx @chrome_devtools_remote\nx @webview_devtools_remote_42\nx @webview_devtools_remote\nx @not_webview_devtools_remote_4\n'), ['webview_devtools_remote_42', 'webview_devtools_remote']);
+  assert.equal(webViewSockets(Array.from({ length: 40 }, (_, i) => `x @webview_devtools_remote_${i}\n`).join('')).length, 32);
 });
 
 test('ADB discovery enumerates pages and closes its temporary tunnel', async () => {
@@ -72,6 +73,63 @@ test('ADB discovery enumerates pages and closes its temporary tunnel', async () 
     assert.equal(f.sockets.size, 0);
     assert.deepEqual(f.requestedPaths, ['/json/list']);
   } finally { await f.close(); }
+});
+
+test('discovery handles socket tables above 1 MiB with split lines and a final unterminated socket', async () => {
+  const f = await fixture();
+  const noise = '0000: 00000002 00000000 00010000 0001 01 0 @unrelated_socket\n'.repeat(24000);
+  assert.ok(Buffer.byteLength(noise) > 1024 * 1024);
+  const stream = Duplex.from((async function* () {
+    for (let offset = 0; offset < noise.length; offset += 8192) yield Buffer.from(noise.slice(offset, offset + 8192));
+    yield Buffer.from('0000: @webview_devtools_');
+    yield Buffer.from('remote_42\r');
+    yield Buffer.from('\n0000: @webview_devtools_remote_42');
+  })());
+  try {
+    assert.deepEqual(await discoverWebViews({ ...f.client, shell: async command => {
+      assert.equal(command, 'cat /proc/net/unix');
+      return stream;
+    } }), [view]);
+    assert.equal(stream.destroyed, true);
+    assert.deepEqual(f.requestedPaths, ['/json/list'], 'duplicate sockets must not open extra tunnels');
+  } finally { stream.destroy(); await f.close(); }
+});
+
+test('discovery skips oversized individual lines without losing following valid sockets', async () => {
+  const f = await fixture();
+  const stream = Duplex.from((async function* () {
+    for (let i = 0; i < 200; i++) yield Buffer.alloc(8192, 'x');
+    // This suffix belongs to an invalid oversized line, not a new socket record.
+    yield Buffer.from('@webview_devtools_remote_99\n0000: @webview_devtools_remote_42\n');
+  })());
+  const opened: string[] = [];
+  try {
+    assert.deepEqual(await discoverWebViews({ shell: async () => stream, openLocal: async path => {
+      opened.push(path);
+      return f.client.openLocal(path);
+    } }), [view]);
+    assert.deepEqual(opened, ['localabstract:webview_devtools_remote_42']);
+    assert.equal(stream.destroyed, true);
+  } finally { stream.destroy(); await f.close(); }
+});
+
+test('discovery recognizes a final socket without a newline even across one-byte chunks', async () => {
+  const f = await fixture();
+  const stream = Duplex.from((async function* () {
+    for (const byte of Buffer.from('0000: @webview_devtools_remote_42')) yield Buffer.from([byte]);
+  })());
+  try {
+    assert.deepEqual(await discoverWebViews({ ...f.client, shell: async () => stream }), [view]);
+    assert.equal(stream.destroyed, true);
+  } finally { stream.destroy(); await f.close(); }
+});
+
+test('stalled socket-table reads time out and destroy their stream', async () => {
+  const stream = new PassThrough();
+  stream.write('0000: @unfinished');
+  const client = { shell: async () => stream, openLocal: () => { throw new Error('Must not open a tunnel'); } };
+  await assert.rejects(discoverWebViews(client, 15), /timed out/);
+  assert.equal(stream.destroyed, true);
 });
 
 test('console mapping retains arguments, severity, timestamp and trace', () => {
