@@ -1,5 +1,12 @@
 import type { Messages } from './en';
 export const zhCN = {
+  featureAlpha: "Alpha",
+  featureBeta: "Beta",
+  featurePreview: "预览",
+  featureAlphaDescription: "此功能处于早期开发阶段。行为和兼容性可能会更改。",
+  featureBetaDescription: "此功能处于测试阶段。部分行为在稳定版发布前可能仍会更改。",
+  featurePreviewDescription: "试用即将推出的功能。其设计和行为可能会更改。",
+  featureStatusLabel: "{feature}（{status}）",
 
   consoleTitle: "JavaScript 控制台",
   consoleTarget: "WebView",

@@ -20,6 +20,16 @@
 - Follow `docs/publishing.md`; do not claim publication from a local build,
   version bump or Git tag alone.
 
+## Shared feature maturity styling
+
+- Use `src/components/FeatureStatusBadge.vue` for Alpha, Beta and Preview labels;
+  keep feature stages in `src/feature-status.ts`. A stable feature has no badge.
+- Apply the same stage at feature entry points and panel headings. Reuse the
+  component's light/dark colors, compact sizing and accessible explanations;
+  do not introduce bespoke badge styles or persistent warning banners.
+- Follow the feature maturity rules in `docs/design/README.md`, including keyboard
+  focus, localized tooltips and preserving existing source-row heights.
+
 ## Localization is required for every product text change
 
 - Every new or changed user-facing website text must be localized in the same change in English, Spanish, German, French, Italian, Japanese and Simplified Chinese. This includes headings, buttons, menus, tooltips, empty states, validation, notifications, errors and accessibility labels. Do not hard-code product prose in components or concatenate translated sentence fragments.

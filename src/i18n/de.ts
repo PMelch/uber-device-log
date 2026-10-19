@@ -1,5 +1,12 @@
 import type { Messages } from './en';
 export const de = {
+  featureAlpha: "Alpha",
+  featureBeta: "Beta",
+  featurePreview: "Vorschau",
+  featureAlphaDescription: "Frühe Entwicklungsphase. Verhalten und Kompatibilität können sich ändern.",
+  featureBetaDescription: "Funktion in der Testphase. Einzelne Verhaltensweisen können sich bis zur stabilen Version noch ändern.",
+  featurePreviewDescription: "Vorschau auf eine kommende Funktion. Gestaltung und Verhalten können sich ändern.",
+  featureStatusLabel: "{feature} ({status})",
 
   consoleTitle: "JavaScript-Konsole",
   consoleTarget: "WebView",

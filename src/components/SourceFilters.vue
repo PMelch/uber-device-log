@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, useId } from 'vue';
+import FeatureStatusBadge from './FeatureStatusBadge.vue';
+import { featureStatuses, featureStatusCopy } from '../feature-status';
 import type { LogSourceMetadata } from '../../shared/types';
 import type { SourceFilter } from '../../shared/log-sources';
 import { isLogPidFilterValid, logLevels, type LogLevel } from '../../shared/log-view';
@@ -8,6 +10,9 @@ import type { MessageKey } from '../i18n/en';
 import PrecisionMenu from './PrecisionMenu.vue';
 import { webViewLabel } from '../webview-label';
 import OverlayPanel from './OverlayPanel.vue';
+const statusBadge = ref<InstanceType<typeof FeatureStatusBadge>>();
+const consoleDescriptionId = useId();
+const consoleStatus = featureStatuses.javascriptConsole;
 const props = defineProps<{
   source: LogSourceMetadata;
   modelValue: SourceFilter;
@@ -47,7 +52,7 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
     <div class="source-filter-main">
       <span class="source-filter-name" :title="displayName"><span class="precision-platform" :class="source.webview ? 'precision-web' : `precision-${source.platform}`" aria-hidden="true"></span><span class="source-filter-title">{{ displayName }}</span></span>
       <span v-if="summary.length" class="source-filter-summary" role="group" :title="summary.join(' · ')" :aria-label="summary.join(' · ')"><span v-for="item in summary" :key="item" class="source-filter-chip" aria-hidden="true">{{ item }}</span></span>
-      <button v-if="source.webview" class="source-console-button" :aria-label="t('consoleTitle')" :title="t('consoleTitle')" @click="emit('console')"><span aria-hidden="true">&gt;_</span></button>
+      <button v-if="source.webview" class="source-console-button" :aria-label="consoleStatus ? t('featureStatusLabel', { feature: t('consoleTitle'), status: t(featureStatusCopy[consoleStatus].label) }) : t('consoleTitle')" :aria-describedby="consoleStatus ? consoleDescriptionId : undefined" @keydown.esc.stop.prevent="statusBadge?.hide()" @focus="statusBadge?.show()" @blur="statusBadge?.hide()" @pointerenter="statusBadge?.show()" @pointerleave="statusBadge?.hide()" @click="statusBadge?.hide(); emit('console')"><span aria-hidden="true">&gt;_</span><FeatureStatusBadge ref="statusBadge" :status="consoleStatus" :t="t" passive :description-id="consoleDescriptionId" /></button>
       <OverlayPanel :label="t('sourceFilterPanel', { source: displayName })">
         <template #trigger><span :class="{ 'source-filter-active': active }">{{ active ? t('activeFilters', { count: activeCount }) : t('filters') }}</span><span aria-hidden="true">⌄</span></template>
         <template #default="{ close }">
@@ -85,7 +90,7 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 </template>
 
 <style scoped>
-#precision-design .source-console-button { flex-shrink: 0; width: 36px; height: 36px; padding: 0; border: 1px solid var(--pl-line); border-radius: 7px; background: var(--pl-panel); color: var(--pl-accent); font: 600 14px monospace; cursor: pointer; }
+#precision-design .source-console-button { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 36px; height: 36px; padding: 0 7px; border: 1px solid var(--pl-line); border-radius: 7px; background: var(--pl-panel); color: var(--pl-accent); font: 600 14px monospace; cursor: pointer; }
 #precision-design .source-filters { margin: 6px 8px; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--pl-text) 22%, var(--pl-panel)); border-radius: 9px; background: color-mix(in srgb, var(--pl-text) 6%, var(--pl-panel)); box-shadow: 0 1px 2px #0000000a; min-width: 0; }
 .source-filter-main { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 48px; }
 .source-filter-name { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 12px; font-weight: 600; }

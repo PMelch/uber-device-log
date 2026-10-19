@@ -12,6 +12,13 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  featureAlpha: c("Shared feature maturity badge at entry points and panel headings.", "Short maturity badge for an early feature; not a connection/error status. Amber treatment. Keep brief."),
+  featureBeta: c("Shared feature maturity badge at entry points and panel headings.", "Short maturity badge for a feature being tested before stability. Blue treatment. Keep brief."),
+  featurePreview: c("Shared feature maturity badge at entry points and panel headings.", "Short badge for an upcoming feature available to try; not a guarantee about maturity. Blue treatment. Keep brief."),
+  featureAlphaDescription: c("Shared feature maturity badge at entry points and panel headings.", "Tooltip and accessible description for Alpha; explains early maturity and possible behavior/compatibility changes."),
+  featureBetaDescription: c("Shared feature maturity badge at entry points and panel headings.", "Tooltip and accessible description for Beta; explains testing before a stable release."),
+  featurePreviewDescription: c("Shared feature maturity badge at entry points and panel headings.", "Tooltip and accessible description for Preview; explains upcoming capability and possible design/behavior changes."),
+  featureStatusLabel: c("Shared feature maturity badge at entry points and panel headings.", "Whole accessible label for an action opening a feature with a release-stage badge; preserve both localized labels.", { feature: "Localized feature name, such as JavaScript console.", status: "Localized maturity label, such as Alpha or Preview." }),
 
   consoleTitle: c("JavaScript console panel.", "Panel heading and source-row action accessible name: open the JavaScript execution console."),
   consoleTarget: c("JavaScript console panel.", "Target WebView selector label."),

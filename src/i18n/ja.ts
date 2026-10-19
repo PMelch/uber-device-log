@@ -1,5 +1,12 @@
 import type { Messages } from './en';
 export const ja = {
+  featureAlpha: "アルファ",
+  featureBeta: "ベータ",
+  featurePreview: "プレビュー",
+  featureAlphaDescription: "開発初期の機能です。動作や互換性が変わる場合があります。",
+  featureBetaDescription: "テスト段階の機能です。安定版の公開までに一部の動作が変わる場合があります。",
+  featurePreviewDescription: "今後の機能を試せます。デザインや動作が変わる場合があります。",
+  featureStatusLabel: "{feature}（{status}）",
 
   consoleTitle: "JavaScript コンソール",
   consoleTarget: "WebView",

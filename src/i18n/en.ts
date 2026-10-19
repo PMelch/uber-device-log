@@ -1,5 +1,12 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  featureAlpha: "Alpha",
+  featureBeta: "Beta",
+  featurePreview: "Preview",
+  featureAlphaDescription: "Early feature. Behavior and compatibility may change.",
+  featureBetaDescription: "Feature in testing. Some behavior may still change before a stable release.",
+  featurePreviewDescription: "Try an upcoming feature. Its design and behavior may change.",
+  featureStatusLabel: "{feature} ({status})",
 
   consoleTitle: "JavaScript console",
   consoleTarget: "WebView",

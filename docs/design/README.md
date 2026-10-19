@@ -45,3 +45,29 @@ or retention; it is not a promise that every incoming record is still available.
 Clipboard denial opens a modal manual-copy dialog instead of inserting a panel
 into the list layout. Transitions use opacity, translation in overlays and color;
 there is no continuous pause pulse, and reduced-motion preferences are honored.
+
+## Feature maturity badges
+
+Use the shared `FeatureStatusBadge.vue` component for all maturity labels. Set
+feature stages once in `src/feature-status.ts`, then use that value at the feature's
+entry point and panel heading. `undefined` means stable and removes both badges;
+never scatter literal status labels or feature-specific badge styles in templates.
+
+- **Alpha:** early development; behavior and compatibility may change. Amber.
+- **Beta:** undergoing testing before stability. Blue.
+- **Preview:** an upcoming capability available to try; design and behavior may
+  change. Blue. This is not a stricter/later maturity level than Beta.
+- Use a compact text badge: 10 px semibold type, 1.4 line height, 2 × 6 px
+  padding, 1 px tinted border, 5 px corner radius, no icon and no animation.
+  Light/dark colors live in the shared component. Never rely on color alone.
+- Place it beside the feature name or entry icon, with a 6–10 px gap. Keep source
+  rows at their existing height. Do not add persistent warning banners.
+- Explain the status through a localized tooltip on hover and keyboard focus,
+  linked with `aria-describedby`. Tooltips use the top layer to avoid clipping,
+  stay inside the viewport, and dismiss on blur/pointer leave or Escape.
+- A standalone badge is keyboard focusable. Inside an action, use `passive` so
+  there is no nested focus target; the action forwards focus/hover to the badge's
+  `show`/`hide` methods and references its `descriptionId`. Its accessible label
+  uses `featureStatusLabel` with the full feature and status labels.
+- Store status identifiers, never rendered translations. All labels, descriptions
+  and accessibility copy belong in the seven typed catalogs with translator context.

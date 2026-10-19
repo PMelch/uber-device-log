@@ -7,6 +7,8 @@ import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
 import { webViewLabel } from '../webview-label';
 import ConsoleValue from './ConsoleValue.vue';
+import FeatureStatusBadge from './FeatureStatusBadge.vue';
+import { featureStatuses } from '../feature-status';
 const props = defineProps<{ sources: LogSource[]; initial: string; locale: Locale }>();
 const emit = defineEmits<{ close: [] }>();
 const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, key, params);
@@ -84,7 +86,7 @@ onUnmounted(() => { disposed = true; ++generation; clearTimeout(timer); release(
 <template>
   <Teleport to="body">
   <dialog ref="panel" class="js-console" :aria-label="t('consoleTitle')" @cancel.prevent="emit('close')">
-    <header><div><span class="console-icon" aria-hidden="true">&gt;_</span><strong>{{ t('consoleTitle') }}</strong></div><button :aria-label="t('close')" @click="emit('close')">×</button></header>
+    <header><div><span class="console-icon" aria-hidden="true">&gt;_</span><strong>{{ t('consoleTitle') }}</strong><FeatureStatusBadge :status="featureStatuses.javascriptConsole" :t="t" /></div><button :aria-label="t('close')" @click="emit('close')">×</button></header>
     <section class="console-targets">
       <label>{{ t('consoleTarget') }}<select v-model="selected" :disabled="busy"><option v-for="source in sources" :key="source.key" :value="source.key">{{ webViewLabel(source.device.webview!).name }} · {{ source.device.name }}</option></select></label>
       <label>{{ t('consoleContext') }}<select v-model="context" :disabled="busy || !state.connected" @change="error = undefined"><option value="" disabled>{{ t('consoleChoose') }}</option><option v-for="item in state.contexts" :key="item.key" :value="item.key">{{ scopeLabel(item) }}</option></select></label>

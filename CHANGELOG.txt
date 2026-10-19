@@ -16,6 +16,9 @@ Security
   the target host without bundling build-host native binaries.
 
 Added
+- Introduce shared Alpha, Beta and Preview feature badges with localized,
+  keyboard-accessible explanations. Mark the JavaScript console as Alpha at
+  its entry point and panel heading; centralize feature maturity settings.
 - Add a JavaScript console for Android and iOS WebViews with explicit frame
   selection, command history, bounded property previews and JSON preview copying.
   Navigation invalidates the context without automatically repeating commands.
