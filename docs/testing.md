@@ -143,3 +143,7 @@ After building, run `node scripts/test-webview-selection.mjs` with the same
 `PLAYWRIGHT_MODULE` and `CHROME_EXECUTABLE` overrides as the workflow layout check.
 It checks all seven languages at desktop and touch widths, URL details, selection,
 keyboard focus restoration and stationary rows. Fixtures use synthetic page URLs.
+
+Run `node scripts/test-log-details.mjs` after building (with the same browser
+overrides) to check hover-then-click, keyboard activation, touch and Escape focus
+restoration. The test waits beyond the preview dismissal timer.

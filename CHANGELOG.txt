@@ -36,6 +36,8 @@ Changed
 - Expand contributor, architecture, API/export, testing and release documentation.
 
 Fixed
+- Keep log details open when activating an existing hover or keyboard-focus
+  preview; the first activation pins it instead of immediately dismissing it.
 - Copy and save logs oldest first regardless of the selected display order.
 - Discover Android WebViews even when the device's socket table exceeds 1 MiB.
   Filter socket records incrementally with bounded memory instead of rejecting

@@ -58,7 +58,9 @@ export function useLogDetails(fallbackFocus: () => void) {
   }
   function toggle(event: MouseEvent, entry: DetailRecord['entry'], device: Device | undefined) {
     suppressFocus = false;
-    if (record.value?.entry.key === entry.key) { close(); return; }
+    // Hover and keyboard focus may already have opened a preview. Activation
+    // pins that preview; only an already pinned detail toggles closed.
+    if (record.value?.entry.key === entry.key && pinned.value) { close(); return; }
     dismissedTrigger = undefined;
     show(entry, device, event.currentTarget as HTMLElement, true);
   }
