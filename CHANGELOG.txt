@@ -19,6 +19,9 @@ Added
 - Confirm successful copying directly on the Copy button.
 
 Changed
+- Combine the stream title and capture status with the action toolbar, freeing
+  vertical space for logs while retaining a stable toolbar height across states.
+  Keep capture status beside the title and group Save with Pause.
 - Present stream sources as compact selection chips with clear selected states,
   keyboard focus, touch targets and restrained transitions.
 - Give source filter rows a contrasting surface, stronger outline and clearer

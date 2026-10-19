@@ -36,7 +36,7 @@ filter groups on the trigger. On narrow screens the popover sits near the bottom
 of the viewport. Opening controls never pushes the log list down. Search, severity,
 Android tag/PID and iOS limitations retain their existing semantics.
 
-The status row and command row have fixed heights. Selection replaces the primary
+The stream title, count, capture status and actions share one fixed-height command row. On narrow screens the status uses a compact dot with the full state in its accessible label and tooltip. Selection replaces the primary
 action with Copy; additional actions and the shared export-format selector live in
 More actions. Finishing selection clears the marks but leaves the snapshot paused.
 Returning to live clears selection and displays the current retained buffer.
