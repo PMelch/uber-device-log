@@ -1,5 +1,11 @@
 import type { Messages } from './en';
 export const it = {
+  updateAvailable: "Aggiornamento disponibile: {current} → {latest}",
+  updateChangelog: "Registro delle modifiche",
+  updateInstructions: "Arresta il server. Con npx/bunx, il comando seguente avvia la versione più recente. Dopo un aggiornamento globale, avvia di nuovo udl. Mantieni le opzioni di avvio personalizzate.",
+  updateUnknown: "Non è stato possibile rilevare il metodo di installazione. Scegli il comando corrispondente alla tua installazione.",
+  updateDismiss: "Chiudi le istruzioni di aggiornamento",
+
   featureAlpha: "Alfa",
   featureBeta: "Beta",
   featurePreview: "Anteprima",

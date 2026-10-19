@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { createUpdateCheck, detectInstallation } from './update-check.js';
 import { consoleRoutes } from './console-routes.js';
 import express from 'express';
 import { createServer } from 'node:http';
@@ -10,6 +12,9 @@ const app = express();
 const server = createServer(app);
 const port = Number(process.env.PORT || 4310);
 const active = new Set<Stop>();
+const packageVersion = JSON.parse(readFileSync(`${root}/package.json`, 'utf8')).version as string;
+// Start once, without awaiting the registry; API requests only read this snapshot.
+const updateCheck = createUpdateCheck(packageVersion, detectInstallation(root, process.env));
 
 // Local development utility: neither discovery nor logs are exposed to the LAN.
 app.use((request, response, next) => {
@@ -20,6 +25,11 @@ app.use((request, response, next) => {
     return;
   }
   next();
+});
+
+app.get('/api/update', (_request, response) => {
+  response.setHeader('Cache-Control', 'no-store');
+  response.json(updateCheck.state);
 });
 
 app.get('/api/devices', async (_request, response) => {

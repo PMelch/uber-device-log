@@ -20,6 +20,7 @@ import PrecisionMenu from './components/PrecisionMenu.vue';
 import OverlayPanel from './components/OverlayPanel.vue';
 import LogMessageText from './components/LogMessageText.vue';
 import LogDetails from './components/LogDetails.vue';
+import UpdateNotice from './components/UpdateNotice.vue';
 import { useLogDetails } from './composables/useLogDetails';
 
 const { locale, setLocale, t, n, localizeMessage, deviceState, levelLabel } = useI18n();
@@ -564,7 +565,7 @@ onUnmounted(() => {
 
 <template>
   <div id="precision-design" :data-platform="selectedSources.some(source => source.device.webview) ? 'webview' : logDevice?.platform" :class="{ selecting: selectionMode }">
-    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
+    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><UpdateNotice :t="t" /><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
     </div></header>
     <div class="precision-workspace">
       <aside class="precision-device-sidebar" :aria-label="t('availableDevices')">

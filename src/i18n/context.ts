@@ -12,6 +12,11 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  updateAvailable: c("Header update notice summary and heading.", "A newer package release is available. Show installed version followed by an arrow and available version; keep compact.", { current: "Currently running package version; retain verbatim.", latest: "New available package version; retain verbatim." }),
+  updateChangelog: c("Header update notice.", "Link opens release notes in another browser tab."),
+  updateInstructions: c("Header update notice above update commands.", "Stop the running server before using commands in a terminal. npx/bunx commands themselves launch the latest version. Global installation commands only update the installation; user must then restart udl. Keep custom startup options such as --port. Retain npx, bunx and udl verbatim as executable identifiers. Updates are never installed automatically."),
+  updateUnknown: c("Header update notice for an unidentified installation method.", "Installation method could not be identified; displayed commands are alternatives. User should choose only the one matching their installation."),
+  updateDismiss: c("Header update notice close button.", "Collapse update instructions while retaining the header update summary for reopening."),
   featureAlpha: c("Shared feature maturity badge at entry points and panel headings.", "Short maturity badge for an early feature; not a connection/error status. Amber treatment. Keep brief."),
   featureBeta: c("Shared feature maturity badge at entry points and panel headings.", "Short maturity badge for a feature being tested before stability. Blue treatment. Keep brief."),
   featurePreview: c("Shared feature maturity badge at entry points and panel headings.", "Short badge for an upcoming feature available to try; not a guarantee about maturity. Blue treatment. Keep brief."),

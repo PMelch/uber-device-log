@@ -1,5 +1,11 @@
 import type { Messages } from './en';
 export const zhCN = {
+  updateAvailable: "有可用更新：{current} → {latest}",
+  updateChangelog: "更新日志",
+  updateInstructions: "停止正在运行的服务器。使用 npx/bunx 时，以下命令会启动最新版本。全局安装更新完成后，请重新启动 udl。请保留自定义启动选项。",
+  updateUnknown: "无法检测安装方式。请选择与您的安装方式对应的命令。",
+  updateDismiss: "关闭更新说明",
+
   featureAlpha: "Alpha",
   featureBeta: "Beta",
   featurePreview: "预览",

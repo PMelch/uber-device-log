@@ -153,3 +153,19 @@ keyboard focus restoration and stationary rows. Fixtures use synthetic page URLs
 Run `node scripts/test-log-details.mjs` after building (with the same browser
 overrides) to check hover-then-click, keyboard activation, touch and Escape focus
 restoration. The test waits beyond the preview dismissal timer.
+
+## Startup update check
+
+The update check follows the existing split between server API snapshots and Vue
+state. `server/update-check.test.ts` injects registry responses to cover startup
+without waiting, timeouts/offline/HTTP failures, invalid metadata, stable version
+ordering, and installation paths. `server/update-notice.test.ts` covers polling
+and cancellation independently of capture. No package manager is invoked during
+startup; uncertain installation layouts return `unknown` and offer alternatives.
+Only fixed registry/changelog URLs and fixed commands are used; log data and local
+paths are not sent. `--help` and `--version` exit before starting the server.
+
+For UI verification, return an `available` response from `/api/update`, including
+all four commands for `unknown`. Check all seven languages at desktop, 375px and
+320px widths, light/dark themes, collapse/reopen, Escape focus restoration, and
+language switching while the notice exists. Source row heights must not change.

@@ -19,6 +19,17 @@ curl -N --get http://127.0.0.1:4310/api/logs \
   --data-urlencode platform=android --data-urlencode id=DEVICE_ID
 ```
 
+## Update availability
+
+`GET /api/update` returns a non-cached snapshot of the single background npm
+registry check started with the server. It never starts or waits for a new check.
+Fields: `currentVersion`, nullable `latestVersion`, `installation` (`npx`, `bunx`,
+`npm-global`, `bun-global`, or `unknown`), `commands` (fixed update commands),
+nullable `changelogUrl`, and `status` (`checking`, `available`, `current`, or
+`unavailable`). Network, timeout, HTTP and invalid metadata failures resolve to
+`unavailable` without interrupting startup or capture. Only stable newer versions
+from the registry latest channel are advertised.
+
 ## Device discovery
 
 `GET /api/devices` returns HTTP 200 with `Cache-Control: no-store`:

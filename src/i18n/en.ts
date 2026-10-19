@@ -1,5 +1,11 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  updateAvailable: "Update available: {current} → {latest}",
+  updateChangelog: "Changelog",
+  updateInstructions: "Stop the running server. For npx/bunx, the command below starts the latest version. After a global update, start udl again. Keep any custom startup options.",
+  updateUnknown: "The installation method could not be detected. Choose the command that matches your installation.",
+  updateDismiss: "Close update instructions",
+
   featureAlpha: "Alpha",
   featureBeta: "Beta",
   featurePreview: "Preview",

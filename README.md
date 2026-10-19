@@ -71,6 +71,15 @@ udl --version     # Show the installed version
 With a one-off launcher, use `npx uber-device-log --port 4311` or
 `bunx uber-device-log --port 4311`. Both require Node.js; omit Bun's `--bun` flag.
 
+At each server start, a background check queries the public npm registry for the
+latest stable version (four-second timeout). If an update is available, the app
+shows the current and new versions, a changelog link, and instructions for the
+detected npx, bunx, global npm or global Bun installation. If detection is
+inconclusive, it offers the supported commands. Updates are never installed
+automatically. Stop the running server before updating, then restart it; retain
+any custom command options such as `--port`. Offline checks fail silently. The
+request sends no logs or device information. Help/version commands do not check.
+
 ### Run from source
 
 ```sh

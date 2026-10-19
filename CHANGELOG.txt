@@ -16,6 +16,9 @@ Security
   the target host without bundling build-host native binaries.
 
 Added
+- Check for new versions in the background at startup and show the installed and
+  latest versions, changelog, and update instructions for the detected launcher
+  or global installation. Offer alternatives when detection is inconclusive.
 - Introduce shared Alpha, Beta and Preview feature badges with localized,
   keyboard-accessible explanations. Mark the JavaScript console as Alpha at
   its entry point and panel heading; centralize feature maturity settings.
