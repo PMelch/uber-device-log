@@ -475,7 +475,7 @@ function endDrag() {
 async function copyLogs() {
   if (!selectedRows.value.length || !logDevice.value) return;
   const count = selectedRows.value.length;
-  const { text } = serializeLogExport(selectedRows.value, logDevice.value, exportFormat.value);
+  const { text } = serializeLogExport(selectedRows.value, logDevice.value, exportFormat.value, newestPosition.value);
   copyFallback.value = undefined;
   try {
     await navigator.clipboard.writeText(text);
@@ -491,7 +491,7 @@ function closeCopy() { copyFallback.value = undefined; copyButton.value?.focus()
 function saveLogs() {
   if (!displayedMessages.value.length || !logDevice.value) return;
   const { text, mimeType, extension } = serializeLogExport(
-    selectedRows.value.length ? selectedRows.value : displayedMessages.value, logDevice.value, exportFormat.value,
+    selectedRows.value.length ? selectedRows.value : displayedMessages.value, logDevice.value, exportFormat.value, newestPosition.value,
   );
   const url = URL.createObjectURL(new Blob([text + '\n'], { type: mimeType }));
   const link = document.createElement('a');

@@ -215,7 +215,7 @@ view while capture continues, including on touch devices.
 Selecting entries freezes the view so you can work without incoming messages
 moving the selection. **Select all filtered** selects the current results.
 Without a selection, **Save all displayed logs** saves the filtered view.
-Exports preserve whole entries, metadata and multiline messages in display order.
+Exports preserve whole entries, metadata and multiline messages, always oldest first regardless of the display order.
 
 ### Choose your language
 

@@ -126,8 +126,10 @@ in [architecture.md](architecture.md#browser-state-and-invariants).
 
 ## Copy/Save formats
 
-`serializeLogExport(messages, device, format)` returns text plus its MIME type and
-extension. The caller supplies entries in display order. Copy requires whole-entry
+`serializeLogExport(messages, device, format, newestPosition)` returns text plus its MIME type and
+extension. The caller supplies entries in display order and the position of the newest
+entry (`top` or `bottom`, default `bottom`). Exports always put the newest entries last;
+`top` reverses the supplied entries without changing the viewer data. Copy requires whole-entry
 selection; Save uses that selection or the entire filtered view, including a frozen
 snapshot. Neither is limited to mounted virtual rows. Optional fields are omitted
 by JSON serialization; UI selection keys are excluded. Message strings are retained

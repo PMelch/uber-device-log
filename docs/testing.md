@@ -40,7 +40,7 @@ Some tests use Node mock timers and emit an experimental-API warning.
 | iOS WebViews | `ios-webviews.test.ts`, `ios-inspector.test.ts`: simulated listings and protocol commands, readiness, lease routing/reuse/release, timeout recovery |
 | Browser transport | `log-streams.test.ts`, `log-batches.test.ts`: concurrent sources, stale callbacks, explicit retry, coalescing and bounded pending batches |
 | Search/filter/merge | `search.test.ts`, `log-view.test.ts`, `log-sources.test.ts`, `log-performance.test.ts`: search semantics, exact metadata, chronological retention, cache correctness/invalidation |
-| Export/selection | `log-export.test.ts`, `webview-export.test.ts`, `log-selection.test.ts`: schemas, provenance, raw multiline text, display order and inclusive ranges |
+| Export/selection | `log-export.test.ts`, `webview-export.test.ts`, `log-selection.test.ts`: schemas, provenance, raw multiline text, oldest-first exports for both display orders and inclusive ranges |
 | Message presentation | `crash-format.test.ts`, `log-message-text.test.ts`, `log-details.test.ts`, `log-details-view.test.ts`: formatting, safe rendering, explicit metadata and conservative interpretation |
 | UI interaction | `log-details-interaction.test.ts`, `disclosure-dismissal.test.ts`, `device-picker.test.ts`, `source-filters.test.ts`: controlled DOM/event simulations and Vue SSR contracts |
 | Preferences/diagnostics | `preferences.test.ts`, `remembered-device.test.ts`, `performance.test.ts`: storage fallback, initial restoration, elapsed-time sampling and lifecycle cleanup |
@@ -106,7 +106,7 @@ language with an existing notification and retained selection. Follow the
 For capture/state changes, combine native logs and multiple WebViews; stop one
 source and confirm the others continue. Pause, select whole entries and native text,
 change filters/order/capacity, scroll away from latest, resume, clear, and reconnect.
-Verify Copy/Save includes offscreen filtered records in display order and retains
+Verify Copy/Save includes offscreen filtered records oldest first for both display orders and retains
 original text. Test clipboard denial and blocked localStorage.
 
 For adapter changes, use authorized physical Android/iOS devices. Record host OS,
