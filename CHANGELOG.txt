@@ -1,0 +1,18 @@
+Über Device Log — Changelog
+==========================
+
+User-visible changes are recorded here in English.
+Coverage begins with changes after Git tag v0.7.0; earlier versions have not
+been backfilled. Unreleased entries describe work for the next release,
+including changes in the current working tree, not an already published version.
+
+Unreleased
+----------
+
+Changed
+- Update the public website to emphasize combined native and WebView logging
+  for hybrid apps, and use uber-device-log.app as the website domain.
+- Expand contributor, architecture, API/export, testing and release documentation.
+
+Fixed
+- Copy and save logs oldest first regardless of the selected display order.

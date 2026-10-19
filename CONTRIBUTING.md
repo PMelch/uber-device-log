@@ -51,6 +51,13 @@ rather than restating code. Update the corresponding guide when a contract chang
 
 ## Verify a change
 
+For each user-visible change, update `Unreleased` in [CHANGELOG.txt](CHANGELOG.txt)
+in the same change. Describe the user impact under Added, Changed, Fixed, Removed
+or Security; combine related work into one entry. Internal-only cleanup and minor
+documentation edits do not need individual entries. Release maintainers reconcile
+the notes against commits and diffs before publishing; commit messages alone are
+not the changelog. See [AGENTS.md](AGENTS.md) for the project rule.
+
 For every change:
 
 ```sh
