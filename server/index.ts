@@ -1,3 +1,4 @@
+import { consoleRoutes } from './console-routes.js';
 import express from 'express';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +56,9 @@ app.get('/api/logs', async (request, response) => {
   response.once('close', () => active.delete(stop));
 });
 
+const consoles = consoleRoutes();
+app.use('/api/console', consoles.router);
+
 app.use('/api', (_request, response) => { response.sendStatus(404); });
 
 let closeVite: (() => Promise<void>) | undefined;
@@ -84,6 +88,7 @@ async function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
   for (const stop of active) stop();
+  consoles.close();
   await closeVite?.();
   server.close();
   server.closeAllConnections();

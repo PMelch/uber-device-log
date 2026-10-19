@@ -12,6 +12,31 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+
+  consoleTitle: c("JavaScript console panel.", "Panel heading and source-row action accessible name: open the JavaScript execution console."),
+  consoleTarget: c("JavaScript console panel.", "Target WebView selector label."),
+  consoleContext: c("JavaScript console panel.", "Execution context selector label; selects the actual frame global environment."),
+  consoleChoose: c("JavaScript console panel.", "Placeholder in the execution context picker after navigation or before initial selection."),
+  consoleTop: c("JavaScript console panel.", "Main-frame context label. Retain top and window as JavaScript identifiers."),
+  consoleScope: c("JavaScript console panel.", "Helper below picker: window refers to selected iframe, top to outer page; access remains subject to browser restrictions."),
+  consoleReady: c("JavaScript console panel.", "Connection indicator when context enumeration is ready."),
+  consoleWaiting: c("JavaScript console panel.", "Connection indicator while obtaining runtime contexts."),
+  consoleEmpty: c("JavaScript console panel.", "Empty output area instruction; examples insert code but never execute it."),
+  consoleCode: c("JavaScript console panel.", "Accessible label for multiline expression input."),
+  consoleRun: c("JavaScript console panel.", "Explicitly execute code once in the selected context."),
+  consoleRunning: c("JavaScript console panel.", "Execute button while a single request is pending."),
+  consoleHistory: c("JavaScript console panel.", "Command history selector label. Picking one only inserts it into the editor."),
+  consoleClear: c("JavaScript console panel.", "Clear local console output, without clearing logs or app state."),
+  consoleOld: c("JavaScript console panel.", "Badge on result collected before a navigation or target change."),
+  consolePreview: c("JavaScript console panel.", "Explains bounded property snapshot. Getters are not called; functions and promises are not auto-executed or awaited."),
+  consoleTruncated: c("JavaScript console panel.", "Preview branch was limited in depth, size, or because it is circular."),
+  consoleCopy: c("JavaScript console panel.", "Copies displayed preview representation as JSON, not the original complete object."),
+  consoleUnavailable: c("JavaScript console panel.", "Connection failed or was lost; stable API error code."),
+  consoleStale: c("JavaScript console panel.", "Page/frame changed. Must explicitly choose fresh context; never retry code automatically."),
+  consoleTimeout: c("JavaScript console panel.", "Request timeout does not imply that code stopped executing; stable API error."),
+  consoleBusy: c("JavaScript console panel.", "Only one evaluation per runtime is allowed at a time, or session quota reached."),
+  consoleInvalid: c("JavaScript console panel.", "Invalid/empty/oversized expression or malformed request."),
+
   filterSummaryAllLevels: c('Compact source row severity summary.', 'All severity levels are enabled; no severity restriction is active. Show this explicitly so users do not mistake an absent summary for no levels selected. Keep short.'),
   filterSummaryFuzzy: c("Compact active filter summary in the fixed-height source row.", "Active fuzzy message/metadata search query. Keep short; text may be visually truncated, with the full value available in the tooltip and accessibility label.", { value: "Original search query, kept verbatim." }),
   filterSummaryLiteral: c("Compact active filter summary in the fixed-height source row.", "Active literal message/metadata search query. Keep short; text may be visually truncated, with the full value available in the tooltip and accessibility label.", { value: "Original search query, kept verbatim." }),

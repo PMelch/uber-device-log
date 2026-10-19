@@ -1,5 +1,10 @@
 /** Stable codes keep server events translatable without reconnecting a stream. */
 export const notificationMessages = {
+  consoleInvalid: "Enter a JavaScript expression of at most 16,384 characters.",
+  consoleBusy: "Another command is still running.",
+  consoleTimeout: "No response in time. The code may still be running; it was not retried.",
+  consoleStale: "The page or frame changed. Choose a context again. The command will not be repeated.",
+  consoleUnavailable: "WebView connection unavailable. Reconnect to continue.",
   webviewEnded: "WebView closed or console connection ended. Select an available source to resume.",
   webviewDiscoveryUnavailable: "WebView discovery unavailable on {device}: {detail}",
   webviewLive: "Live \u2014 reading WebView console.",

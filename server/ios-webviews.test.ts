@@ -76,3 +76,26 @@ test('late iOS service acquisition is closed after the deadline', async () => {
   const result=discoverIosWebViews('phone',()=>new Promise(resolve=>{finish=resolve}));
   await assert.rejects(result,/connection timed out/);finish(service);await Promise.resolve();assert.equal(service.closed,true);
 });
+
+test('WebKit execution routes to the chosen target and wrapper failures leave log capture alive', async () => {
+  const { RuntimeConsole } = await import('./runtime-console.js');
+  const runtime = new RuntimeConsole('ios', 100);
+  const service = new Inspector(), ended: unknown[] = [], logs: unknown[] = [];
+  const nested = (packet: unknown) => service.data({ method: 'Target.dispatchMessageFromTarget', params: { targetId: 'page-1', message: JSON.stringify(packet) } });
+  service.respond = message => {
+    if (message.__selector === '_rpc_forwardSocketSetup:') service.data({ method: 'Target.targetCreated', params: { targetInfo: { targetId: 'page-1', type: 'page' } } });
+    if (message.__selector !== '_rpc_forwardSocketData:') return;
+    const outer = JSON.parse(message.__argument.WIRSocketDataKey.toString()), inner = JSON.parse(outer.params.message);
+    if (inner.method === 'Runtime.evaluate') { service.data({ id: outer.id, error: { message: 'Target unavailable' } }); return; }
+    service.data({ id: outer.id, result: {} });
+    if (inner.method === 'Runtime.enable') nested({ method: 'Runtime.executionContextCreated', params: { context: { id: 3, frameId: 'root', type: 'normal', name: '' } } });
+    nested({ id: inner.id, result: inner.method === 'Page.getResourceTree' ? { frameTree: { frame: { id: 'root', url: 'https://example.com' } } } : {} });
+  };
+  const stop = await openIosWebViewLogs('phone', view, m => logs.push(m), m => ended.push(m), async () => service, runtime);
+  await runtime.enable();
+  assert.equal(runtime.state().contexts[0].top, true);
+  await assert.rejects(runtime.evaluate(runtime.state().contexts[0].key, 0, 'document.title'), /consoleUnavailable/);
+  nested({ method: 'Console.messageAdded', params: { message: { text: 'still capturing', level: 'log' } } });
+  assert.equal(logs.length, 1); assert.equal(ended.length, 0); assert.equal(service.closed, false);
+  stop();
+});

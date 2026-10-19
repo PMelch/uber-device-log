@@ -47,8 +47,9 @@ timestamps do not guarantee the exact causal order of device events.
 
 ![An iPhone WebView console showing JavaScript messages, warnings and an exception](images/webview-console.png)
 
-WebView capture reads console output. It does not offer JavaScript execution,
-expandable object inspection, a DOM inspector or a network panel.
+WebView capture reads console output. The separate JavaScript console can run
+expressions and expand bounded property previews. There is no visual DOM
+inspector or network panel.
 
 Exports retain source identity: plain text prefixes each entry with its source
 name, and structured JSON uses schema version 2 with source metadata per entry.
@@ -97,3 +98,28 @@ remain usable for the session if browser storage is blocked.
 Your preferences survive reloads; captured logs are not saved. As always,
 original log messages and technical values are never translated.
 
+
+## JavaScript execution
+
+Open the `>_` button in a WebView source row. Choose a WebView and an execution
+context, then enter an expression and select **Run** or press **Ctrl/Cmd+Enter**.
+Example buttons and command history only insert text; they never run it.
+
+The main page is shown as `top / window`. Inside an iframe, `window` refers to
+that frame, while `top` refers to the outermost page. Normal browser origin
+restrictions still apply. Only inspectable page contexts are offered; local
+variables in suspended function scopes are not available through this console.
+
+Results show types, execution duration and expandable property previews. These
+previews are captured after evaluation, limited to three levels and 150
+properties overall (50 per object), and never invoke JavaScript getters.
+They are not atomic snapshots of a changing application. JSON copying exports
+the displayed preview structure, including truncation markers. Promises are
+shown as objects rather than automatically awaited.
+
+Changing pages or losing a frame invalidates its selection. Choose a current
+context before running another command; existing results are marked as coming
+from a previous context. Commands are never retried automatically, including
+when a response times out. A timeout does not stop code already running in the
+WebView. Closing the panel releases its session while log capture continues.
+History and results are held only in memory for the open panel.

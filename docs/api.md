@@ -202,3 +202,26 @@ WebView exports also include top-level `webview`. `timestampSource` is `host-rec
 for native iOS and `device` otherwise; console receipt-time fallbacks are not
 individually flagged. The message-details JSON (`original` plus `parsed`) is a
 separate single-record diagnostic representation, not either versioned export.
+
+## WebView JavaScript console
+
+All routes below retain the server's localhost Host/Origin restriction. POST
+requests require `Content-Type: application/json`, with a 100 KiB body limit.
+Sessions are private random tokens, capped at eight and released after two
+minutes without requests. The client polls once per second while the panel is open.
+
+- `POST /api/console`: `{platform,id,socket,target}` must match a connected,
+  discovered WebView. Returns `{id,revision,connected,contexts}`. Contexts have
+  opaque `key` values; callers must not send raw protocol context IDs.
+- `GET /api/console/:id`: current revision, connection state and frame contexts.
+- `POST /api/console/:id/execute`: `{context,revision,expression}`. Requires an
+  explicit context from the current revision. Expressions are limited to 16,384
+  characters, with one evaluation at a time per WebView. Returns a bounded value
+  preview, exception flag, elapsed milliseconds and the originating revision.
+- `DELETE /api/console/:id`: release the session without stopping other capture
+  consumers. Returns 204, including for an already-closed session.
+
+Errors use stable `console*` notification codes plus an English fallback message.
+Commands never retry automatically. A protocol timeout does not cancel JavaScript
+already executing on the device. The server exposes only the operations above,
+not a general inspector protocol relay.

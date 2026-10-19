@@ -7,6 +7,7 @@ import { defaultSourceFilter, createSourceFilterer, mergeSourceMessages, type So
 import { createLogStreams, createLogBatcher, type StreamSource, type LogStream } from './log-streams';
 import WebViewOption from './components/WebViewOption.vue';
 import { webViewLabel } from './webview-label';
+import JavaScriptConsole from './components/JavaScriptConsole.vue';
 import SourceFilters from './components/SourceFilters.vue';
 import { rangeKeys, selectedEntries } from '../shared/log-selection';
 import { serializeLogExport, type LogExportFormat } from '../shared/log-export';
@@ -24,6 +25,7 @@ import { useLogDetails } from './composables/useLogDetails';
 const { locale, setLocale, t, n, localizeMessage, deviceState, levelLabel } = useI18n();
 
 const devices = ref<Device[]>([]);
+const consoleSource = ref('');
 const warnings = ref<(DeviceList['warnings'][number] | UiMessage)[]>([]);
 const selected = ref('');
 const messages = shallowRef<(LogMessage & { key: number })[]>([]);
@@ -609,7 +611,7 @@ onUnmounted(() => {
           </div>
           <p class="precision-source-hint">{{ t('combinedHint') }}</p>
           <template v-for="source in selectedSources" :key="source.key">
-            <SourceFilters :source="metadata(source)" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
+            <SourceFilters :source="metadata(source)" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
             <p v-if="sourceStates[source.key] && !sourceStates[source.key]!.live" class="precision-source-status" role="status">{{ sourceLabel(source) }} · {{ localizeMessage(sourceStates[source.key]!.message) }}</p>
           </template>
         </section>
@@ -687,6 +689,7 @@ onUnmounted(() => {
       <p class="setup-hint">{{ t('setupHint') }}</p>
     </main>
     </div>
+    <JavaScriptConsole v-if="consoleSource" :locale="locale" :sources="sourceOptions.filter(source => source.device.webview)" :initial="consoleSource" @close="consoleSource = ''" />
     <LogDetails v-if="detailRecord" :record="detailRecord" :pinned="detailPinned" :position="detailPosition" :locale="locale" @close="details.close(true)" @pin="details.pinCurrent" @enter="details.keepOpen" @leave="details.leave" />
   </div>
 </template>

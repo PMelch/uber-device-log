@@ -16,6 +16,10 @@ Security
   the target host without bundling build-host native binaries.
 
 Added
+- Add a JavaScript console for Android and iOS WebViews with explicit frame
+  selection, command history, bounded property previews and JSON preview copying.
+  Navigation invalidates the context without automatically repeating commands.
+  Console execution shares the existing capture connection.
 - Show a compact summary of active search, tag, PID and severity filters in each
   source row without increasing its height; retain full values in accessible labels
   and tooltips when space is limited. Explicitly show all levels when severity

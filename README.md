@@ -156,7 +156,9 @@ service; no additional proxy, browser extension or Appium server is required.
    Android logs by exact tag or PID.
 3. **Inspect what happened.** Pause the view while capture continues and inspect
    message metadata, exceptions and original text.
-4. **Share the context.** Copy or save selected entries or filtered logs as plain
+4. **Inspect JavaScript values.** Open the `>_` console on a WebView source,
+   select the page or an iframe, and run expressions in that context.
+5. **Share the context.** Copy or save selected entries or filtered logs as plain
    text or structured JSON, preserving source identity and multiline traces.
 
 ![An iPhone WebView console showing JavaScript messages, warnings and an exception](docs/images/webview-console.png)
@@ -169,8 +171,10 @@ message details, export options and preferences.
 
 ## Good to know
 
-- WebView capture reads console output; it does not provide JavaScript execution,
-  DOM inspection or a network panel. Merged timestamps do not guarantee the exact
+- The JavaScript console evaluates expressions in inspectable WebViews. Commands
+  can modify the app; page navigation requires choosing the context again.
+  Property previews are bounded and do not invoke getters. There is no visual
+  DOM inspector or network panel. Merged timestamps do not guarantee the exact
   causal order of events across sources.
 
 - **Clear** empties the viewer, not the device's logs.

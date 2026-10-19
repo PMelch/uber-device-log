@@ -1,3 +1,4 @@
+import type { RuntimeConsole } from './runtime-console.js';
 import { createServer } from 'node:net';
 import type { Duplex } from 'node:stream';
 import { StringDecoder } from 'node:string_decoder';
@@ -195,11 +196,11 @@ export function webViewMessage(event: CdpEvent, view: WebView): LogMessage | und
 }
 
 export async function openWebViewLogs(device: WebViewDevice, view: WebView,
-  onMessage: (message: LogMessage) => void, onEnd: (reason: Notification | string) => void): Promise<() => void> {
+  onMessage: (message: LogMessage) => void, onEnd: (reason: Notification | string) => void, runtime?: RuntimeConsole): Promise<() => void> {
   const tunnel = await webViewTunnel(device, view.socket);
   let ws: WebSocket | undefined;
   let stopped = false;
-  const stop = () => { if (stopped) return; stopped = true; ws?.close(); tunnel.close(); };
+  const stop = () => { if (stopped) return; stopped = true; runtime?.close(); ws?.close(); tunnel.close(); };
   try {
     const target = (await targets(tunnel.origin)).find(target => target?.id === view.id && target.type === 'page');
     const path = target && targetPath(target);
@@ -209,11 +210,17 @@ export async function openWebViewLogs(device: WebViewDevice, view: WebView,
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('WebView console connection timed out')), 5000);
       const finish = (error?: Error) => { clearTimeout(timer); error ? reject(error) : resolve(); };
-      connection.addEventListener('open', () => connection.send(JSON.stringify({ id: 1, method: 'Runtime.enable' })));
+      connection.addEventListener('open', () => { runtime?.attach('', packet => connection.send(JSON.stringify(packet))); if (runtime) connection.send(JSON.stringify({ id: 2, method: 'Target.setAutoAttach', params: { autoAttach: true, waitForDebuggerOnStart: false, flatten: true } })); connection.send(JSON.stringify({ id: 1, method: 'Runtime.enable' })); });
       connection.addEventListener('message', event => {
         if (stopped) return;
         try {
           const data = JSON.parse(String(event.data));
+          if (data.method === 'Target.attachedToTarget' && data.params?.targetInfo?.type === 'iframe') {
+            const sessionId = data.params.sessionId;
+            runtime?.attach(sessionId, packet => connection.send(JSON.stringify({ ...packet, sessionId })), false);
+            if (runtime) connection.send(JSON.stringify({ id: 2, sessionId, method: 'Target.setAutoAttach', params: { autoAttach: true, waitForDebuggerOnStart: false, flatten: true } }));
+          } else if (data.method === 'Target.detachedFromTarget') runtime?.detach(data.params.sessionId);
+          if (runtime?.receive(data, data.sessionId ?? '')) return;
           if (data.id === 1) {
             if (data.error) finish(new Error(data.error.message ?? 'Runtime.enable failed'));
             else finish();

@@ -1,5 +1,25 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+
+  consoleTitle: "JavaScript console",
+  consoleTarget: "WebView",
+  consoleContext: "Execution context",
+  consoleChoose: "Choose a context…",
+  consoleTop: "top / window · Main page",
+  consoleScope: "window refers to the selected frame; top refers to the main page. Browser access rules still apply.",
+  consoleReady: "Connected",
+  consoleWaiting: "Waiting for contexts…",
+  consoleEmpty: "Inspect a value or try an expression.",
+  consoleCode: "JavaScript expression",
+  consoleRun: "Run",
+  consoleRunning: "Running…",
+  consoleHistory: "Command history",
+  consoleClear: "Clear output",
+  consoleOld: "Previous context",
+  consolePreview: "Property preview · limited depth · getters are not called",
+  consoleTruncated: "Preview limited",
+  consoleCopy: "Copy preview as JSON",
+
   filterSummaryAllLevels: "Levels: All",
   filterSummaryFuzzy: "Fuzzy: {value}",
   filterSummaryLiteral: "Text: {value}",
