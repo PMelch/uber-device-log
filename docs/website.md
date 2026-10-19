@@ -59,3 +59,12 @@ wildcard or the website directories to the package allowlist.
 
 Check the final archive with `npm pack --dry-run --json` after building. The
 packaging smoke test also rejects files outside the application allowlist.
+
+## Refresh screenshots
+
+Build the application, then run `node scripts/capture-doc-screenshots.mjs`. Set
+`PLAYWRIGHT_MODULE` and `CHROME_EXECUTABLE` as for the browser regression scripts
+when using a separately installed Playwright runtime or Chrome. The script uses
+the real built UI with fictional device and log fixtures, and updates all four
+images in `docs/images/`. Inspect the images before committing, then rebuild the
+website so it copies the refreshed assets. No connected device is required.

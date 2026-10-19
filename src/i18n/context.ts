@@ -308,7 +308,7 @@ export const websiteTranslationContext = {
   },
   "siteFindBody": {
     "location": "Public landing page: FindBody",
-    "meaning": "Feature card: fuzzy and literal search per source; severity filters apply to Android and WebView, never native iOS syslog. No placeholders."
+    "meaning": "Feature card: open each source’s filter panel; current restrictions are summarized directly in its row. Fuzzy and literal search are supported. Severity filters apply to Android and WebView, never native iOS syslog. No placeholders."
   },
   "sitePause": {
     "location": "Public landing page: Pause",

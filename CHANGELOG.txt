@@ -19,6 +19,9 @@ Added
 - Confirm successful copying directly on the Copy button.
 
 Changed
+- Refresh README and website screenshots for the current interface and update
+  move detailed interaction guidance into a dedicated user guide. Keep the README
+  focused on setup, capabilities and capture limits.
 - Combine the stream title and capture status with the action toolbar, freeing
   vertical space for logs while retaining a stable toolbar height across states.
   Keep capture status beside the title and group Save with Pause.
