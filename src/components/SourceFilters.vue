@@ -70,9 +70,9 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 </template>
 
 <style scoped>
-#precision-design .source-filters { margin: 6px 8px; padding: 4px 10px; border: 1px solid var(--pl-line); border-radius: 9px; background: var(--pl-panel); min-width: 0; }
+#precision-design .source-filters { margin: 6px 8px; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--pl-text) 22%, var(--pl-panel)); border-radius: 9px; background: color-mix(in srgb, var(--pl-text) 6%, var(--pl-panel)); box-shadow: 0 1px 2px #0000000a; min-width: 0; }
 .source-filter-main { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 48px; }
-.source-filter-name { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 12px; }
+.source-filter-name { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 12px; font-weight: 600; }
 .source-filter-name .precision-platform { flex: 0 0 18px; }
 .source-filter-active { color: var(--pl-accent); }
 #precision-design .source-search { padding: 8px; gap: 8px; min-width: 0; border: 1px solid var(--pl-line); background: var(--pl-panel); border-radius: 8px; margin-bottom: 8px; }

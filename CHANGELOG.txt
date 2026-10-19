@@ -15,6 +15,8 @@ Added
 - Confirm successful copying directly on the Copy button.
 
 Changed
+- Give source filter rows a contrasting surface, stronger outline and clearer
+  source names in both light and dark themes without changing their layout.
 - Use compact WebView titles and domains with clear selection marks; show full
   URLs and target identifiers in accessible details popovers. Disambiguate
   matching pages with paths and identifiers only when needed.
