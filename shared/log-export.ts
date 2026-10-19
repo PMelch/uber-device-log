@@ -3,7 +3,7 @@ import { formatLogMessages } from './log-view';
 
 export type LogExportFormat = 'text' | 'json';
 
-/** One export contains records from one device, in the requested display order. */
+/** One export contains records from one device, oldest first. */
 export interface LogExport {
   schemaVersion: 1;
   device: Pick<Device, 'id' | 'name' | 'platform'>;
@@ -21,11 +21,13 @@ export interface InterleavedLogExport {
 }
 
 /**
- * Serialize in caller-supplied display order, excluding private UI selection keys.
+ * Serialize oldest first, excluding private UI selection keys.
+ * Callers supply the display order; newest-at-top views are reversed without mutation.
  * Any source-aware entry selects JSON v2; no source metadata selects legacy v1.
  * Source names prefix text output; message strings are never interpreted/translated.
  */
-export function serializeLogExport(messages: readonly LogMessage[], device: Device, format: LogExportFormat) {
+export function serializeLogExport(messages: readonly LogMessage[], device: Device, format: LogExportFormat, newestPosition: 'top' | 'bottom' = 'bottom') {
+  if (newestPosition === 'top') messages = [...messages].reverse();
   if (format === 'text') {
     return { text: messages.map(entry => `${entry.source ? `[${entry.source.name}] ` : ''}${formatLogMessages([entry])}`).join('\n'), mimeType: 'text/plain;charset=utf-8', extension: 'log' };
   }
