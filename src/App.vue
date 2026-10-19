@@ -620,7 +620,13 @@ onUnmounted(() => {
           <button v-if="selectionMode" ref="copyButton" class="precision-action command-primary" :disabled="!selectedRows.length" :aria-label="copied ? t('copied', { count: selectedRows.length }) : t('copyCount', { count: selectedRows.length })" @click="copyLogs"><span aria-hidden="true" v-if="copied">✓</span>{{ t(copied ? 'copiedAction' : 'copyAction') }}</button>
           <button v-else ref="selectButton" class="precision-action command-primary command-select" :disabled="!displayedMessages.length" @click="freezeSelection">{{ t('select') }}</button>
           <button class="precision-action command-save" :disabled="!displayedMessages.length" :aria-label="selectedRows.length ? t('saveCount', { count: selectedRows.length }) : t('saveAll')" @click="saveLogs">{{ t('saveAction') }}</button>
-          <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" :aria-label="t(paused ? selectionMode ? 'resumeSelection' : 'backToLive' : 'pause')" :title="t(paused ? selectionMode ? 'resumeSelection' : 'backToLive' : 'pause')" @click="togglePause"><span aria-hidden="true">{{ paused ? '▷' : 'Ⅱ' }}</span><span class="pause-label">{{ t(paused ? 'backToLive' : 'pause') }}</span></button>
+          <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" :aria-label="t(paused ? selectionMode ? 'resumeSelection' : 'backToLive' : 'pause')" :title="t(paused ? selectionMode ? 'resumeSelection' : 'backToLive' : 'pause')" @click="togglePause">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+              <path v-if="paused" d="M8 5v14l11-7z" />
+              <g v-else><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></g>
+            </svg>
+            <span class="pause-label">{{ t(paused ? 'backToLive' : 'pause') }}</span>
+          </button>
           <OverlayPanel :label="t('moreActions')" :width="320" panel-class="command-popover">
             <template #trigger><span aria-hidden="true">•••</span></template>
             <template #default="{ close }">

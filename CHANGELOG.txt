@@ -54,6 +54,8 @@ Changed
 - Expand contributor, architecture, API/export, testing and release documentation.
 
 Fixed
+- Render Pause and Resume as font-independent icons, avoiding serif pause bars
+  on Windows.
 - Keep log details open when activating an existing hover or keyboard-focus
   preview; the first activation pins it instead of immediately dismissing it.
 - Copy and save logs oldest first regardless of the selected display order.
