@@ -19,6 +19,8 @@ Added
 - Confirm successful copying directly on the Copy button.
 
 Changed
+- Present stream sources as compact selection chips with clear selected states,
+  keyboard focus, touch targets and restrained transitions.
 - Give source filter rows a contrasting surface, stronger outline and clearer
   source names in both light and dark themes without changing their layout.
 - Use compact WebView titles and domains with clear selection marks; show full

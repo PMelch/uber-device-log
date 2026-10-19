@@ -600,10 +600,11 @@ onUnmounted(() => {
       <section class="precision-console" :aria-label="t('deviceMessages')">
         <section v-if="sourceOptions.length" class="precision-source-controls" :aria-label="t('includeSources')">
           <div class="precision-source-choices"><strong>{{ t('includeSources') }}</strong>
-            <label v-for="source in sourceOptions" :key="source.key" class="precision-source-choice">
+            <label v-for="source in sourceOptions" :key="source.key" class="precision-source-choice" :title="sourceLabel(source)">
               <input type="checkbox" :checked="includedKeys.includes(source.key)" :disabled="source.device.state !== 'connected' && !includedKeys.includes(source.key)" :aria-label="t('includeSource', {source:sourceLabel(source)})" @change="toggleSource(source)" />
               <span class="precision-platform" :class="source.device.webview ? 'precision-web' : 'precision-' + source.device.platform" aria-hidden="true"></span>
-              <span>{{ sourceLabel(source) }}</span>
+              <span class="source-choice-label">{{ sourceLabel(source) }}</span>
+              <span class="source-choice-check" aria-hidden="true">✓</span>
             </label>
           </div>
           <p class="precision-source-hint">{{ t('combinedHint') }}</p>
