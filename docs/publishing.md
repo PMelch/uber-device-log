@@ -59,10 +59,23 @@ starts the global `udl` command from outside the project, and verifies
 frontend assets, the discovery API and the Origin guard. It does not require
 physical devices; device capture still needs a separate hardware check.
 
-The `files` allowlist includes only the CLI, compiled server/shared JavaScript,
-built frontend/assets and README; npm additionally includes package.json and
-LICENSE. Source tests, design previews, local configs and credentials are excluded.
-The icon license is bundled with the built frontend. No source maps are shipped.
+The application's `files` allowlist includes only the CLI, compiled server/shared
+JavaScript, built frontend/assets and README; npm additionally includes package.json
+and LICENSE. Application tests, design previews, local configs and credentials are
+excluded. The icon license is bundled with the built frontend. Application source
+maps are not shipped.
+
+Dependencies, including `appium-ios-device`, are installed on the target host;
+no dependency trees or build-host native binaries are bundled in the archive.
+Keep both lockfiles synchronized with the security overrides. These overrides
+protect the development checkout, not downstream installs of this package.
+Appium currently pins shell-quote 1.10.0 upstream, so fresh npm/Bun installations
+can still receive that vulnerable version. The package smoke test reports this
+known finding explicitly; it does not claim a clean consumer security audit.
+It continues to reject vulnerable source-map-js copies and checks independent
+npm, Bun and global npm installation/startup. See the dated dependency audit
+for the bounded reachability assessment and unresolved node-forge finding.
+
 `prepack` rebuilds automatically; `prepublishOnly` runs the unit/regression tests.
 Do not use `--ignore-scripts` for release publishing or packing.
 

@@ -9,6 +9,12 @@ including changes in the current working tree, not an already published version.
 Unreleased
 ----------
 
+Security
+- Pin patched shell-quote and source-map-js versions in the development checkout.
+  Published installations still depend on Appium's upstream shell-quote pin;
+  report this known finding during package verification. Install dependencies on
+  the target host without bundling build-host native binaries.
+
 Added
 - Show a compact summary of active search, tag, PID and severity filters in each
   source row without increasing its height; retain full values in accessible labels

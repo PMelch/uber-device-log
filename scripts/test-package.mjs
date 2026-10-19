@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, existsSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,6 +11,35 @@ import { setTimeout as delay } from 'node:timers/promises';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const temporary = mkdtempSync(join(tmpdir(), 'uber-device-log-package-'));
 const run = (command, args, cwd = root) => execFileSync(command, args, { cwd, encoding: 'utf8', timeout: 180000, stdio: ['ignore', 'pipe', 'pipe'] });
+function inspectDependencySecurity(directory) {
+  const found = new Set();
+  function walk(path) {
+    for (const item of readdirSync(path, { withFileTypes: true })) {
+      if (!item.isDirectory()) continue;
+      const child = join(path, item.name);
+      const manifestPath = join(child, 'package.json');
+      if (existsSync(manifestPath)) {
+        const { name, version } = JSON.parse(readFileSync(manifestPath, 'utf8'));
+        const minimum = { 'shell-quote': [1, 11, 0], 'source-map-js': [1, 2, 2] }[name];
+        if (minimum) {
+          found.add(name);
+          const parts = version.split('.').map(Number);
+          const firstDifference = minimum.findIndex((value, index) => parts[index] !== value);
+          const patched = !version.includes('-') && (firstDifference === -1 || parts[firstDifference] > minimum[firstDifference]);
+          if (name === 'shell-quote' && !patched) {
+            console.warn(`KNOWN SECURITY FINDING: ${name}@${version}; Appium's upstream pin is not fixed by checkout overrides`);
+          } else {
+            assert.ok(patched, `${name}@${version} is vulnerable in installed package`);
+            console.log(`PASS installed patched dependency: ${name}@${version}`);
+          }
+        }
+      }
+      walk(child);
+    }
+  }
+  walk(directory);
+  assert.ok(found.has('shell-quote'), 'Must inspect the installed Appium shell-quote dependency');
+}
 async function freePort() {
   const server = createServer();
   server.listen(0, '127.0.0.1');
@@ -61,13 +90,16 @@ async function smoke(command, args) {
 try {
   run('npm', ['run', 'build']);
   const [pack] = JSON.parse(run('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary]));
+  assert.equal((pack.bundled || []).length, 0, 'Dependencies must be installed on the target host, not bundled');
   for (const file of pack.files) {
     assert.ok(/^(package\.json|README\.md|LICENSE|bin\/[^/]+\.mjs|build\/(server|shared)\/[^/]+\.js|dist\/.*)$/.test(file.path), `Unexpected package file: ${file.path}`);
-    assert.ok(!/(^|\/)(\.env[^/]*|\.npmrc|.*\.(pem|key)|.*\.test\.[^/]+)$/.test(file.path));
+    assert.ok(!/(^|\/)(\.env[^/]*|\.npmrc|.*\.(pem|key))$/.test(file.path), `Sensitive package file: ${file.path}`);
+    assert.ok(!/\.test\.[^/]+$/.test(file.path), `Application test in archive: ${file.path}`);
   }
   console.log(`PASS archive allowlist: ${pack.files.length} files`);
   run('npm', ['install', '--omit=dev', '--no-audit', '--no-fund', join(temporary, pack.filename)], temporary);
   const installed = join(temporary, 'node_modules', 'uber-device-log');
+  inspectDependencySecurity(join(temporary, 'node_modules'));
   const manifest = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
   assert.equal(manifest.bin['uber-device-log'], 'bin/uber-device-log.mjs');
   assert.equal(manifest.bin.udl, manifest.bin['uber-device-log']);
@@ -77,8 +109,16 @@ try {
   assert.equal(run('node', [join(installed, manifest.bin['uber-device-log']), '--version'], temporary).trim(), manifest.version);
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log']);
   await smoke('bunx', ['--no-install', 'uber-device-log']);
+  // bunx against an npm installation does not verify Bun's own dependency resolver.
+  const bunDirectory = join(temporary, 'bun-install');
+  mkdirSync(bunDirectory);
+  writeFileSync(join(bunDirectory, 'package.json'), JSON.stringify({ name: 'bun-package-fixture', private: true }));
+  run('bun', ['add', join(temporary, pack.filename)], bunDirectory);
+  inspectDependencySecurity(join(bunDirectory, 'node_modules'));
+  await smoke('node', [join(bunDirectory, 'node_modules/uber-device-log/bin/uber-device-log.mjs')]);
   const prefix = join(temporary, 'global');
   run('npm', ['install', '--global', '--prefix', prefix, '--omit=dev', '--no-audit', '--no-fund', join(temporary, pack.filename)], temporary);
+  inspectDependencySecurity(join(prefix, process.platform === 'win32' ? 'node_modules' : 'lib/node_modules'));
   const globalCommand = join(prefix, process.platform === 'win32' ? 'udl.cmd' : 'bin/udl');
   assert.ok(existsSync(globalCommand), 'Global installation must expose udl');
   assert.equal(run(globalCommand, ['--version'], tmpdir()).trim(), manifest.version);

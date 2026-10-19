@@ -63,7 +63,13 @@ Requires npm, Bun (`bunx`), Node, loopback listeners and dependency-install acce
 The script builds, packs into a temporary directory, validates the archive allowlist,
 installs without development dependencies, checks help/version, and launches with
 npx, bunx and a temporary global `udl` installation from outside the checkout. It
-checks frontend assets, discovery and the Origin guard, then removes its temporary
+also installs the archive independently with Bun, rejects bundled dependencies
+and vulnerable source-map-js copies, and reports installed shell-quote versions.
+The upstream shell-quote pin remains a known consumer finding; root overrides
+apply only to the development checkout. A successful smoke test is not a clean
+security audit.
+The fixture gives Bun its own manifest so it cannot inherit the npm test project.
+It checks frontend assets, discovery and the Origin guard, then removes its temporary
 files. It does not publish anything or prove physical capture. See
 [publishing.md](publishing.md) for the minimum-Node regression check.
 

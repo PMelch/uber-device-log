@@ -1,0 +1,148 @@
+Dependency security audit — 2026-10-19
+====================================
+
+Scope: npm dependency advisories for checkout
+1c0628f15af83db96a1ce7a798dadaf91bd813e7, package version 0.7.0.
+This is a static reachability review, not a penetration test or a complete
+security audit. The assessment below records the initial, unchanged dependency
+baseline. See the remediation section at the end for the subsequent fixes.
+
+Result
+------
+The full npm audit reports six affected packages (three critical, three high),
+representing three distinct root advisories. Parent dependency reports are not
+additional independent vulnerabilities. Both lockfiles contain the affected
+versions. No exploitable path was identified in the inspected viewer workflows.
+This does not establish that the vulnerable libraries are safe for other uses.
+
+1. shell-quote 1.10.0 — critical upstream
+---------------------------------------
+Advisory: https://github.com/advisories/GHSA-pqg4-j6r4-53mv
+Path: appium-ios-device 3.1.24 -> @appium/support 7.2.8 -> shell-quote;
+also @appium/support -> teen_process 4.2.1 -> shell-quote.
+
+The issue requires a comment token followed by an attacker-controlled line
+terminator in quote(), with the resulting text subsequently executed by a shell.
+In teen_process/lib/exec.ts, quote() formats an error representation; execution
+uses spawn(cmd, args, options). subprocess.ts likewise stores a representation.
+@appium/support/lib/util.ts exposes a quote wrapper, but no calls to this wrapper
+or shellParse were found in appium-ios-device/lib. The viewer uses iOS discovery,
+syslog and WebInspector services, not command construction from captured logs.
+No complete attacker-input-to-shell path was identified.
+
+Fixed upstream in 1.11.0; npm latest is 1.12.0 at audit time. @appium/support pins
+1.10.0 exactly, so a normal compatible refresh does not fix this path. Prefer an
+upstream dependency release; otherwise validate a targeted override. Root npm
+overrides alone do not protect consumers installing this package as a dependency;
+verify the installed tarball's resolved dependency tree, not just the workspace.
+Do not blindly accept npm's suggested appium-ios-device downgrade to 3.1.21.
+
+2. node-forge 1.4.0 — high upstream
+----------------------------------
+Advisory: https://github.com/advisories/GHSA-86w9-cpqp-85rv
+Path: @devicefarmer/adbkit 3.3.9 -> node-forge 1.4.0.
+
+The issue affects RSA PKCS#1 v1.5 signature verification. adbkit's relevant
+key.verify calls are in dist/src/adb/tcpusb/socket.js (authentication of its
+optional TCP/USB bridge). server/devices.ts creates a normal ADB client, using
+listDevicesWithPaths/getDevice/shell and device socket services. The application
+does not invoke createTcpUsbBridge, parsePublicKey or RSA verification. Importing
+the bridge module is not equivalent to starting its listener/authentication.
+No reachable signature-verification path was identified in current workflows.
+
+The registry latest is still 1.4.0 and the advisory lists no patched release.
+Document this as an unremediated dependency finding with no identified reachable
+path. Reassess when adbkit changes or any bridge/authentication functionality is
+introduced. Do not hide it by claiming a clean audit or inventing a fixed version.
+
+3. source-map-js 1.2.1 — high upstream
+------------------------------------
+Advisory: https://github.com/advisories/GHSA-68fv-2mgg-jv7q
+Path: @tanstack/vue-virtual -> vue -> Vue compilers/PostCSS -> source-map-js.
+Vue's peer dependency explains its presence in the production dependency tree.
+
+Malicious indexed source-map section offsets can block the event loop. The
+production server serves prebuilt dist assets; it does not run the Vue compiler
+or accept source-map uploads. Captured log strings are not parsed as source maps.
+Development/build tooling processes repository inputs and remains a separate
+trust boundary. No production input path to the affected map processing was found.
+
+Fixed in 1.2.2, also registry latest. npm audit fix --dry-run --ignore-scripts
+proposes only source-map-js 1.2.1 -> 1.2.2 without forcing dependency changes.
+Refresh both lockfiles and rerun build/package checks when applying this update.
+
+Evidence and release recommendation
+-----------------------------------
+Executed fresh npm audit --json, npm ls for all three libraries, registry version
+queries and npm audit fix --dry-run --ignore-scripts. Consulted the upstream
+advisories and inspected application entry points plus installed dependency code.
+An independent reviewer corroborated the bounded static reachability findings.
+No exploit payload was executed and no hardware interaction was performed.
+
+The prior release check passed 122 tests, production builds, package smoke tests
+including Node 22.12, and browser regressions. Those results do not prove absence
+of vulnerabilities. This audit changed only this report, so those checks were not
+repeated here.
+
+Recommendation: apply and validate available dependency fixes before release;
+record the node-forge reachability assessment as a residual finding. Re-audit the
+actual installed tarball as well as both locked development dependency trees.
+Baseline status: assessed, not remediated; npm audit remains nonzero.
+
+Initial remediation experiment — 2026-10-19 (superseded below)
+-------------------------------------------------------------
+Pinned shell-quote 1.12.0 and source-map-js 1.2.2 through root overrides and
+updated both npm and Bun lockfiles. Full and production-only npm audits now
+report zero critical findings and two high entries: node-forge and its parent
+adbkit, representing the single unpatched advisory assessed above.
+
+An isolated experiment showed that fresh Bun installation ignored a published
+npm shrinkwrap and restored shell-quote 1.10.0. Instead, appium-ios-device and its
+dependency closure are now bundled into the archive so the patched library is
+retained by consumer installations. The approximately 15 MB compressed package
+includes third-party sources/licenses and optional host-specific Sharp binaries.
+The viewer never invokes Sharp image helpers; other-OS runtime validation is
+still required. See docs/publishing.md for the maintenance implications.
+
+A simulated npm installation using --os=linux --cpu=x64 succeeded; this checks
+installer filtering, not Linux runtime behavior. Audit of that installed archive
+reports only node-forge (one high entry, zero critical). Consumer npm ls can
+report ELSPROBLEMS because Appium's unchanged upstream manifest pins 1.10.0 but
+the bundled shell-quote is 1.12.0. The version mismatch is intentional until an
+upstream release removes the old pin; startup and actual installed copies are
+checked independently. Do not describe npm ls itself as clean.
+
+The new harmless quoting regression failed before updating (missing expected
+TypeError) and passes afterward; it never executes a shell. The new installed
+dependency check also rejected shell-quote 1.10.0 in the old tarball. All 123
+unit/regression tests pass after the update. The package test now inspects all
+installed copies of both patched libraries after npm, independent Bun and global
+npm installation. Final package validation results are recorded below.
+
+Package validation passed on Node 26.4.0 and the minimum Node 22.12.0: build,
+archive allowlist, fresh npm and Bun dependency scans, npx/bunx startup, frontend
+assets, discovery API, Origin guard, and isolated global installation/startup.
+No hardware capture or Linux/Windows runtime test is implied by these results.
+Status at that stage: both available fixes applied and verified; node-forge remains
+unpatched with the bounded reachability assessment above.
+
+Bundling reverted at user request — 2026-10-19
+---------------------------------------------
+This section supersedes the bundled-package results above. Removed the Appium
+bundle; dependencies are again resolved and installed on the target host. No
+build-host Sharp binaries are included in our package. The root security
+overrides and patched npm/Bun lockfiles are retained for the development checkout.
+They do not propagate to consumers. Appium's upstream shell-quote 1.10.0 pin
+therefore remains an unresolved finding for fresh consumer installations, along
+with node-forge. The earlier static reachability assessment still applies.
+
+The package test now rejects any bundled dependency, retains independent npm,
+Bun and global installations, rejects vulnerable source-map-js copies, and
+explicitly warns about affected shell-quote copies instead of claiming they are
+patched. This known limitation is not a clean consumer security audit.
+
+Post-reversal validation passed: 123 tests, production build, archive allowlist,
+and npm/Bun/global installation and startup checks on Node 26.4.0 and 22.12.0.
+The archive contains 21 files, zero bundled dependencies, and is 122,526 bytes
+compressed. Fresh consumer installations reported shell-quote 1.10.0 as expected;
+source-map-js resolved to patched 1.2.2. The local security fixes remain intact.
