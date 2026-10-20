@@ -4,6 +4,7 @@ import { createUpdateCheck, detectInstallation } from './update-check.js';
 import { consoleRoutes } from './console-routes.js';
 import express from 'express';
 import { parseCliOptions } from './cli-options.js';
+import { initializeProject } from './project-context.js';
 import { FlowProject } from './flow-project.js';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +16,9 @@ const app = express();
 const server = createServer(app);
 const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
 const port = options.port;
-const flowProject = await FlowProject.create(options.project);
+const project = initializeProject(options.project);
+app.locals.project = project;
+const flowProject = await FlowProject.create(project?.directory);
 const active = new Set<Stop>();
 const packageVersion = JSON.parse(readFileSync(`${root}/package.json`, 'utf8')).version as string;
 // Start once, without awaiting the registry; API requests only read this snapshot.

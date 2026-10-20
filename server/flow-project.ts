@@ -1,3 +1,4 @@
+import { initializeProject } from './project-context.js';
 import { randomBytes, createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, readdir, realpath, rename, unlink, open } from 'node:fs/promises';
@@ -32,6 +33,50 @@ async function readBoundedSource(path: string, label: string) {
     return buffer.toString('utf8', 0, length);
   } finally { await handle.close(); }
 }
+function parseProjectConfig(source: string, label: string) {
+  const doc = parseDocument(source, { schema: 'core', uniqueKeys: true });
+  if (doc.errors.length || doc.warnings.length) throw new Error(`Invalid ${label}: ${[...doc.errors, ...doc.warnings].map(e => e.message).join('; ')}`);
+  const value = doc.toJS({ maxAliasCount: 0 });
+  const config = value ?? {};
+  if (value === null) doc.setIn([], doc.createNode({}));
+  if (typeof config !== 'object' || Array.isArray(config) || (config.blueprints !== undefined && (typeof config.blueprints !== 'string' || !config.blueprints.trim()))) throw new Error(`${label} must be a mapping with optional blueprints: <relative directory>.`);
+  return { doc, config };
+}
+async function optionalStat(path: string) {
+  try { return await lstat(path); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; return undefined; }
+}
+async function migrateLegacyProject(root: string, configFile: string) {
+  // A nonempty shared config is authoritative and is never rewritten.
+  if ((await readBoundedSource(configFile, '.udl/config.yaml')).length) return;
+  const legacyConfig = resolve(root, '.flowsrc');
+  const hasLegacyConfig = !!await optionalStat(legacyConfig);
+  const source = hasLegacyConfig ? await readBoundedSource(legacyConfig, '.flowsrc') : '';
+  const { doc, config } = parseProjectConfig(source, '.flowsrc');
+  const legacyDirectory = resolve(root, config.blueprints ?? '.flows');
+  if (!within(root, legacyDirectory) || legacyDirectory === root) throw new Error('Blueprint directory must be inside the project root.');
+  if (legacyDirectory === resolve(root, '.flows')) {
+    if (hasLegacyConfig) doc.set('blueprints', '.udl/flows');
+    const before = await optionalStat(legacyDirectory);
+    if (before) {
+      if (before.isSymbolicLink() || !before.isDirectory()) throw new Error('Legacy .flows must be a directory, not a symlink.');
+      const destination = resolve(root, '.udl', 'flows');
+      if (await optionalStat(destination)) throw new Error('Migration conflict: both .flows and .udl/flows exist. Reconcile them before restarting.');
+      await rename(legacyDirectory, destination);
+    }
+  }
+  if (hasLegacyConfig) {
+    // Retain .flowsrc as a backup. Only populate the empty shared config created
+    // by initializeProject; never truncate a config another instance has filled.
+    const handle = await open(configFile, constants.O_RDWR | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    try {
+      const stat = await handle.stat();
+      if (!stat.isFile() || stat.size !== 0) throw new Error('Project configuration changed during migration. Restart to use it.');
+      await handle.writeFile(doc.toString(), 'utf8');
+      await handle.sync();
+    } finally { await handle.close(); }
+  }
+}
 export class FlowProject {
   private token = randomBytes(32).toString('hex');
   private snapshot: FlowSnapshot;
@@ -41,16 +86,14 @@ export class FlowProject {
   }
   static async create(directory?: string) {
     if (directory === undefined) return new FlowProject();
-    const root = await realpath(resolve(directory));
+    const context = initializeProject(directory)!;
+    const root = await realpath(context.directory);
     if (!(await lstat(root)).isDirectory()) throw new Error(`Flow project is not a directory: ${directory}`);
-    const configFile = resolve(root, '.flowsrc');
-    const source = await readBoundedSource(configFile, '.flowsrc');
-    const doc = parseDocument(source, { schema: 'core', uniqueKeys: true });
-    if (doc.errors.length || doc.warnings.length) throw new Error(`Invalid .flowsrc: ${[...doc.errors, ...doc.warnings].map(e => e.message).join('; ')}`);
-    // toJS rejects aliases even in otherwise empty configuration.
-    const config = doc.toJS({ maxAliasCount: 0 }) ?? {};
-    if (typeof config !== 'object' || Array.isArray(config) || Object.keys(config).some(k => k !== 'blueprints') || (config.blueprints !== undefined && (typeof config.blueprints !== 'string' || !config.blueprints.trim()))) throw new Error('.flowsrc supports only blueprints: <relative directory>.');
-    const path = resolve(root, config.blueprints ?? '.flows');
+    const configFile = resolve(root, '.udl', 'config.yaml');
+    await migrateLegacyProject(root, configFile);
+    const source = await readBoundedSource(configFile, '.udl/config.yaml');
+    const { config } = parseProjectConfig(source, '.udl/config.yaml');
+    const path = resolve(root, config.blueprints ?? '.udl/flows');
     if (!within(root, path) || path === root) throw new Error('Blueprint directory must be inside the project root.');
     const project = new FlowProject(root, path);
     await project.safeDirectory(false);

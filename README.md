@@ -190,7 +190,7 @@ and the raw log viewer continue. Log filters, pause and selection do not pause
 flow analysis. Changing included sources or reconnecting starts a new analysis
 epoch and interrupts active flows, preserving their history.
 
-Enable a project containing `.flowsrc` and a blueprint directory. The included
+Enable a project using `.udl/config.yaml` and a blueprint directory. The included
 `test_flow_project` has configuration, YAML blueprints and sample application
 messages. From the checkout root:
 
@@ -203,8 +203,8 @@ node bin/uber-device-log.mjs --flows=./test_flow_project
 
 `--project` and `--flows` are aliases for the project directory, resolved relative
 to your shell's working directory. Use either once. For your own project, create
-`.flowsrc` containing `blueprints: .flows` and put `.yaml` or `.yml` definitions in
-`.flows`. An empty configuration also defaults to `.flows`. Without a project,
+`.udl/config.yaml` containing `blueprints: .udl/flows` and put `.yaml` or `.yml` definitions in
+`.udl/flows`. An empty configuration also defaults to `.udl/flows`. Without a project,
 Logs remains available and Flows explains how to enable it.
 
 The **Blueprints** editor loads project files, validates drafts and saves them to
@@ -218,6 +218,18 @@ Use the [agent extraction guide](docs/semantic-flows-agent-guide.md) to derive
 blueprints from application code, including payload identifiers reused by later
 steps. [Semantic Flows design](docs/semantic-flows.md) records the broader design
 and implementation scope.
+
+### Project configuration upgrade
+
+UDL creates a missing `.udl/config.yaml` without overwriting an existing file.
+The optional `blueprints` setting defaults to `.udl/flows` and resolves relative
+to the project root. Other project settings may coexist in the YAML mapping.
+On startup, projects with an empty shared config automatically import
+`.flowsrc` (retained as a backup), move the legacy default `.flows/` directory
+to `.udl/flows/`, and update its default `blueprints` value. Custom blueprint
+paths remain unchanged. A nonempty shared config takes precedence. If both
+legacy and destination directories exist, startup fails without overwriting
+either directory; reconcile them before restarting.
 
 ## Good to know
 

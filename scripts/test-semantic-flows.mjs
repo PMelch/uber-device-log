@@ -66,7 +66,7 @@ try {
   await page.getByText('Blueprint is valid.', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Save blueprint', exact: true }).click();
   await page.getByText('Blueprint saved.', { exact: true }).waitFor();
-  const file = join(fixture.projectDirectory, '.flows', 'purchase.yaml');
+  const file = join(fixture.projectDirectory, '.udl/flows', 'purchase.yaml');
   assert.ok((await readFile(file, 'utf8')).includes('# Browser regression save'));
   await writeFile(file, (await readFile(file, 'utf8')) + '# External edit\n');
   await page.locator('#flow-yaml').fill(original + '\n# Unsaved local draft\n');
@@ -90,7 +90,7 @@ try {
   await page.getByText('Blueprint is valid.', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Save blueprint', exact: true }).click();
   await page.getByText('Blueprint saved.', { exact: true }).waitFor();
-  assert.ok((await readFile(join(fixture.projectDirectory, '.flows', 'browser-created.yaml'), 'utf8')).includes('id: new-flow'));
+  assert.ok((await readFile(join(fixture.projectDirectory, '.udl/flows', 'browser-created.yaml'), 'utf8')).includes('id: new-flow'));
 
   await page.getByRole('button', { name: 'All flows', exact: true }).click();
   await page.locator('.flow-toolbar input').fill('CHECKSUM_MISMATCH');

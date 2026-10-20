@@ -14,10 +14,10 @@ test('flow workspace keeps configuration, diagnostics, and captured data separat
     for (const { code } of languages) {
       const disabled = await render({ locale: code });
       assert.ok(disabled.includes(escaped(translate(code, 'flowsNoProject'))));
-      const empty = await render({ locale: code, snapshot: { enabled: true, files: [], blueprints: [], diagnostics: [], revision: '1', projectName: 'project', directory: '.flows' } });
+      const empty = await render({ locale: code, snapshot: { enabled: true, files: [], blueprints: [], diagnostics: [], revision: '1', projectName: 'project', directory: '.udl/flows' } });
       assert.ok(empty.includes(escaped(translate(code, 'flowsNoBlueprints'))));
       assert.ok(!empty.includes(escaped(translate(code, 'flowsEmpty'))));
-      const waiting = await render({ locale: code, snapshot: { enabled: true, files: [], blueprints: [{ id: 'test' }], diagnostics: [], revision: '1', projectName: 'project', directory: '.flows' } });
+      const waiting = await render({ locale: code, snapshot: { enabled: true, files: [], blueprints: [{ id: 'test' }], diagnostics: [], revision: '1', projectName: 'project', directory: '.udl/flows' } });
       assert.ok(waiting.includes(escaped(translate(code, 'flowsEmpty'))));
       assert.ok(empty.includes(escaped(translate(code, 'flowsBlueprints'))));
     }

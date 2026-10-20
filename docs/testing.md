@@ -121,7 +121,7 @@ node bin/uber-device-log.mjs --flows=./test_flow_project
 
 Choose the intended device/WebView sources, then emit matching application logs
 as described in [the test project README](../test_flow_project/README.md). Its
-`.flowsrc` and `.flows/` directory are ordinary project inputs. Selecting this
+`.udl/config.yaml` and `.udl/flows/` directory are ordinary project inputs. Selecting this
 project does not fabricate capture traffic. The example HTML emitter must run in
 the inspected WebView, or equivalent lines must be emitted by the tested app.
 

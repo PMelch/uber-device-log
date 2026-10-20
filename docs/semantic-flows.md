@@ -52,17 +52,17 @@ npx uber-device-log --project=.
 npx uber-device-log --flows=.
 ```
 
-Both flags identify a project directory containing `.flowsrc`; `--flows` is an alias for the project root, not a direct YAML file or blueprint directory. Accept `--project <dir>` and `--flows <dir>` too. Reject using both flags, even when equal, to avoid ambiguous precedence. Resolve the flag relative to the invoking `process.cwd()`, never the installed package or worktree path. Do not walk parent directories implicitly.
+Both flags identify a project directory using `.udl/config.yaml`; `--flows` is an alias for the project root, not a direct YAML file or blueprint directory. Accept `--project <dir>` and `--flows <dir>` too. Reject using both flags, even when equal, to avoid ambiguous precedence. Resolve the flag relative to the invoking `process.cwd()`, never the installed package or worktree path. Do not walk parent directories implicitly.
 
-Without either flag, retain normal log-only startup. With a flag, require a readable project directory and `.flowsrc`; missing/invalid configuration fails clearly at startup, with path and useful diagnostics. `--help` and `--version` remain usable without loading project files.
+Without either flag, retain normal log-only startup. With a flag, require a readable project directory; create a missing `.udl/` directory and empty `.udl/config.yaml`. Invalid existing configuration fails clearly at startup, with path and useful diagnostics. `--help` and `--version` remain usable without loading project files.
 
-Use YAML for `.flowsrc`, with just one supported option initially:
+Use YAML for `.udl/config.yaml`, with the optional flow setting below; other project settings may coexist:
 
 ```yaml
-blueprints: .flows
+blueprints: .udl/flows
 ```
 
-An empty configuration defaults to `.flows`. Resolve the directory relative to `.flowsrc`. For the initial version require it to stay within the project root after realpath resolution. Read `.yaml` and `.yml` directly inside that directory, excluding `.draft.yaml` and `.draft.yml` suffixes, sorted by filename; no recursive discovery in v1. A missing blueprint directory produces a recoverable Flows state and a create-directory action; an empty directory is valid. Bad blueprints leave Logs usable and display file/line diagnostics; there is no partial activation of an invalid file. Reject duplicate blueprint IDs across the active set.
+An empty configuration defaults to `.udl/flows`. Resolve the directory relative to the project root. For the initial version require it to stay within the project root after realpath resolution. Read `.yaml` and `.yml` directly inside that directory, excluding `.draft.yaml` and `.draft.yml` suffixes, sorted by filename; no recursive discovery in v1. A missing blueprint directory produces a recoverable Flows state and a create-directory action; an empty directory is valid. Bad blueprints leave Logs usable and display file/line diagnostics; there is no partial activation of an invalid file. Reject duplicate blueprint IDs across the active set.
 
 Use a maintained YAML parser with a restricted JSON-compatible schema, no executable tags, no aliases, duplicate-key rejection, and explicit file/depth/node/count limits. Dependency choice and exact limits are implementation decisions to verify against current official documentation before adding the dependency. Keep the example below under `docs/` until a loader and schema exist; do not accidentally enable sample patterns on real logs.
 
@@ -74,7 +74,7 @@ Use a maintained YAML parser with a restricted JSON-compatible schema, no execut
 
 Use a versioned directed graph. A step matcher establishes evidence; graph edges establish valid progress. Mandatory means required on the chosen route, not required on every possible route. Optional nodes may be bypassed explicitly; unchosen routes are not missing steps.
 
-The version 1 DSL is implemented by `shared/flow-blueprints.ts`; `test_flow_project/.flows` contains executable examples. Example messages are fictional JSON records inside `LogMessage.message`. Existing adapters also deliver unstructured text, which needs blueprint-specific extraction.
+The version 1 DSL is implemented by `shared/flow-blueprints.ts`; `test_flow_project/.udl/flows` contains executable examples. Example messages are fictional JSON records inside `LogMessage.message`. Existing adapters also deliver unstructured text, which needs blueprint-specific extraction.
 
 ```yaml
 version: 1
@@ -300,7 +300,7 @@ Confirm the chosen v1 epoch behavior when a source is toggled, and whether futur
 
 Run `npm run dev -- --project=./test_flow_project` from the repository root, or `node bin/uber-device-log.mjs --flows=./test_flow_project` after a build. The fixture README describes emitting matching JSON console events from an inspected WebView. No sample events are injected automatically.
 
-The snapshot endpoint includes the configured project name and relative blueprint directory, token, active blueprints/revision, current file sources/revisions and diagnostics. The client sends `X-Flow-Token` plus `Content-Type: application/json` on every flow mutation, including validation and reload. Create accepts `{filename, source}`, update accepts `{source, revision}` and validate accepts `{filename, source}`. A successful create/update returns a complete snapshot; invalid sets return status 422 with `{diagnostics}`, and conflicts return 409 with `{diagnostics}`. Initial invalid blueprints activate none; invalid external reloads retain the last complete valid definitions and active revision while exposing current file sources and diagnostics for repair. The project root and `.flowsrc` are fixed at startup; changing `.flowsrc` requires restarting.
+The snapshot endpoint includes the configured project name and relative blueprint directory, token, active blueprints/revision, current file sources/revisions and diagnostics. The client sends `X-Flow-Token` plus `Content-Type: application/json` on every flow mutation, including validation and reload. Create accepts `{filename, source}`, update accepts `{source, revision}` and validate accepts `{filename, source}`. A successful create/update returns a complete snapshot; invalid sets return status 422 with `{diagnostics}`, and conflicts return 409 with `{diagnostics}`. Initial invalid blueprints activate none; invalid external reloads retain the last complete valid definitions and active revision while exposing current file sources and diagnostics for repair. The project root and `.udl/config.yaml` are fixed at startup; changing `.udl/config.yaml` requires restarting.
 
 Initial limits: 256 KiB per file, 100 blueprint files, 100 steps per blueprint, 50 error rules, 50 extraction fields, 20 conjunctive predicates per matcher, matcher depth 12, YAML depth 32 and 12,000 YAML nodes. Paths reject prototype properties; regex extractors require an existing named capture group. `equalsFrom` producer steps must dominate the consuming step on every route; optional branch-dependent values therefore require distinct route steps. Error rules currently support ordinary matchers; `equalsFrom` in an error rule is rejected because guaranteed availability cannot be established for all active positions.
 

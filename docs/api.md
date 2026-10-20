@@ -117,8 +117,8 @@ language changes; unknown codes and legacy strings retain their fallback verbati
 ## Semantic Flows
 
 Launch with `--project=<directory>` or its alias `--flows=<directory>` to enable
-a local project. `.flowsrc` supports only `blueprints: <relative directory>`;
-an empty configuration defaults to `.flows`. Files are non-recursive `.yaml` or
+a local project. `.udl/config.yaml` supports `blueprints: <relative directory>`;
+an empty configuration defaults to `.udl/flows`. Files are non-recursive `.yaml` or
 `.yml` definitions inside the project. Invalid startup configuration fails launch;
 invalid blueprint reloads report diagnostics while keeping the last valid active
 set. Without a project, the snapshot has `enabled: false` and no active blueprints.

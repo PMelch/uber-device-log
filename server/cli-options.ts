@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 export function parseCliOptions(args: string[], environmentPort?: string) {
   let portText = environmentPort ?? '4310';
   let project: string | undefined;
@@ -11,7 +13,7 @@ export function parseCliOptions(args: string[], environmentPort?: string) {
       if (project !== undefined) throw new Error('Use --project or --flows only once.');
       const value = arg.includes('=') ? arg.slice(arg.indexOf('=') + 1) : args[++index];
       if (!value || value.startsWith('--')) throw new Error(`${arg} requires a project directory.`);
-      project = value;
+      project = resolve(value);
     }
     else if (arg === '--port' || arg === '-p') {
       const value = args[++index];

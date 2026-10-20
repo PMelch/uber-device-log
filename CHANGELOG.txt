@@ -16,6 +16,10 @@ Security
   the target host without bundling build-host native binaries.
 
 Added
+- Store project configuration in .udl/config.yaml, creating it when missing;
+  default Semantic Flow blueprints to .udl/flows with a configurable project-relative path.
+  Automatically migrate legacy .flowsrc settings and the default .flows directory
+  without overwriting existing configuration or conflicting destination files.
 - Add Semantic Flows with project-specific YAML blueprints, correlated step payloads,
   branching, expected errors and orphan detection. Inspect flow timelines beside
   raw logs, edit and validate blueprints, and use the agent authoring guide and

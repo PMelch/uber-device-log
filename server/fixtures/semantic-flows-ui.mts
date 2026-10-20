@@ -12,9 +12,9 @@ export async function createSemanticFlowsFixture(autoReplay = true) {
   const projectDirectory = join(root, 'test_flow_project');
   await cp(join(repository, 'test_flow_project'), projectDirectory, { recursive: true });
   // Only this temporary copy has short deadlines, so browser timeout checks finish quickly.
-  for (const filename of await readdir(join(projectDirectory, '.flows'))) {
+  for (const filename of await readdir(join(projectDirectory, '.udl/flows'))) {
     if (!/\.ya?ml$/.test(filename)) continue;
-    const file = join(projectDirectory, '.flows', filename);
+    const file = join(projectDirectory, '.udl/flows', filename);
     await writeFile(file, (await readFile(file, 'utf8')).replace(/^timeout: .+$/m, 'timeout: 3s'));
   }
   const project = await FlowProject.create(projectDirectory);

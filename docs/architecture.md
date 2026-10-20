@@ -158,7 +158,7 @@ collectors to keep replayed history outside the previous analysis epoch.
 
 | Module | Responsibility |
 | --- | --- |
-| `server/flow-project.ts` | Project `.flowsrc`, restricted blueprint discovery, whole-set validation, snapshot revisions and filesystem editor routes |
+| `server/flow-project.ts` | Project `.udl/config.yaml`, restricted blueprint discovery, whole-set validation, snapshot revisions and filesystem editor routes |
 | `shared/flow-types.ts`, `shared/flow-blueprints.ts` | Versioned declarative graph types, safe YAML parsing and syntax/dependency validation |
 | `shared/flow-engine.ts` | Per-device/session recognition, exact correlation aliases and prior-step payload references, branches, errors, orphan evidence, deadlines and bounded retention |
 | `src/flow-analysis.ts`, `src/flow-worker.ts` | Bounded worker ingress, snapshot activation acknowledgement, clear barriers, worker watchdog and explicit restart |
@@ -182,8 +182,8 @@ blueprint author text and identifiers remain data. Sensitive extracted values
 are masked until explicitly revealed, as is original evidence that may contain
 the same values. Flow state is session-local and is not persisted or uploaded.
 
-The project argument resolves from the launch working directory. `.flowsrc`
-configures a directory within the project root, defaulting to `.flows`. Reads
+The project argument resolves from the launch working directory. `.udl/config.yaml`
+configures a directory within the project root, defaulting to `.udl/flows`. Reads
 and writes reject unsafe filenames and symlinks. Editor mutations require a
 same-origin capability token and JSON content type in addition to the existing
 loopback guards, with revision conflicts protecting external edits. This remains
