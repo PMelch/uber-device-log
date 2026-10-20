@@ -7,11 +7,16 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { listDevices, openLogs, type Stop } from './devices.js';
 import { streamLogs } from './stream.js';
+import { parseCliOptions } from './cli-options.js';
+import { initializeProject } from './project-context.js';
 
+const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
+const project = initializeProject(options.project);
 const root = fileURLToPath(new URL(process.argv.includes('--production') ? '../..' : '..', import.meta.url));
 const app = express();
+app.locals.project = project;
 const server = createServer(app);
-const port = Number(process.env.PORT || 4310);
+const port = options.port;
 const active = new Set<Stop>();
 const packageVersion = JSON.parse(readFileSync(`${root}/package.json`, 'utf8')).version as string;
 // Start once, without awaiting the registry; API requests only read this snapshot.

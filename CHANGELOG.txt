@@ -16,6 +16,8 @@ Security
   the target host without bundling build-host native binaries.
 
 Added
+- Associate an instance with a project using --project and create a missing
+  .udl/config.yaml for future project-specific settings, preserving existing files.
 - Open Chrome DevTools for a selected Android WebView from its source row or
   JavaScript console. Provide a copyable inspector address and a Safari setup
   guide with the selected iOS device and WebView details. Use a labeled, outlined
