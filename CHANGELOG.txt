@@ -1,23 +1,20 @@
 Über Device Log — Changelog
 ==========================
 
-User-visible changes are recorded here in English.
-Coverage begins with changes after Git tag v0.7.0; earlier versions have not
-been backfilled. Unreleased entries describe work for the next release,
-including changes in the current working tree, not an already published version.
+User-visible changes are recorded here in English, newest version first.
+Unreleased contains only changes after the latest published version.
+Historical entries were reconstructed from release-tag diffs and the npm
+publication history. Dates are npm publication dates in Europe/Vienna.
+Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 
 Unreleased
 ----------
 
-Security
-- Pin patched shell-quote and source-map-js versions in the development checkout.
-  Published installations still depend on Appium's upstream shell-quote pin;
-  report this known finding during package verification. Install dependencies on
-  the target host without bundling build-host native binaries.
-
 Added
 - Hide an update reminder for 24 hours or dismiss that version permanently in
   this browser. Newer versions still appear; update instructions remain unchanged.
+- Associate an instance with a project using --project and create a missing
+  .udl/config.yaml for future project-specific settings, preserving existing files.
 - Open Chrome DevTools for a selected Android WebView from its source row or
   JavaScript console. Provide a copyable inspector address and a Safari setup
   guide with the selected iOS device and WebView details. Use a labeled, outlined
@@ -32,6 +29,25 @@ Added
   selection, command history, bounded property previews and JSON preview copying.
   Navigation invalidates the context without automatically repeating commands.
   Console execution shares the existing capture connection.
+
+Fixed
+- Populate the iOS JavaScript console context picker by initializing WebKit frame
+  discovery before requesting execution contexts.
+- Retry failed JavaScript console context discovery when reconnecting, including
+  iOS WebViews whose log capture keeps the shared inspector connection open.
+- Render Pause and Resume as font-independent icons, avoiding serif pause bars
+  on Windows.
+
+0.8.0 - 2026-10-19
+------------------
+
+Security
+- Pin patched shell-quote and source-map-js versions in the development checkout.
+  Published installations still depend on Appium's upstream shell-quote pin;
+  report this known finding during package verification. Install dependencies on
+  the target host without bundling build-host native binaries.
+
+Added
 - Show a compact summary of active search, tag, PID and severity filters in each
   source row without increasing its height; retain full values in accessible labels
   and tooltips when space is limited. Explicitly show all levels when severity
@@ -41,7 +57,7 @@ Added
 - Confirm successful copying directly on the Copy button.
 
 Changed
-- Refresh README and website screenshots for the current interface and update
+- Refresh README and website screenshots for the current interface and
   move detailed interaction guidance into a dedicated user guide. Keep the README
   focused on setup, capabilities and capture limits.
 - Combine the stream title and capture status with the action toolbar, freeing
@@ -70,11 +86,87 @@ Changed
 - Expand contributor, architecture, API/export, testing and release documentation.
 
 Fixed
-- Render Pause and Resume as font-independent icons, avoiding serif pause bars
-  on Windows.
 - Keep log details open when activating an existing hover or keyboard-focus
   preview; the first activation pins it instead of immediately dismissing it.
 - Copy and save logs oldest first regardless of the selected display order.
 - Discover Android WebViews even when the device's socket table exceeds 1 MiB.
   Filter socket records incrementally with bounded memory instead of rejecting
   the complete table. Preserve timeouts, deduplication and the 32-socket limit.
+
+0.7.0 - 2026-10-13
+------------------
+
+Added
+- Capture console messages and uncaught JavaScript exceptions from inspectable
+  Android and iOS WebViews over USB, alongside native device logs.
+- Combine native logs and multiple WebView consoles from the same device in one
+  timestamp-ordered stream, with independent search and severity filters.
+- Choose fuzzy or literal search and filter native Android logs by exact tag and
+  PID. Reset filters without changing the search mode.
+- Preserve source identity in text exports and structured JSON schema version 2
+  for combined streams.
+- Add Japanese localization to the viewer and public website.
+
+Changed
+- Keep large log buffers responsive with virtualized rows and batched updates.
+- Allow native text selection inside messages while retaining whole-entry
+  selection through checkboxes and selection controls.
+- Use a more compact search layout and provide WebView setup and capture guidance.
+
+Fixed
+- Keep live performance diagnostics and their settings out of production builds.
+
+0.6.1 - 2026-10-01
+------------------
+
+Fixed
+- Keep export-format menus and Settings open long enough to activate their
+  controls in Safari; dismiss them on outside interactions or focus changes.
+
+0.6.0 - 2026-10-01
+------------------
+
+Added
+- Disconnect capture from the device sidebar or compact device picker while
+  retaining captured logs, filters and selection.
+
+Fixed
+- Retain the captured device's platform-specific log display and severity
+  filtering after disconnecting.
+
+0.5.1 - 2026-09-30
+------------------
+
+Fixed
+- Start the packaged application on Node.js 22.12 by loading the Android device
+  dependency compatibly with native ESM. Clarify the minimum Node.js requirement.
+
+0.5.0 - 2026-09-30
+------------------
+
+Added
+- Show device selection in a persistent sidebar on wide screens, retaining the
+  compact device menu on smaller screens.
+- Add a localized public website with setup guidance and product information.
+
+0.4.0 - 2026-09-30
+------------------
+
+Added
+- Initial npm release with Android Logcat and iOS syslog capture in a local
+  browser viewer, device discovery, connection status and manual reconnection.
+- Launch through npx, bunx or the globally installed udl and uber-device-log
+  commands, with port, help and version options. Require Node.js 22.12 or newer.
+- Search log messages and metadata, filter Android severity levels, switch
+  message order, follow incoming logs, and clear the viewer.
+- Pause the view while capture continues, select whole entries with mouse,
+  keyboard or touch controls, and copy or save selected or filtered logs as
+  plain text or structured JSON.
+- Format recognized Java, native Android and iOS crash diagnostics and expose
+  message details, original text and JSON in a details popover.
+- Offer English, Spanish, German, French, Italian and Simplified Chinese UI text
+  while preserving original log content and technical data.
+- Remember language, appearance, message order, buffer capacity and the last
+  selected device. Restore capture on reload when that device is available.
+- Provide responsive layouts and System, Light and Dark appearance options,
+  with a bounded log buffer configurable up to 100,000 entries.

@@ -14,6 +14,7 @@ Usage: udl [options]
 
 Options:
   -p, --port <number>  HTTP port (default: PORT environment variable or 4310)
+      --project <path> Project directory (creates .udl/config.yaml if missing)
   -h, --help           Show this help
   -v, --version        Show package version
 

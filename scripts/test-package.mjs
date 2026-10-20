@@ -48,9 +48,9 @@ async function freePort() {
   await new Promise(resolve => server.close(resolve));
   return port;
 }
-async function smoke(command, args) {
+async function smoke(command, args, project) {
   const port = await freePort();
-  const child = spawn(command, [...args, '--port', String(port)], { cwd: temporary, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(command, [...args, '--port', String(port), ...(project ? ['--project', project] : [])], { cwd: temporary, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
   child.stdout.on('data', data => { output += data; });
   child.stderr.on('data', data => { output += data; });
@@ -74,6 +74,8 @@ async function smoke(command, args) {
     assert.equal(devices.status, 200);
     assert.ok(Array.isArray((await devices.json()).devices));
     assert.equal((await fetch(`http://127.0.0.1:${port}/api/devices`, { headers: { Origin: 'https://untrusted.example' } })).status, 403);
+    if (project) assert.equal(readFileSync(join(temporary, project, '.udl', 'config.yaml'), 'utf8'), '');
+    else assert.equal(existsSync(join(temporary, '.udl')), false);
     console.log(`PASS ${command}: installed archive starts; UI, assets, discovery and origin guard work`);
   } finally {
     if (child.exitCode === null && !spawnError) {
@@ -107,7 +109,11 @@ try {
   assert.ok(!existsSync(join(temporary, 'node_modules', 'tsx')));
   assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help'], temporary), /Usage: udl/);
   assert.equal(run('node', [join(installed, manifest.bin['uber-device-log']), '--version'], temporary).trim(), manifest.version);
-  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log']);
+  const project = 'example project';
+  mkdirSync(join(temporary, project));
+  assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help', '--project', project], temporary), /--project/);
+  assert.equal(existsSync(join(temporary, project, '.udl')), false, 'Help must not initialize projects');
+  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], project);
   await smoke('bunx', ['--no-install', 'uber-device-log']);
   // bunx against an npm installation does not verify Bun's own dependency resolver.
   const bunDirectory = join(temporary, 'bun-install');
