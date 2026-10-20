@@ -4,6 +4,7 @@ import type { ServerResponse } from 'node:http';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { streamLogs } from './stream';
+import { createBuiltinProviders, openProviderLogs } from './providers';
 import type { OpenLogs, Stop } from './devices';
 import type { Device } from '../shared/types';
 
@@ -18,6 +19,18 @@ class Response extends EventEmitter {
   asHttp() { return this as unknown as ServerResponse; }
 }
 const device: Device = { id: 'test', name: 'Test phone', platform: 'android', state: 'connected' };
+
+test('closing HTTP capture aborts provider startup immediately', async () => {
+  const response = new Response();
+  let signal: AbortSignal | undefined;
+  let resolve!: (stop: Stop) => void;
+  const stop = streamLogs(response.asHttp(), device, (_device, _message, _end, cancellation) => {
+    signal = cancellation;
+    return new Promise(done => { resolve = done; });
+  });
+  stop(); resolve(() => {}); await delay(0);
+  assert.equal(signal?.aborted, true);
+});
 
 test('closing a browser stops its collector exactly once', async () => {
   const response = new Response();
@@ -79,10 +92,10 @@ test('slow browsers bound the queue and are told when messages were skipped', as
   const response = new Response();
   response.writable = false;
   let emit!: Parameters<OpenLogs>[1];
-  const stop = streamLogs(response.asHttp(), device, async (_device, onMessage) => {
+  const stop = streamLogs(response.asHttp(), device, openProviderLogs(createBuiltinProviders(async (_device, onMessage) => {
     emit = onMessage;
     return () => {};
-  });
+  })));
   try {
     await delay(0);
     for (let i = 0; i < 1200; i++) emit({ timestamp: 'now', message: String(i) });
@@ -98,5 +111,6 @@ test('slow browsers bound the queue and are told when messages were skipped', as
     const messages = JSON.parse(frame.split('\n')[1].slice(6));
     assert.equal(messages.length, 100);
     assert.equal(messages[0].message, '200');
+    assert.equal(messages[0].raw, undefined);
   } finally { stop(); }
 });

@@ -1,3 +1,4 @@
+import { createBuiltinProviders, openProviderLogs } from './providers.js';
 import { openAndroidInspector } from './android-inspector.js';
 import { createWebViewHub } from './webview-hub.js';
 import { createRequire } from 'node:module';
@@ -76,6 +77,7 @@ export type OpenLogs = (
   device: Device,
   onMessage: (message: LogMessage) => void,
   onEnd: (reason: Notification | string) => void,
+  signal?: AbortSignal,
 ) => Promise<Stop>;
 
 export const acquireWebView = createWebViewHub((device, message, end, runtime) => {
@@ -85,7 +87,7 @@ export const acquireWebView = createWebViewHub((device, message, end, runtime) =
     : openIosWebViewLogs(device.id, device.webview, message, end, undefined, runtime);
 });
 
-export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
+const openTransportLogs: OpenLogs = async (device, onMessage, onEnd) => {
   if (device.webview) return (await acquireWebView(device, { message: onMessage, end: onEnd })).release;
   if (device.platform === 'android') {
     // Own the socket for deterministic cleanup; openLogcat() returns a transformed
@@ -117,6 +119,9 @@ export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
     service._decoder.destroy();
   };
 };
+
+export const builtinProviders = createBuiltinProviders(openTransportLogs, listDevices);
+export const openLogs: OpenLogs = openProviderLogs(builtinProviders);
 
 export async function openInspector(device: Device) {
   if (device.platform !== 'android' || !device.webview) throw new Error('An Android WebView is required');

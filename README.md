@@ -235,6 +235,8 @@ sources continue capturing when one WebView stops.
 
 ## Documentation
 
+Contributor architecture: [internal provider contract and migration status](docs/providers.md).
+
 Release notes and upcoming changes: [CHANGELOG.txt](CHANGELOG.txt).
 
 | Guide | What's inside |

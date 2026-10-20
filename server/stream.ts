@@ -11,6 +11,7 @@ import { notification, type Notification } from '../shared/notifications.js';
  * Terminal events close immediately, so queued logs are not a guaranteed final flush.
  */
 export function streamLogs(response: ServerResponse, device: Device, open: OpenLogs): Stop {
+  const cancellation = new AbortController();
   let closed = false;
   let stopCollector: Stop | undefined;
   let queue: LogMessage[] = [];
@@ -23,6 +24,7 @@ export function streamLogs(response: ServerResponse, device: Device, open: OpenL
   function close() {
     if (closed) return;
     closed = true;
+    cancellation.abort();
     clearInterval(flushTimer);
     clearInterval(heartbeat);
     clearTimeout(connectTimeout);
@@ -63,7 +65,7 @@ export function streamLogs(response: ServerResponse, device: Device, open: OpenL
     if (closed) return;
     if (queue.length === 1000) { queue.shift(); dropped++; }
     queue.push({ ...message, message: message.message.slice(0, 16384) });
-  }, finish).then(stop => {
+  }, finish, cancellation.signal).then(stop => {
     clearTimeout(connectTimeout);
     if (closed) stop();
     else {
