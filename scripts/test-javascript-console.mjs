@@ -86,6 +86,9 @@ try {
     connectionDelay = width === 1440 && locale === 'en' ? 500 : 0;
     await trigger.click();
     const panel = page.locator('.js-console'); await panel.waitFor();
+    // Wait for initial editor focus before moving keyboard focus to the
+    // maturity tooltip; connection completion must preserve that new focus.
+    await page.waitForFunction(() => document.activeElement === document.querySelector('.js-console textarea'));
     const badge = panel.locator('header .feature-status-badge');
     assert.equal(await badge.getAttribute('data-status'), 'alpha');
     await badge.focus();

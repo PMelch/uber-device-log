@@ -1,5 +1,8 @@
 /** Stable codes keep server events translatable without reconnecting a stream. */
 export const notificationMessages = {
+  inspectorInvalid: "Invalid inspector request. Select an available Android WebView.",
+  inspectorBusy: "Too many inspector sessions. Try again later.",
+  inspectorUnavailable: "The inspector could not connect. Refresh the device list and try again.",
   consoleInvalid: "Enter a JavaScript expression of at most 16,384 characters.",
   consoleBusy: "Another command is still running.",
   consoleTimeout: "No response in time. The code may still be running; it was not retried.",

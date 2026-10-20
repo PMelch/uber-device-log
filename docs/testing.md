@@ -211,3 +211,25 @@ For UI verification, return an `available` response from `/api/update`, includin
 all four commands for `unknown`. Check all seven languages at desktop, 375px and
 320px widths, light/dark themes, collapse/reopen, Escape focus restoration, and
 language switching while the notice exists. Source row heights must not change.
+
+## External WebView inspection
+
+After building, run `node scripts/test-webview-inspector.mjs` with the same
+`PLAYWRIGHT_MODULE` and `CHROME_EXECUTABLE` overrides described above. The
+synthetic fixture exercises Android target requests and popup fallback, Safari
+setup and target copying, clipboard denial, keyboard focus and nested console
+inspection, all seven languages, desktop/mobile widths and both themes.
+
+The server tests inject CDP targets and loopback connections to verify selected
+page isolation, rejected hosts/origins/paths, connection cleanup, session reuse,
+expiry and capacity recovery. They do not require an attached phone.
+
+On 2026-10-20, an additional isolated smoke test used installed Chrome
+155.0.8059.85 as a synthetic CDP target and its advertised hosted DevTools
+frontend, through `openAndroidInspector`. With local-network permission granted,
+DOM, Runtime and Debugger messages reached the frontend and the page DOM was
+visible. Without permission, Chrome rejected the WebSocket with
+`ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`, confirming the need for the UI's
+permission guidance. This establishes the browser/proxy integration, not physical
+Android WebView compatibility. Safari guidance has synthetic UI coverage only;
+no physical iOS Safari inspection was performed for this change.

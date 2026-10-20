@@ -7,6 +7,7 @@ import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
 import { webViewLabel } from '../webview-label';
 import ConsoleValue from './ConsoleValue.vue';
+import InspectorAction from './InspectorAction.vue';
 import FeatureStatusBadge from './FeatureStatusBadge.vue';
 import { featureStatuses } from '../feature-status';
 const props = defineProps<{ sources: LogSource[]; initial: string; locale: Locale }>();
@@ -96,6 +97,7 @@ onUnmounted(() => { disposed = true; ++generation; clearTimeout(timer); release(
     <section class="console-targets">
       <label>{{ t('consoleTarget') }}<select v-model="selected" :disabled="busy"><option v-for="source in sources" :key="source.key" :value="source.key">{{ webViewLabel(source.device.webview!).name }} · {{ source.device.name }}</option></select></label>
       <label>{{ t('consoleContext') }}<select v-model="context" :disabled="busy || !state.connected" @change="error = undefined"><option value="" disabled>{{ t('consoleChoose') }}</option><option v-for="item in state.contexts" :key="item.key" :value="item.key">{{ scopeLabel(item) }}</option></select></label>
+      <InspectorAction v-if="target?.device.webview" :key="target.key" :source="{ key: target.key, name: target.device.name, platform: target.device.platform, deviceId: target.device.id, webview: target.device.webview }" :t="t" />
       <p class="console-scope">{{ t('consoleScope') }}</p>
       <div class="console-status"><span :class="{ connected: state.connected && state.contexts.length }">●</span>{{ t(state.connected && state.contexts.length ? 'consoleReady' : 'consoleWaiting') }}<button :disabled="busy || connecting" @click="connect">{{ t('reconnect') }}</button></div>
     </section>

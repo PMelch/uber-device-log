@@ -131,3 +131,22 @@ flow blueprints. The **Flows** tab groups matching logs into correlated steps,
 with timelines, payload inspection and a blueprint editor. See the
 [Semantic Flows setup and sample project](../README.md#semantic-flows) and the
 [agent authoring guide](semantic-flows-agent-guide.md).
+
+## Full WebView inspectors
+
+Use the inspector button beside `>_` in a WebView source row, or inside the
+JavaScript console, for the selected target.
+
+For Android, the action opens the matching Chrome DevTools frontend in another
+tab. It needs internet access to load Google's frontend and permission to access
+the local network if the browser asks. The target connection stays on this
+computer. If a tab is blocked, copy the prepared address from the helper and
+paste it into Chrome. The local viewer must remain running; inspector access
+expires after 30 minutes, so use the action again to prepare a fresh address.
+Only WebViews that advertise a supported DevTools frontend are available.
+
+For iOS, the helper shows Safari setup steps and copyable device and WebView
+details. On the Mac connected to the device, enable Safari's developer features;
+enable Web Inspector on the iOS device. In Safari's Develop menu, choose the
+device, then the corresponding app and page. There is no direct Safari deep link
+to an individual remote WebView.

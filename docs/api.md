@@ -290,4 +290,24 @@ minutes without requests. The client polls once per second while the panel is op
 Errors use stable `console*` notification codes plus an English fallback message.
 Commands never retry automatically. A protocol timeout does not cancel JavaScript
 already executing on the device. The server exposes only the operations above,
-not a general inspector protocol relay.
+not a general inspector protocol relay. External DevTools access uses the
+separate target-specific route below.
+
+## External Android inspector
+
+`POST /api/inspector` accepts `{platform:"android",id,socket,target}` as JSON.
+The identifiers must match a currently discovered WebView on a connected device.
+The request retains the application's localhost Host/Origin restriction and has
+a 10 KiB body limit. The response is `{url}`, an HTTPS Google-hosted Chrome
+DevTools frontend for the revision advertised by the target, with a private
+loopback WebSocket address. Device-provided frontend hosts and WebSocket hosts
+are never used as arbitrary network destinations.
+
+The relay accepts only the exact random access path and approved frontend
+origin, forwards only to the selected target and exposes no discovery endpoint.
+Access is bounded to eight sessions, reused for the same target, expires after
+30 minutes and is closed on server shutdown. At capacity, the oldest inactive
+session can be replaced while active inspectors remain protected. Errors return stable
+`inspectorInvalid`, `inspectorBusy` or `inspectorUnavailable` notification codes
+with an English fallback. Browsers can require local-network permission for the
+hosted frontend to connect. Safari guidance uses no backend inspector endpoint.
