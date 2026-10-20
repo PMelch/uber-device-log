@@ -68,6 +68,10 @@ Changed
 - Expand contributor, architecture, API/export, testing and release documentation.
 
 Fixed
+- Populate the iOS JavaScript console context picker by initializing WebKit frame
+  discovery before requesting execution contexts.
+- Retry failed JavaScript console context discovery when reconnecting, including
+  iOS WebViews whose log capture keeps the shared inspector connection open.
 - Render Pause and Resume as font-independent icons, avoiding serif pause bars
   on Windows.
 - Keep log details open when activating an existing hover or keyboard-focus
