@@ -64,7 +64,13 @@ Requires npm, Bun (`bunx`), Node, loopback listeners and dependency-install acce
 The script builds, packs into a temporary directory, validates the archive allowlist,
 installs without development dependencies, checks help/version, and launches with
 npx, bunx and a temporary global `udl` installation from outside the checkout. It
-checks frontend assets, discovery and the Origin guard, then removes its temporary
+also installs the archive independently with Bun, rejects bundled dependencies
+and vulnerable source-map-js copies, and reports installed shell-quote versions.
+The upstream shell-quote pin remains a known consumer finding; root overrides
+apply only to the development checkout. A successful smoke test is not a clean
+security audit.
+The fixture gives Bun its own manifest so it cannot inherit the npm test project.
+It checks frontend assets, discovery and the Origin guard, then removes its temporary
 files. It does not publish anything or prove physical capture. See
 [publishing.md](publishing.md) for the minimum-Node regression check.
 
@@ -164,3 +170,44 @@ iOS WebViews and Windows/Linux require their own evidence. Preserve dated result
 as historical evidence rather than describing them as current guarantees. Report
 commands, environment, failures and hardware limitations with each change; avoid
 maintaining an undated hard-coded test count in general guides.
+
+## Stable workflow layout regression
+
+After `npm run build`, run `node scripts/test-workflow-layout.mjs` with Playwright
+available separately. `PLAYWRIGHT_MODULE` can point to its `index.mjs` and
+`CHROME_EXECUTABLE` can point to an installed Chrome executable. Optionally set
+`WORKFLOW_SCREENSHOT` to save the final dark/mobile filter state.
+
+The synthetic fixture checks 1440, 900, 390 and 320px widths. It measures actual
+log-row positions across filter/advanced-filter overlays, selection, copy success,
+manual clipboard fallback, action menus and arrivals during pause. It also checks
+JSON export of offscreen selections, arrivals exceeding buffer capacity, all seven
+languages with selection retained, keyboard Escape/focus restoration, horizontal
+overflow and reduced motion. It does not establish physical-device compatibility.
+
+### Compact WebView selection
+
+After building, run `node scripts/test-webview-selection.mjs` with the same
+`PLAYWRIGHT_MODULE` and `CHROME_EXECUTABLE` overrides as the workflow layout check.
+It checks all seven languages at desktop and touch widths, URL details, selection,
+keyboard focus restoration and stationary rows. Fixtures use synthetic page URLs.
+
+Run `node scripts/test-log-details.mjs` after building (with the same browser
+overrides) to check hover-then-click, keyboard activation, touch and Escape focus
+restoration. The test waits beyond the preview dismissal timer.
+
+## Startup update check
+
+The update check follows the existing split between server API snapshots and Vue
+state. `server/update-check.test.ts` injects registry responses to cover startup
+without waiting, timeouts/offline/HTTP failures, invalid metadata, stable version
+ordering, and installation paths. `server/update-notice.test.ts` covers polling
+and cancellation independently of capture. No package manager is invoked during
+startup; uncertain installation layouts return `unknown` and offer alternatives.
+Only fixed registry/changelog URLs and fixed commands are used; log data and local
+paths are not sent. `--help` and `--version` exit before starting the server.
+
+For UI verification, return an `available` response from `/api/update`, including
+all four commands for `unknown`. Check all seven languages at desktop, 375px and
+320px widths, light/dark themes, collapse/reopen, Escape focus restoration, and
+language switching while the notice exists. Source row heights must not change.

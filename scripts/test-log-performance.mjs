@@ -106,11 +106,12 @@ try {
     streaming = true; await page.waitForTimeout(1200); streaming = false; await page.waitForTimeout(100);
     assert.equal((await state()).last, frozen.last);
     assert.ok(Number(/Incoming: ([\d,]+) logs\/s/.exec(await page.locator('.precision-performance').innerText())?.[1].replaceAll(',', '')) > 0, 'paused capture still counts arrivals');
+    await page.locator('.precision-commandbar > .overlay-trigger').click();
     await page.getByRole('button', { name: 'Select all filtered', exact: true }).click();
-    await page.locator('.precision-selectionbar summary').click();
-    await page.getByRole('button', { name: 'Structured JSON', exact: true }).click();
+    await page.locator('.precision-commandbar > .overlay-trigger').click();
+    await page.locator('#command-export-format').selectOption('json');
     const downloadEvent = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Save (10,000)', exact: true }).click();
+    await page.locator('.precision-overlay:popover-open').getByRole('button', { name: 'Save (10,000)', exact: true }).click();
     const download = await downloadEvent;
     const exported = JSON.parse(await readFile(await download.path(), 'utf8')); assert.equal(exported.entries.length, 10000);
     await page.getByRole('button', { name: /Back to live/ }).click();

@@ -1,5 +1,7 @@
+import type { RuntimeConsole } from './runtime-console.js';
 import { createServer } from 'node:net';
 import type { Duplex } from 'node:stream';
+import { StringDecoder } from 'node:string_decoder';
 import type { LogMessage, WebView } from '../shared/types.js';
 import { notification, type Notification } from '../shared/notifications.js';
 
@@ -10,9 +12,13 @@ export interface WebViewDevice {
 
 const discoveryTimeout = 2500;
 const maxResponse = 1024 * 1024;
+const maxWebViewSockets = 32;
+// A /proc/net/unix row contains a short header and a Unix socket name. Keep
+// partial rows bounded too, even if a malformed stream never sends a newline.
+const maxSocketLine = 4096;
 
 export function webViewSockets(text: string): string[] {
-  return [...new Set([...text.matchAll(/@((?:webview_devtools_remote)(?:_[\w.-]+)?)\s*$/gm)].map(match => match[1]))].slice(0, 32);
+  return [...new Set([...text.matchAll(/@((?:webview_devtools_remote)(?:_[\w.-]+)?)\s*$/gm)].map(match => match[1]))].slice(0, maxWebViewSockets);
 }
 
 async function acquireStream(pending: PromiseLike<Duplex>, timeout: number): Promise<Duplex> {
@@ -30,15 +36,39 @@ async function acquireStream(pending: PromiseLike<Duplex>, timeout: number): Pro
   });
 }
 
-async function readStream(stream: Duplex): Promise<string> {
-  let text = '';
-  const timer = setTimeout(() => stream.destroy(new Error('WebView discovery timed out')), discoveryTimeout);
+async function readWebViewSockets(stream: Duplex, timeout: number): Promise<string[]> {
+  const sockets = new Set<string>();
+  const decoder = new StringDecoder('utf8');
+  let line = '';
+  let oversized = false;
+  function finishLine() {
+    if (!oversized) for (const socket of webViewSockets(line)) sockets.add(socket);
+    line = '';
+    oversized = false;
+  }
+  function consume(text: string) {
+    let start = 0;
+    while (start < text.length && sockets.size < maxWebViewSockets) {
+      const newline = text.indexOf('\n', start);
+      const end = newline === -1 ? text.length : newline;
+      if (!oversized) {
+        if (line.length + end - start > maxSocketLine) { line = ''; oversized = true; }
+        else line += text.slice(start, end);
+      }
+      if (newline === -1) break;
+      finishLine();
+      start = newline + 1;
+    }
+  }
+  const timer = setTimeout(() => stream.destroy(new Error('WebView discovery timed out')), timeout);
   try {
     for await (const chunk of stream) {
-      text += chunk.toString();
-      if (text.length > maxResponse) throw new Error('WebView discovery response too large');
+      consume(typeof chunk === 'string' ? chunk : decoder.write(chunk));
+      if (sockets.size === maxWebViewSockets) return [...sockets];
     }
-    return text;
+    consume(decoder.end());
+    finishLine();
+    return [...sockets];
   } finally { clearTimeout(timer); stream.destroy(); }
 }
 
@@ -114,7 +144,7 @@ function targetPath(target: Target): string | undefined {
 }
 
 export async function discoverWebViews(device: WebViewDevice, timeout = discoveryTimeout): Promise<WebView[]> {
-  const sockets = webViewSockets(await readStream(await acquireStream(device.shell('cat /proc/net/unix'), timeout)));
+  const sockets = await readWebViewSockets(await acquireStream(device.shell('cat /proc/net/unix'), timeout), timeout);
   const views: WebView[] = [];
   // Small batches bound simultaneous ADB connections, even with many processes.
   for (let offset = 0; offset < sockets.length; offset += 4) {
@@ -166,11 +196,11 @@ export function webViewMessage(event: CdpEvent, view: WebView): LogMessage | und
 }
 
 export async function openWebViewLogs(device: WebViewDevice, view: WebView,
-  onMessage: (message: LogMessage) => void, onEnd: (reason: Notification | string) => void): Promise<() => void> {
+  onMessage: (message: LogMessage) => void, onEnd: (reason: Notification | string) => void, runtime?: RuntimeConsole): Promise<() => void> {
   const tunnel = await webViewTunnel(device, view.socket);
   let ws: WebSocket | undefined;
   let stopped = false;
-  const stop = () => { if (stopped) return; stopped = true; ws?.close(); tunnel.close(); };
+  const stop = () => { if (stopped) return; stopped = true; runtime?.close(); ws?.close(); tunnel.close(); };
   try {
     const target = (await targets(tunnel.origin)).find(target => target?.id === view.id && target.type === 'page');
     const path = target && targetPath(target);
@@ -180,11 +210,17 @@ export async function openWebViewLogs(device: WebViewDevice, view: WebView,
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('WebView console connection timed out')), 5000);
       const finish = (error?: Error) => { clearTimeout(timer); error ? reject(error) : resolve(); };
-      connection.addEventListener('open', () => connection.send(JSON.stringify({ id: 1, method: 'Runtime.enable' })));
+      connection.addEventListener('open', () => { runtime?.attach('', packet => connection.send(JSON.stringify(packet))); if (runtime) connection.send(JSON.stringify({ id: 2, method: 'Target.setAutoAttach', params: { autoAttach: true, waitForDebuggerOnStart: false, flatten: true } })); connection.send(JSON.stringify({ id: 1, method: 'Runtime.enable' })); });
       connection.addEventListener('message', event => {
         if (stopped) return;
         try {
           const data = JSON.parse(String(event.data));
+          if (data.method === 'Target.attachedToTarget' && data.params?.targetInfo?.type === 'iframe') {
+            const sessionId = data.params.sessionId;
+            runtime?.attach(sessionId, packet => connection.send(JSON.stringify({ ...packet, sessionId })), false);
+            if (runtime) connection.send(JSON.stringify({ id: 2, sessionId, method: 'Target.setAutoAttach', params: { autoAttach: true, waitForDebuggerOnStart: false, flatten: true } }));
+          } else if (data.method === 'Target.detachedFromTarget') runtime?.detach(data.params.sessionId);
+          if (runtime?.receive(data, data.sessionId ?? '')) return;
           if (data.id === 1) {
             if (data.error) finish(new Error(data.error.message ?? 'Runtime.enable failed'));
             else finish();

@@ -1,0 +1,82 @@
+Über Device Log — Changelog
+==========================
+
+User-visible changes are recorded here in English.
+Coverage begins with changes after Git tag v0.7.0; earlier versions have not
+been backfilled. Unreleased entries describe work for the next release,
+including changes in the current working tree, not an already published version.
+
+Unreleased
+----------
+
+Security
+- Pin patched shell-quote and source-map-js versions in the development checkout.
+  Published installations still depend on Appium's upstream shell-quote pin;
+  report this known finding during package verification. Install dependencies on
+  the target host without bundling build-host native binaries.
+
+Added
+- Add Semantic Flows with project-specific YAML blueprints, correlated step payloads,
+  branching, expected errors and orphan detection. Inspect flow timelines beside
+  raw logs, edit and validate blueprints, and use the agent authoring guide and
+  sample project to create definitions from application code.
+- Check for new versions in the background at startup and show the installed and
+  latest versions, changelog, and update instructions for the detected launcher
+  or global installation. Offer alternatives when detection is inconclusive.
+- Introduce shared Alpha, Beta and Preview feature badges with localized,
+  keyboard-accessible explanations. Mark the JavaScript console as Alpha at
+  its entry point and panel heading; centralize feature maturity settings.
+- Add a JavaScript console for Android and iOS WebViews with explicit frame
+  selection, command history, bounded property previews and JSON preview copying.
+  Navigation invalidates the context without automatically repeating commands.
+  Console execution shares the existing capture connection.
+- Show a compact summary of active search, tag, PID and severity filters in each
+  source row without increasing its height; retain full values in accessible labels
+  and tooltips when space is limited. Explicitly show all levels when severity
+  filtering is unrestricted.
+- Show the number of log records received while the view is paused, including
+  records that have since left the live buffer.
+- Confirm successful copying directly on the Copy button.
+
+Changed
+- Refresh README and website screenshots for the current interface and
+  move detailed interaction guidance into a dedicated user guide. Keep the README
+  focused on setup, capabilities and capture limits.
+- Combine the stream title and capture status with the action toolbar, freeing
+  vertical space for logs while retaining a stable toolbar height across states.
+  Keep capture status beside the title and group Save with Pause.
+- Present stream sources as compact selection chips with clear selected states,
+  keyboard focus, touch targets and restrained transitions.
+- Give source filter rows a contrasting surface, stronger outline and clearer
+  source names in both light and dark themes without changing their layout.
+- Use compact WebView titles and domains with clear selection marks; show full
+  URLs and target identifiers in accessible details popovers. Disambiguate
+  matching pages with paths and identifiers only when needed.
+- Show the Select button only for touch-style primary pointers. Desktop users
+  select entries directly through rows or checkboxes; keyboard selection remains
+  available. Finishing selection restores focus to a visible control.
+- Keep the log viewport stationary when entering selection mode, opening filters
+  or additional actions, and pausing the view. Use compact source filter rows,
+  overlay panels and a fixed-height toolbar on desktop and mobile.
+- Group additional selection/export actions and the export-format selector in
+  More actions, using compact grouped menu rows and collapsible help instead
+  of stacked full-width buttons. Open the manual-copy fallback as a dialog.
+- Replace the continuous pause pulse with restrained transitions that honor
+  reduced-motion preferences. Localize new controls in all seven UI languages.
+- Update the public website to emphasize combined native and WebView logging
+  for hybrid apps, and use uber-device-log.app as the website domain.
+- Expand contributor, architecture, API/export, testing and release documentation.
+
+Fixed
+- Preserve keyboard focus in the JavaScript console when a connection finishes,
+  so Escape dismisses a feature tooltip without closing the console.
+- Retain early events independently for overlapping flow blueprints, so a shorter
+  flow completing does not prevent a longer flow from reaching its outcome.
+- Render Pause and Resume as font-independent icons, avoiding serif pause bars
+  on Windows.
+- Keep log details open when activating an existing hover or keyboard-focus
+  preview; the first activation pins it instead of immediately dismissing it.
+- Copy and save logs oldest first regardless of the selected display order.
+- Discover Android WebViews even when the device's socket table exceeds 1 MiB.
+  Filter socket records incrementally with bounded memory instead of rejecting
+  the complete table. Preserve timeouts, deduplication and the 32-socket limit.

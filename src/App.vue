@@ -5,6 +5,9 @@ import type { Device, DeviceList, LogMessage, LogSourceMetadata } from '../share
 import { logLevel } from '../shared/log-view';
 import { defaultSourceFilter, createSourceFilterer, mergeSourceMessages, type SourceFilter } from '../shared/log-sources';
 import { createLogStreams, createLogBatcher, type StreamSource, type LogStream } from './log-streams';
+import WebViewOption from './components/WebViewOption.vue';
+import { webViewLabel } from './webview-label';
+import JavaScriptConsole from './components/JavaScriptConsole.vue';
 import SourceFilters from './components/SourceFilters.vue';
 import { rangeKeys, selectedEntries } from '../shared/log-selection';
 import { serializeLogExport, type LogExportFormat } from '../shared/log-export';
@@ -14,8 +17,10 @@ import { createRememberedDevice, deviceKey, webViewKey } from './remembered-devi
 import { usePerformance } from './composables/usePerformance';
 import { usePreferences } from './composables/usePreferences';
 import PrecisionMenu from './components/PrecisionMenu.vue';
+import OverlayPanel from './components/OverlayPanel.vue';
 import LogMessageText from './components/LogMessageText.vue';
 import LogDetails from './components/LogDetails.vue';
+import UpdateNotice from './components/UpdateNotice.vue';
 import { useLogDetails } from './composables/useLogDetails';
 import { useFlows } from './composables/useFlows';
 import FlowWorkspace from './components/FlowWorkspace.vue';
@@ -32,6 +37,7 @@ function tabKeydown(event: KeyboardEvent) {
 }
 watch(activeTab, () => { details.close(); nextTick(() => { rowVirtualizer.value.measure(); if (following.value && !paused.value) scrollToLatest(); }); });
 const devices = ref<Device[]>([]);
+const consoleSource = ref('');
 const warnings = ref<(DeviceList['warnings'][number] | UiMessage)[]>([]);
 const selected = ref('');
 const messages = shallowRef<(LogMessage & { key: number })[]>([]);
@@ -50,6 +56,8 @@ function measurePerformancePanel() {
 watch([performanceEnabled, performanceSample, locale], () => nextTick(measurePerformancePanel), { flush: 'post' });
 const pausedMessages = shallowRef<typeof messages.value>();
 const paused = computed(() => pausedMessages.value !== undefined);
+const receivedSincePause = ref(0);
+watch(paused, () => { receivedSincePause.value = 0; }, { flush: 'sync' });
 const visibleMessages = computed(() => pausedMessages.value ?? messages.value);
 const includedKeys = ref<string[]>([]);
 const sourceFilters = ref<Record<string, SourceFilter>>({});
@@ -74,7 +82,15 @@ let dragFrame = 0;
 
 const copyFallback = ref<string>();
 const copyText = ref<HTMLTextAreaElement>();
+const copyDialog = ref<HTMLDialogElement>();
 const copyButton = ref<HTMLButtonElement>();
+const selectButton = ref<HTMLButtonElement>();
+const copied = ref(false);
+let copyFeedbackTimer: ReturnType<typeof setTimeout> | undefined;
+watch(selectedKeys, () => {
+  copied.value = false;
+  clearTimeout(copyFeedbackTimer);
+}, { flush: 'sync' });
 const status = ref<UiMessage | string>(uiMessage('initialStatus'));
 const loading = ref(false);
 const following = ref(true);
@@ -168,7 +184,11 @@ function metadata(source: StreamSource): LogSourceMetadata {
   return { key: source.key, name: device.webview ? device.webview.title || device.webview.url || device.webview.id : device.name,
     platform: device.platform, deviceId: device.id, ...(device.webview ? {webview:{...device.webview}} : {}) };
 }
-function sourceLabel(source: StreamSource) { return source.device.webview ? metadata(source).name : t('sourceDeviceLogs'); }
+function sourceLabel(source: StreamSource) {
+  if (!source.device.webview) return t('sourceDeviceLogs');
+  const label = webViewLabel(source.device.webview, source.device.webviews);
+  return [label.name || t('webviewConsole'), label.subtitle].filter(Boolean).join(' · ');
+}
 function entryDevice(entry: LogMessage): Device | undefined {
   return entry.source ? capturedSources.value[entry.source.key] : logDevice.value;
 }
@@ -297,6 +317,7 @@ const logBatcher = createLogBatcher<(LogMessage & { key: number })>(batch => { v
   compact: (rows, capacity) => measurePerformance(() => mergeSourceMessages([], rows, capacity)),
 });
 function receiveLogs(source: StreamSource, batch: LogMessage[]) {
+  if (paused.value) receivedSincePause.value += batch.length;
   recordIncoming(batch.length);
   const origin = metadata(source);
   const rows = batch.map(message => ({ ...message, source: origin, key: nextKey++ }));
@@ -361,6 +382,7 @@ async function togglePause() {
 }
 
 function clearView() {
+  receivedSincePause.value = 0;
   logBatcher.clear();
   details.close();
   clearSelection();
@@ -416,12 +438,16 @@ watch(sourceFilters, async () => {
   if (following.value) scrollToLatest();
 }, {deep:true});
 function freezeSelection() {
+  const moveFocus = document.activeElement === selectButton.value;
   // Freeze the rows the user actually clicked before queued arrivals can evict them.
   if (!paused.value) pausedMessages.value = messages.value;
   logBatcher.flush();
   selectionMode.value = true;
+  if (moveFocus) void nextTick(() => viewport.value?.focus({ preventScroll: true }));
 }
 function clearSelection() {
+  copied.value = false;
+  clearTimeout(copyFeedbackTimer);
   endDrag();
   nativeRange.value = undefined;
   selectedKeys.value = new Set();
@@ -429,6 +455,14 @@ function clearSelection() {
   rangePending.value = false;
   copyFallback.value = undefined;
   exportStatus.value = undefined;
+}
+async function finishSelection() {
+  clearSelection();
+  selectionMode.value = false;
+  // Finishing selection leaves the reading snapshot paused, as before.
+  await nextTick();
+  const target = selectButton.value?.getClientRects().length ? selectButton.value : viewport.value;
+  target?.focus({ preventScroll: true });
 }
 function chooseRow(key: number, additive = false, extend = false) {
   details.close();
@@ -501,9 +535,13 @@ async function copyLogs() {
   try {
     await navigator.clipboard.writeText(text);
     exportStatus.value = uiMessage('copied', { count });
+    copied.value = true;
+    clearTimeout(copyFeedbackTimer);
+    copyFeedbackTimer = setTimeout(() => { copied.value = false; }, 1800);
   } catch {
     copyFallback.value = text;
     await nextTick();
+    copyDialog.value?.showModal();
     copyText.value?.focus();
     copyText.value?.select();
   }
@@ -533,6 +571,7 @@ onMounted(() => {
   poll = setInterval(() => void refresh(), 3000);
 });
 onUnmounted(() => {
+  clearTimeout(copyFeedbackTimer);
   window.removeEventListener('resize', measurePerformancePanel);
   document.removeEventListener('selectionchange', nativeSelectionChanged);
   window.removeEventListener('pointerup', endDrag);
@@ -547,7 +586,7 @@ onUnmounted(() => {
 
 <template>
   <div id="precision-design" :data-platform="selectedSources.some(source => source.device.webview) ? 'webview' : logDevice?.platform" :class="{ selecting: selectionMode }">
-    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
+    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><UpdateNotice :t="t" /><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
     </div></header>
     <div class="precision-workspace">
       <aside class="precision-device-sidebar" :aria-label="t('availableDevices')">
@@ -560,9 +599,7 @@ onUnmounted(() => {
             <span class="device-sidebar-label"><strong>{{ device.name }}</strong><span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }}</span><span class="precision-sub">{{ deviceState(device.state) }}</span></span>
             <span class="device-sidebar-dot" :data-connected="device.state === 'connected'" aria-hidden="true"></span>
           </button>
-          <button v-for="view in device.webviews" :key="webViewKey(device, view)" type="button" class="device-sidebar-item device-webview-item" :disabled="device.state !== 'connected'" :aria-pressed="includedKeys.includes(webViewKey(device, view))" :aria-label="t('webviewSelect', { title: view.title || view.url || view.id, device: device.name })" @click="chooseSource(device, webViewKey(device, view))">
-            <span class="precision-platform precision-web" aria-hidden="true"></span><span class="device-sidebar-label"><span class="precision-sub">{{ t('webviewConsole') }}</span><strong>{{ view.title || view.url || view.id }}</strong><span class="precision-sub">{{ view.url }}</span></span>
-          </button>
+          <WebViewOption v-for="view in device.webviews" :key="webViewKey(device, view)" :view="view" :siblings="device.webviews ?? []" :device="device.name" :disabled="device.state !== 'connected'" :selected="includedKeys.includes(webViewKey(device, view))" @select="chooseSource(device, webViewKey(device, view))" />
           </template>
         </div>
         <button type="button" class="precision-action precision-disconnect" :disabled="!selected" @click="disconnect">{{ t('disconnectDevice') }}</button>
@@ -571,12 +608,12 @@ onUnmounted(() => {
       <div class="precision-controls">
         <div class="precision-field precision-device"><label>{{ t('connectedDevice') }}</label>
           <PrecisionMenu :label="t('chooseDevice')" :disabled="!devices.length">
-            <template #selected><span v-if="currentDevice" class="precision-platform" :class="'precision-' + currentDevice.platform" aria-hidden="true"></span><span class="device-label">{{ currentDevice?.webview ? t('webviewSelected', { device: currentDevice.name, title: currentDevice.webview.title || currentDevice.webview.url || currentDevice.webview.id }) : currentDevice?.name ?? (devices.length ? t('selectDevice') : t('noDevices')) }}<span class="precision-sub">{{ currentDevice ? `${currentDevice.platform === 'ios' ? 'iOS' : 'Android'} · ${currentDevice.id}` : 'Android & iOS' }}</span></span></template>
+            <template #selected><span v-if="currentDevice" class="precision-platform" :class="'precision-' + currentDevice.platform" aria-hidden="true"></span><span class="device-label">{{ currentDevice?.webview ? t('webviewSelected', { device: currentDevice.name, title: webViewLabel(currentDevice.webview, currentDevice.webviews).name || t('webviewConsole') }) : currentDevice?.name ?? (devices.length ? t('selectDevice') : t('noDevices')) }}<span class="precision-sub">{{ currentDevice ? `${currentDevice.platform === 'ios' ? 'iOS' : 'Android'} · ${currentDevice.id}` : 'Android & iOS' }}</span></span></template>
             <div class="precision-menuhead">{{ t('availableDevices') }}</div>
             <p v-if="!devices.length" class="precision-menuhead">{{ t('authorizeDevice') }}</p>
             <template v-for="device in devices" :key="keyOf(device)">
             <button :disabled="device.state !== 'connected'" :aria-pressed="selected === keyOf(device) && includedKeys.includes(keyOf(device))" @click="chooseSource(device)"><span class="precision-platform" :class="'precision-' + device.platform" aria-hidden="true"></span><span class="device-label">{{ device.name }}<span class="precision-sub">{{ device.platform === 'ios' ? 'iOS' : 'Android' }} · {{ device.id }} · {{ deviceState(device.state) }}</span></span></button>
-            <button v-for="view in device.webviews" :key="webViewKey(device, view)" class="device-webview-option" :disabled="device.state !== 'connected'" :aria-pressed="includedKeys.includes(webViewKey(device, view))" :aria-label="t('webviewSelect', { title: view.title || view.url || view.id, device: device.name })" @click="chooseSource(device, webViewKey(device, view))"><span class="precision-platform precision-web" aria-hidden="true"></span><span class="device-label">{{ view.title || view.url || view.id }}<span class="precision-sub">{{ t('webviewConsole') }} · {{ view.url }}</span></span></button>
+            <WebViewOption v-for="view in device.webviews" :key="webViewKey(device, view)" :view="view" :siblings="device.webviews ?? []" :device="device.name" :disabled="device.state !== 'connected'" :selected="includedKeys.includes(webViewKey(device, view))" @select="chooseSource(device, webViewKey(device, view))" />
             </template>
           </PrecisionMenu>
         </div>
@@ -591,15 +628,16 @@ onUnmounted(() => {
       <section class="precision-console" :aria-label="t('deviceMessages')">
         <section v-if="sourceOptions.length" class="precision-source-controls" :aria-label="t('includeSources')">
           <div class="precision-source-choices"><strong>{{ t('includeSources') }}</strong>
-            <label v-for="source in sourceOptions" :key="source.key" class="precision-source-choice">
+            <label v-for="source in sourceOptions" :key="source.key" class="precision-source-choice" :title="sourceLabel(source)">
               <input type="checkbox" :checked="includedKeys.includes(source.key)" :disabled="source.device.state !== 'connected' && !includedKeys.includes(source.key)" :aria-label="t('includeSource', {source:sourceLabel(source)})" @change="toggleSource(source)" />
               <span class="precision-platform" :class="source.device.webview ? 'precision-web' : 'precision-' + source.device.platform" aria-hidden="true"></span>
-              <span>{{ sourceLabel(source) }}</span>
+              <span class="source-choice-label">{{ sourceLabel(source) }}</span>
+              <span class="source-choice-check" aria-hidden="true">✓</span>
             </label>
           </div>
           <p v-show="activeTab === 'logs'" class="precision-source-hint">{{ t('combinedHint') }}</p>
           <template v-for="source in selectedSources" :key="source.key">
-            <SourceFilters v-show="activeTab === 'logs'" :source="metadata(source)" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
+            <SourceFilters v-show="activeTab === 'logs'" :source="metadata(source)" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
             <p v-if="sourceStates[source.key] && !sourceStates[source.key]!.live" class="precision-source-status" role="status">{{ sourceLabel(source) }} · {{ localizeMessage(sourceStates[source.key]!.message) }}</p>
           </template>
         </section>
@@ -608,26 +646,51 @@ onUnmounted(() => {
           <FlowWorkspace :snapshot="flows.snapshot.value" :instances="flows.instances.value" :loading="flows.loading.value" :gap-count="flows.gapCount.value" :active-sources="includedKeys.length" :locale="locale" @clear="flows.clear" @reload="flows.reload" />
         </div>
         <div id="workspace-logs" v-show="activeTab === 'logs'" role="tabpanel" aria-labelledby="workspace-tab-logs" class="precision-logs-panel">
-        <div class="precision-consolebar"><div class="precision-caption"><strong>{{ t(includedKeys.length > 1 ? 'combinedLogs' : selectedSources[0]?.device.webview ? 'webviewConsole' : 'logStream') }}</strong><span>·</span><span>{{ t('messageCount', { count: displayedMessages.length }) }}</span><span class="precision-live" :data-active="capturing"><span class="precision-dot"></span>{{ t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing') }}</span></div><div class="precision-actions">
-          <button class="precision-action" :disabled="!currentDevice" @click="start">↻ {{ t('reconnect') }}</button>
-          <button class="precision-action" :disabled="!messages.length && !visibleMessages.length" @click="clearView">{{ t('clear') }}</button>
-          <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" @click="togglePause">{{ paused ? '▷' : 'Ⅱ' }} {{ t(paused ? 'backToLive' : 'pause') }}</button>
-          <button class="precision-action" :disabled="!displayedMessages.length" :aria-pressed="selectionMode" @click="selectionMode ? (clearSelection(), selectionMode = false) : freezeSelection()">{{ t(selectionMode ? 'doneSelecting' : 'select') }}</button>
-        </div></div>
-        <div class="precision-selectionbar" @keydown.esc="event => { if (!event.defaultPrevented) clearSelection(); }">
-          <span role="status">{{ selectedRows.length ? t('selectedCount', { count: selectedRows.length }) : t('noSelection') }}</span>
-          <PrecisionMenu :label="t('exportFormat')">
-            <template #selected>{{ t(exportFormat === 'text' ? 'plainText' : 'structuredJson') }}</template>
-            <button :aria-pressed="exportFormat === 'text'" @click="exportFormat = 'text'">{{ t('plainText') }}</button>
-            <button :aria-pressed="exportFormat === 'json'" @click="exportFormat = 'json'">{{ t('structuredJson') }}</button>
-          </PrecisionMenu>
-          <button ref="copyButton" class="precision-action" :disabled="!selectedRows.length" @click="copyLogs">{{ t('copyCount', { count: selectedRows.length }) }}</button>
-          <button class="precision-action" :disabled="!displayedMessages.length" @click="saveLogs">{{ selectedRows.length ? t('saveCount', { count: selectedRows.length }) : t('saveAll') }}</button>
-            <button class="precision-action" :disabled="!displayedMessages.length" @click="selectAll">{{ t('selectAll') }}</button>
-            <button class="precision-action" :disabled="anchorKey === undefined" :aria-pressed="rangePending" @click="rangePending = !rangePending">{{ t(rangePending ? 'cancelRange' : 'rangeTo') }}</button>
-            <button class="precision-action" :disabled="!selectedRows.length" @click="clearSelection">{{ t('clearSelection') }}</button>
-          <span v-if="rangePending" class="selection-hint">{{ t('rangeHint') }}</span>
-          <span v-else class="selection-hint">{{ t(selectionMode ? 'frozenHint' : 'selectionHint') }}</span>
+        <div class="precision-commandbar" :class="{ 'has-selection': selectionMode }">
+          <div class="command-heading"><div class="command-title-row"><strong class="stream-title">{{ t(includedKeys.length > 1 ? 'combinedLogs' : selectedSources[0]?.device.webview ? 'webviewConsole' : 'logStream') }}</strong><span class="precision-live command-live" :data-active="capturing" :data-paused="paused" tabindex="0" :title="t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing')" :aria-label="t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing')"><span class="precision-dot" aria-hidden="true"></span><span class="command-live-label">{{ t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing') }}</span></span></div>
+          <span class="command-context" :title="rangePending ? t('rangeHint') : selectionMode ? t('frozenHint') : paused ? t('newSincePauseHint') : undefined" :aria-live="selectionMode ? 'polite' : 'off'">{{ rangePending ? t('rangeEndCompact') : selectionMode ? t('selectionCountCompact', { count: selectedRows.length }) : paused ? t('newSincePause', { count: receivedSincePause }) : t('messageCount', { count: displayedMessages.length }) }}</span>
+          </div>
+          <button v-if="selectionMode" ref="copyButton" class="precision-action command-primary" :disabled="!selectedRows.length" :aria-label="copied ? t('copied', { count: selectedRows.length }) : t('copyCount', { count: selectedRows.length })" @click="copyLogs"><span aria-hidden="true" v-if="copied">✓</span>{{ t(copied ? 'copiedAction' : 'copyAction') }}</button>
+          <button v-else ref="selectButton" class="precision-action command-primary command-select" :disabled="!displayedMessages.length" @click="freezeSelection">{{ t('select') }}</button>
+          <button class="precision-action command-save" :disabled="!displayedMessages.length" :aria-label="selectedRows.length ? t('saveCount', { count: selectedRows.length }) : t('saveAll')" @click="saveLogs">{{ t('saveAction') }}</button>
+          <button class="precision-action precision-pause" :disabled="!currentDevice && !messages.length && !paused" :aria-pressed="paused" :aria-label="t(paused ? selectionMode ? 'resumeSelection' : 'backToLive' : 'pause')" :title="t(paused ? selectionMode ? 'resumeSelection' : 'backToLive' : 'pause')" @click="togglePause">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+              <path v-if="paused" d="M8 5v14l11-7z" />
+              <g v-else><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></g>
+            </svg>
+            <span class="pause-label">{{ t(paused ? 'backToLive' : 'pause') }}</span>
+          </button>
+          <OverlayPanel :label="t('moreActions')" :width="320" panel-class="command-popover">
+            <template #trigger><span aria-hidden="true">•••</span></template>
+            <template #default="{ close }">
+              <header class="overlay-heading"><strong>{{ t('moreActions') }}</strong><button class="precision-action" :aria-label="t('close')" @click="close(true)">×</button></header>
+              <div class="command-menu">
+                <section class="command-group" :aria-label="t('actionExport')">
+                <h3>{{ t('actionExport') }}</h3>
+                <div class="command-format"><label for="command-export-format">{{ t('actionFormat') }}</label>
+                <select id="command-export-format" v-model="exportFormat" :aria-label="t('exportFormat')"><option value="text">{{ t('plainText') }}</option><option value="json">{{ t('structuredJson') }}</option></select></div>
+                <button class="precision-action" :disabled="!displayedMessages.length" @click="saveLogs(); close(true)">{{ selectedRows.length ? t('saveCount', { count: selectedRows.length }) : t('saveAll') }}</button>
+                </section>
+                <section class="command-group" :aria-label="t('actionSelection')">
+                <h3>{{ t('actionSelection') }}</h3>
+                <button class="precision-action" :disabled="!displayedMessages.length" @click="selectAll(); close(true)">{{ t('selectAll') }}</button>
+                <button v-if="selectionMode" class="precision-action" :disabled="anchorKey === undefined" :aria-pressed="rangePending" @click="rangePending = !rangePending; close(true)">{{ t(rangePending ? 'cancelRange' : 'rangeTo') }}</button>
+                <button v-if="selectionMode" class="precision-action" :disabled="!selectedRows.length" @click="clearSelection(); close(true)">{{ t('clearSelection') }}</button>
+                <button v-if="selectionMode" class="precision-action" @click="close(); finishSelection()">{{ t('doneSelecting') }}</button>
+                </section>
+                <section class="command-group" :aria-label="t('actionSession')">
+                <h3>{{ t('actionSession') }}</h3>
+                <button v-if="paused" class="precision-action" :aria-label="t(selectionMode ? 'resumeSelection' : 'backToLive')" :title="selectionMode ? t('resumeSelection') : undefined" @click="togglePause(); close(true)">{{ t('backToLive') }}</button>
+                <button class="precision-action" :disabled="!currentDevice" @click="start(); close(true)">↻ {{ t('reconnect') }}</button>
+                <button class="precision-action" :disabled="!messages.length && !visibleMessages.length" @click="clearView(); close(true)">{{ t('clear') }}</button>
+                </section>
+                <details class="command-help"><summary>{{ t('actionHelp') }}</summary>
+                <p>{{ t(rangePending ? 'rangeHint' : selectionMode ? 'frozenHint' : 'selectionHint') }}</p>
+                <p v-if="paused">{{ t('newSincePauseHint') }}</p>
+                </details>
+              </div>
+            </template>
+          </OverlayPanel>
         </div>
         <div class="precision-columns" aria-hidden="true"><span class="precision-selectcell">#</span><span>{{ t(logDevice?.platform === 'ios' && !selectedSources.some(source => source.device.webview) ? 'received' : 'time') }}</span><span class="precision-source-heading">{{ t('sourceColumn') }}</span><span class="precision-level-heading">{{ t('level') }}</span><span class="precision-tag">{{ t('tagPid') }}</span><span>{{ t('message') }}</span></div>
         <div ref="viewport" class="logs" tabindex="0" :aria-label="t('logMessages')" @scroll="onScroll" @pointermove="moveDrag" @pointerup="endDrag" @pointercancel="endDrag" @lostpointercapture="endDrag" @keydown.esc="clearSelection" @focusin="focusRow" @focusout="blurRow">
@@ -637,7 +700,7 @@ onUnmounted(() => {
           <div v-for="{ item, entry } in virtualRows" :key="entry.key" :ref="measureRow" :data-index="item.index" :style="{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${item.start}px)` }" class="entry precision-row" :data-level="logLevel(entry.level)" :data-log-key="entry.key" :class="{ 'is-selected': selectedKeys.has(entry.key) }" @pointerdown="rowPointerDown($event, entry.key)"><label class="precision-selectcell" @pointerdown.stop><input type="checkbox" :checked="selectedKeys.has(entry.key)" :aria-label="t('selectEntry', { count: entry.key + 1 })" @click.stop="chooseRow(entry.key, true, $event.shiftKey)" /><span class="precision-number">{{ n(entry.key + 1) }}</span></label><time class="precision-time" :title="entry.timestamp">{{ displayTime(entry.timestamp) }}</time><span class="precision-entry-source" :title="entry.source?.name"><span class="precision-platform" :class="entry.source?.webview ? 'precision-web' : 'precision-' + (entry.source?.platform ?? logDevice?.platform)" aria-hidden="true"></span><span>{{ entry.source?.webview ? entry.source.name : t('sourceDeviceLogs') }}</span></span><span class="precision-level">{{ logLevel(entry.level) }}</span><span class="precision-tag">{{ entry.tag }}<span class="precision-sub">{{ entry.pid }}</span></span><div class="precision-message-cell"><LogMessageText :message="entry.message" /><button type="button" class="precision-detail-trigger" :aria-label="t('detailOpen', { count: entry.key + 1 })" aria-haspopup="dialog" :aria-expanded="detailRecord?.entry.key === entry.key" :aria-controls="detailRecord?.entry.key === entry.key ? 'log-message-details' : undefined" @pointerenter="details.preview($event, entry, entryDevice(entry))" @pointermove="details.move($event, entry, entryDevice(entry))" @pointerleave="details.leave" @pointerdown.stop="details.pointerDown" @click.stop="details.toggle($event, entry, entryDevice(entry))" @focus="details.focus($event, entry, entryDevice(entry))" @blur="details.leave">ⓘ</button></div></div>
           </div>
         </div>
-        <div v-if="copyFallback !== undefined" class="precision-copy-fallback"><label for="copy-text">{{ t('clipboardFallback') }}</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">{{ t('close') }}</button></div>
+        <dialog v-if="copyFallback !== undefined" ref="copyDialog" class="precision-copy-fallback" :aria-label="t('clipboardFallback')" @cancel.prevent="closeCopy"><label for="copy-text">{{ t('clipboardFallback') }}</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">{{ t('close') }}</button></dialog>
         <div class="precision-bottom"><span>{{ t('retained', { count: visibleMessages.length, capacity: bufferSize }) }}</span><button v-if="!following && !paused" class="precision-action" @click="follow">{{ t('followLatest') }}</button><span v-else>{{ paused ? t(capturing ? 'frozenActive' : 'frozenStopped') : (newestPosition === 'top' ? '↑ ' : '↓ ') + t('followingNewest') }}</span></div>
         </div>
       </section>
@@ -658,6 +721,7 @@ onUnmounted(() => {
       <p class="setup-hint">{{ t('setupHint') }}</p>
     </main>
     </div>
+    <JavaScriptConsole v-if="consoleSource" :locale="locale" :sources="sourceOptions.filter(source => source.device.webview)" :initial="consoleSource" @close="consoleSource = ''" />
     <LogDetails v-if="detailRecord" :record="detailRecord" :pinned="detailPinned" :position="detailPosition" :locale="locale" @close="details.close(true)" @pin="details.pinCurrent" @enter="details.keepOpen" @leave="details.leave" />
   </div>
 </template>

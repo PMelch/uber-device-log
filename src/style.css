@@ -161,9 +161,6 @@ body { margin: 0; }
 #precision-design .precision-stack-line[data-kind=native-frame] .precision-stack-location { color: var(--pl-text); font-weight: 400; }
 
 /* Whole-record selection: touch gestures remain native scrolling. */
-#precision-design .precision-selectionbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 14px;border-bottom:1px solid var(--pl-line);background:var(--pl-panel);font-size:12px}
-#precision-design .selection-hint{color:var(--pl-soft);flex-basis:100%}
-#precision-design .precision-selectionbar details{min-width:160px}
 #precision-design .precision-row{user-select:none;touch-action:pan-x pan-y}
 #precision-design .precision-row.is-selected{background:var(--pl-accent-bg);box-shadow:inset 3px 0 var(--pl-accent)}
 #precision-design .precision-selectcell{display:flex;align-items:center;gap:5px;min-height:28px;cursor:pointer}
@@ -174,7 +171,6 @@ body { margin: 0; }
 #precision-design .precision-columns,#precision-design .precision-row{grid-template-columns:36px 64px 54px minmax(0,1fr)}
 #precision-design[data-platform="ios"] .precision-columns,#precision-design[data-platform="ios"] .precision-row{grid-template-columns:36px 64px minmax(0,1fr)}
 #precision-design .precision-selectcell{min-height:44px;min-width:36px;align-self:start}
-#precision-design .precision-selectionbar .precision-action{min-height:44px}
 }
 
 @media(pointer:coarse){#precision-design:not(.selecting) .precision-selectcell input{visibility:hidden}}
@@ -189,7 +185,6 @@ body { margin: 0; }
 #precision-design .precision-action { white-space: normal; text-align: left; }
 #precision-design .precision-controls summary { white-space: normal; }
 #precision-design .precision-menu button { white-space: normal; overflow-wrap: anywhere; }
-#precision-design .precision-selectionbar .precision-menu { width: max-content; max-width: calc(100vw - 64px); }
 #precision-design .precision-columns > span { min-width: 0; overflow-wrap: anywhere; }
 #precision-design .warning, #precision-design .precision-footer span { overflow-wrap: anywhere; min-width: 0; }
 @media(max-width:700px) {
@@ -233,20 +228,6 @@ body { margin: 0; }
 
 #precision-design .precision-file-failure-line { display: block; overflow-wrap: anywhere; }
 #precision-design .precision-file-failure-line:last-child { font-weight: 600; }
-
-#precision-design .precision-action.precision-pause[aria-pressed=true] {
-  color: var(--pl-accent);
-  background: var(--pl-accent-bg);
-  border-color: color-mix(in srgb, var(--pl-accent) 35%, var(--pl-line));
-  animation: back-to-live-pulse 2.8s ease-in-out infinite;
-}
-@keyframes back-to-live-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 transparent; }
-  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--pl-accent) 16%, transparent); }
-}
-@media (prefers-reduced-motion: reduce) {
-  #precision-design .precision-action.precision-pause[aria-pressed=true] { animation: none; }
-}
 
 #precision-design .precision-settings { position: relative; }
 #precision-design .settings-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: 300px; max-width: calc(100vw - 28px); max-height: calc(100dvh - 90px); overflow-y: auto; padding: 16px; border: 1px solid var(--pl-line); border-radius: 12px; background: var(--pl-panel); box-shadow: 0 12px 36px #0002; }
@@ -298,9 +279,21 @@ body { margin: 0; }
 #precision-design .precision-web { -webkit-mask-image: url('/icons/web.svg'); mask-image: url('/icons/web.svg'); }
 #precision-design .precision-platform { pointer-events: none; user-select: none; -webkit-user-select: none; }
 #precision-design .precision-source-controls { border-bottom: 1px solid var(--pl-line); }
-#precision-design .precision-source-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px 6px; font-size: 12px; }
-#precision-design .precision-source-choice { display: flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
-#precision-design .precision-source-choice input { min-width: 0; flex: none; width: 16px; height: 16px; accent-color: var(--pl-accent); }
+#precision-design .precision-source-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px 4px; font-size: 12px; }
+#precision-design .precision-source-choices > strong { margin-right: 8px; font-size: 11px; font-weight: 600; color: var(--pl-soft); }
+#precision-design .precision-source-choice { position: relative; display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; min-height: 38px; padding: 7px 10px; border: 1px solid var(--pl-line); border-radius: 9px; background: var(--pl-panel); color: var(--pl-soft); cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease; }
+#precision-design .precision-source-choice:hover { background: var(--pl-wash); border-color: color-mix(in srgb, var(--pl-text) 35%, var(--pl-panel)); }
+#precision-design .precision-source-choice:has(input:checked) { background: var(--pl-accent-bg); border-color: color-mix(in srgb, var(--pl-accent) 45%, var(--pl-panel)); color: var(--pl-text); }
+#precision-design .precision-source-choice:has(input:focus-visible) { outline: 2px solid var(--pl-accent); outline-offset: 3px; }
+#precision-design .precision-source-choice:has(input:disabled) { opacity: .5; cursor: default; }
+#precision-design .precision-source-choice input { position: absolute; width: 1px; height: 1px; min-width: 0; padding: 0; margin: 0; overflow: hidden; clip-path: inset(50%); }
+#precision-design .precision-source-choice .precision-platform { width: 18px; height: 18px; flex-basis: 18px; }
+#precision-design .source-choice-label { min-width: 0; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+#precision-design .source-choice-check { display: grid; place-items: center; width: 16px; height: 16px; flex: 0 0 16px; border: 1px solid var(--pl-line); border-radius: 50%; color: transparent; font-size: 10px; line-height: 1; transition: color 140ms ease, background-color 140ms ease; }
+#precision-design .precision-source-choice:has(input:checked) .source-choice-check { color: var(--pl-panel); background: var(--pl-accent); border-color: var(--pl-accent); }
+@media(pointer:coarse) { #precision-design .precision-source-choice { min-height: 44px; } }
+@media(max-width:700px) { #precision-design .precision-source-choices > strong { flex-basis: 100%; margin: 0 0 2px; } }
+@media(prefers-reduced-motion:reduce) { #precision-design .precision-source-choice, #precision-design .source-choice-check { transition: none; } }
 #precision-design .precision-source-hint, #precision-design .precision-source-status { padding: 6px 16px 10px; font-size: 11px; }
 #precision-design .precision-columns, #precision-design .precision-row { grid-template-columns: 70px 100px 90px 54px 100px minmax(0, 1fr); }
 #precision-design[data-platform="ios"] .precision-columns, #precision-design[data-platform="ios"] .precision-row { grid-template-columns: 70px 100px 90px minmax(0, 1fr); }
@@ -339,6 +332,138 @@ body { margin: 0; }
 
 #precision-design .precision-performance.is-scrollable { pointer-events: auto; }
 #precision-design .precision-performance header { position: sticky; top: 0; background: var(--pl-panel); z-index: 1; }
+
+/* Fixed reading controls: state changes never reflow the log viewport. */
+#precision-design .precision-consolebar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 12px; height: 64px; flex: 0 0 64px; padding: 8px 16px; }
+#precision-design .stream-title { font-size: 12px; font-weight: 500; }
+#precision-design .precision-consolebar .precision-live { justify-self: end; white-space: normal; line-height: 1.4; }
+#precision-design .precision-live[data-paused=true] .precision-dot { color: var(--pl-warn); }
+#precision-design .precision-commandbar { display: flex; align-items: center; gap: 8px; height: 64px; flex: 0 0 64px; padding: 8px 16px; border-bottom: 1px solid var(--pl-line); background: var(--pl-panel); transition: background 160ms ease; }
+#precision-design .precision-commandbar.has-selection { background: var(--pl-accent-bg); }
+#precision-design .command-context { flex: 1; min-width: 0; font-size: 12px; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+#precision-design .precision-commandbar > .precision-action { min-height: 44px; flex: none; justify-content: center; text-align: center; border: 1px solid var(--pl-line); background: var(--pl-panel); border-radius: 8px; }
+#precision-design .precision-commandbar .command-primary { width: 100px; color: var(--pl-panel); background: var(--pl-text); border-color: var(--pl-text); }
+#precision-design .precision-commandbar .precision-pause { width: 146px; box-shadow: none; }
+#precision-design .precision-commandbar .precision-pause[aria-pressed=true] { color: var(--pl-accent); border-color: var(--pl-accent); background: var(--pl-accent-bg); }
+#precision-design .overlay-trigger { flex: none; display: inline-flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 6px 10px; font-size: 12px; border: 1px solid var(--pl-line); border-radius: 8px; background: var(--pl-panel); }
+#precision-design .source-filters .overlay-trigger { width: 142px; max-width: 55%; }
+#precision-design .source-filters .overlay-trigger > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+#precision-design .overlay-trigger:hover { background: var(--pl-wash); }
+#precision-design .overlay-trigger[aria-expanded=true] { color: var(--pl-accent); border-color: var(--pl-accent); }
+/* Native popovers render in the top layer, outside the console's clip. Their
+   DOM stays in the app so theme tokens, localization and focus are inherited. */
+#precision-design .precision-overlay { position: fixed; inset: auto; margin: 0; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; overscroll-behavior: contain; padding: 16px; border: 1px solid var(--pl-line); border-radius: 12px; color: var(--pl-text); background: var(--pl-panel); box-shadow: 0 12px 36px #0003; font-size: 12px; }
+#precision-design .precision-overlay:popover-open { animation: overlay-appear 160ms ease-out; }
+#precision-design .overlay-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+#precision-design .overlay-heading strong { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+#precision-design .overlay-heading button { min-width: 44px; min-height: 44px; flex: none; justify-content: center; font-size: 20px; }
+#precision-design .command-menu { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+#precision-design .command-menu .precision-action { min-height: 44px; font-size: 12px; }
+#precision-design .command-menu select { width: 100%; min-height: 44px; border: 1px solid var(--pl-line); border-radius: 8px; padding: 8px; color: var(--pl-text); background: var(--pl-panel); font: inherit; }
+#precision-design .command-menu select:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 3px; }
+#precision-design .command-menu hr { width: 100%; border: 0; border-top: 1px solid var(--pl-line); }
+#precision-design .command-menu p { font-size: 12px; margin-top: 8px; }
+#precision-design .precision-bottom { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: 72px; flex: 0 0 72px; gap: 10px; padding: 8px 16px; line-height: 1.4; }
+#precision-design .precision-bottom > :last-child { justify-self: end; }
+#precision-design .precision-bottom .precision-action { min-height: 44px; }
+#precision-design .precision-copy-fallback { position: fixed; width: 560px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; margin: auto; border: 1px solid var(--pl-line); border-radius: 12px; color: var(--pl-text); background: var(--pl-panel); box-sizing: border-box; }
+#precision-design .precision-copy-fallback::backdrop { background: #0005; }
+#precision-design .precision-copy-fallback .precision-action { min-height: 44px; }
+#precision-design .precision-row { transition: background 140ms ease; }
+@keyframes overlay-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@media(max-width:900px) {
+  #precision-design .precision-commandbar .command-save { display: none; }
+  #precision-design .precision-commandbar .precision-pause { width: 44px; }
+  #precision-design .precision-commandbar .pause-label { display: none; }
+}
+@media(max-width:700px) {
+  #precision-design .precision-commandbar { padding: 8px; gap: 6px; }
+  #precision-design .precision-commandbar .command-primary { width: 80px; font-size: 11px; }
+  #precision-design .precision-consolebar { padding: 8px 12px; height: 72px; flex-basis: 72px; }
+  #precision-design .precision-overlay { max-height: calc(80dvh - 24px); }
+  #precision-design .precision-overlay input { font-size: 16px; }
+  #precision-design .precision-bottom { padding: 8px 12px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #precision-design .precision-overlay:popover-open { animation: none; }
+  #precision-design .precision-commandbar, #precision-design .precision-row { transition: none; }
+}
+
+/* The actions popover is a menu, not a second toolbar. Keep toolbar button
+   styling on direct children so it cannot leak into top-layer descendants. */
+#precision-design .command-popover { padding: 8px; }
+#precision-design .command-popover .overlay-heading { margin: 0; padding: 0 6px 6px 10px; }
+#precision-design .command-popover .overlay-heading strong { font-size: 12px; }
+#precision-design .command-popover .overlay-heading button { min-width: 32px; min-height: 32px; padding: 4px; font-size: 18px; }
+#precision-design .command-menu { gap: 0; }
+#precision-design .command-group { padding: 6px 0; }
+#precision-design .command-group + .command-group { border-top: 1px solid var(--pl-line); }
+#precision-design .command-group h3 { margin: 0; padding: 4px 10px; font-size: 10px; line-height: 1.4; font-weight: 500; letter-spacing: .5px; text-transform: uppercase; color: var(--pl-soft); }
+#precision-design .command-menu .precision-action { display: flex; align-items: center; justify-content: flex-start; width: 100%; min-height: 32px; padding: 7px 10px; border: 0; border-radius: 5px; background: transparent; box-shadow: none; font-size: 12px; line-height: 1.4; text-align: left; }
+#precision-design .command-menu .precision-action:hover:not(:disabled) { background: var(--pl-wash); }
+#precision-design .command-menu .precision-action[aria-pressed=true] { color: var(--pl-accent); background: var(--pl-accent-bg); }
+#precision-design .command-format { display: flex; align-items: center; gap: 12px; padding: 3px 10px 6px; }
+#precision-design .command-format label { flex: 1; min-width: 0; font-size: 12px; }
+#precision-design .command-format select { width: 62%; min-height: 32px; padding: 4px 8px; font-size: 12px; border-radius: 5px; }
+#precision-design .command-help { border-top: 1px solid var(--pl-line); padding-top: 5px; }
+#precision-design .command-help summary { min-height: 32px; padding: 7px 10px; border: 0; border-radius: 5px; box-shadow: none; font-size: 11px; color: var(--pl-soft); white-space: normal; }
+#precision-design .command-help summary::before { content: '▸'; transition: transform 160ms ease; }
+#precision-design .command-help[open] summary::before { transform: rotate(90deg); }
+#precision-design .command-help p { margin: 6px 10px 10px; font-size: 11px; line-height: 1.5; }
+@media(pointer:coarse) {
+  #precision-design .command-menu .precision-action, #precision-design .command-format select, #precision-design .command-help summary, #precision-design .command-popover .overlay-heading button { min-height: 44px; }
+  #precision-design .command-popover .overlay-heading button { min-width: 44px; }
+}
+@media(prefers-reduced-motion:reduce) { #precision-design .command-help summary::before { transition: none; } }
+
+/* Match the touch-only checkbox affordance; viewport width does not imply touch. */
+#precision-design .precision-commandbar > .command-select { display: none; }
+@media(pointer:coarse) {
+  #precision-design .precision-commandbar > .command-select { display: flex; }
+}
+
+/* Shared compact WebView rows: reserve selection and information slots. */
+#precision-design .webview-option { display: flex; align-items: center; min-width: 0; margin-left: 18px; border-radius: 8px; transition: background-color 120ms ease; }
+#precision-design .webview-option:hover { background: var(--pl-wash); }
+#precision-design .webview-option.is-included { background: var(--pl-accent-bg); }
+#precision-design .webview-option > .webview-select { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; width: auto; height: 58px; padding: 8px; text-align: left; border-radius: 8px; background: transparent; }
+#precision-design .webview-label { flex: 1; min-width: 0; }
+#precision-design .webview-label strong, #precision-design .webview-label .precision-sub { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#precision-design .webview-label strong { font-size: 12px; font-weight: 600; }
+#precision-design .webview-label .precision-sub { margin-top: 3px; font-size: 11px; }
+#precision-design .webview-check { flex: 0 0 14px; color: var(--pl-accent); opacity: 0; transition: opacity 120ms ease; }
+#precision-design .is-included .webview-check { opacity: 1; }
+#precision-design .webview-info { flex: none; }
+#precision-design .webview-info > .overlay-trigger { display: grid; place-items: center; width: 32px; height: 36px; padding: 0; border-radius: 6px; color: var(--pl-soft); }
+#precision-design .webview-details-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+#precision-design .webview-details-heading strong { overflow-wrap: anywhere; }
+#precision-design .webview-details-heading button { display: grid; place-items: center; width: 36px; height: 36px; flex: none; padding: 0; font-size: 22px; }
+#precision-design .webview-url { display: block; }
+#precision-design .webview-url input { display: block; width: 100%; min-width: 0; padding: 10px; margin-top: 6px; border: 1px solid var(--pl-line); border-radius: 6px; }
+#precision-design .webview-details dl { margin: 16px 0 0; }
+#precision-design .webview-details dt { color: var(--pl-soft); }
+#precision-design .webview-details dd { margin: 6px 0 0; overflow-wrap: anywhere; user-select: text; }
+@media(pointer:coarse) {
+  #precision-design .webview-info > .overlay-trigger, #precision-design .webview-details-heading button { width: 44px; height: 44px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #precision-design .webview-option, #precision-design .webview-check { transition: none; }
+}
+
+/* Combine stream identity, capture state and actions in one fixed-height row. */
+#precision-design .command-heading { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#precision-design .command-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+#precision-design .command-heading .stream-title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
+#precision-design .command-heading .command-context { flex: none; font-size: 11px; }
+#precision-design .command-live { flex: 0 1 auto; max-width: 240px; padding: 0; font-size: 11px; white-space: normal; line-height: 1.3; }
+#precision-design .command-live:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 4px; }
+@media(max-width:1100px) {
+  #precision-design .command-live { flex: 0 0 8px; max-width: 8px; }
+  #precision-design .command-live-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+@media(max-width:480px) {
+  #precision-design .command-heading .stream-title { font-size: 10px; }
+}
 
 /* Shared source selection stays live across the raw and semantic workspaces. */
 #precision-design .precision-workspace-tabs{display:flex;gap:22px;border-bottom:1px solid var(--pl-line)}

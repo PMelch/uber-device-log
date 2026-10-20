@@ -2,6 +2,11 @@
 
 # Über Device Log
 
+[![npm version](https://img.shields.io/npm/v/uber-device-log?logo=npm)](https://www.npmjs.com/package/uber-device-log)
+[![Open GitHub issues](https://img.shields.io/github/issues/PMelch/uber-device-log)](https://github.com/PMelch/uber-device-log/issues)
+[![License: Apache-2.0](https://img.shields.io/github/license/PMelch/uber-device-log)](LICENSE)
+[![Node.js: >=22.12.0](https://img.shields.io/badge/Node.js-%3E%3D22.12.0-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/en/download)
+
 **Android Logcat, iOS syslog & WebView consoles, in one place.**
 
 A browser-based **Android Logcat, iOS syslog and WebView console viewer**,
@@ -65,6 +70,15 @@ udl --version     # Show the installed version
 
 With a one-off launcher, use `npx uber-device-log --port 4311` or
 `bunx uber-device-log --port 4311`. Both require Node.js; omit Bun's `--bun` flag.
+
+At each server start, a background check queries the public npm registry for the
+latest stable version (four-second timeout). If an update is available, the app
+shows the current and new versions, a changelog link, and instructions for the
+detected npx, bunx, global npm or global Bun installation. If detection is
+inconclusive, it offers the supported commands. Updates are never installed
+automatically. Stop the running server before updating, then restart it; retain
+any custom command options such as `--port`. Offline checks fail silently. The
+request sends no logs or device information. Help/version commands do not check.
 
 ### Run from source
 
@@ -144,78 +158,25 @@ service; no additional proxy, browser extension or Appium server is required.
 
 ## Using the viewer
 
-### Find a message
-
-Type in a source's search field to search message text and metadata. Use Android
-and WebView severity buttons to narrow the view further. Native iOS syslog does
-not provide severity filtering. Change **Message order** in **Settings** to show
-newest entries first or last. Scrolling away stops automatic following;
-**Follow latest** resumes it.
-
-Choose **Fuzzy search** for typo-tolerant matching or **Literal search** for a
-case-insensitive, contiguous phrase in a single message or metadata field.
-Literal search treats punctuation as text, without regular expressions.
-For native Android logs, expand **Advanced filters**. **Exact Android tag** matches
-the entire tag with case sensitivity;
-**Exact Android PID** matches the numeric process ID. Combine these with search
-and severity filters. Invalid PIDs show a validation message and no results.
-**Reset filters** clears search, tag, PID and severity restrictions while keeping
-the chosen search mode. These controls only filter the view; capture continues,
-and Copy/Save use the displayed filtered entries.
-
-### Combine device and WebView logs
-
-Select a device or WebView, then enable the desired sources above the stream.
-The source checkboxes combine native logs and one or more WebView consoles from
-the selected device. Each source has independent search and severity controls
-(except native iOS syslog); native Android logs also have exact tag and PID
-filters. Entries merge by timestamp and show the
-platform or WebView icon beside their source. A stopped WebView does not stop
-the other sources. Re-enabling a source replaces its previous buffer with the
-new capture, since collectors can replay their history.
-
-Selecting a device or WebView in the device list starts a fresh view with that
-source alone. Use the checkboxes to add other sources. Only the parent device
-is remembered across reloads; WebView page targets are temporary.
-
-WebView console timestamps come from CDP on Android and WebKit on iOS, with host
-receipt time as a fallback. Native iOS syslog uses host receipt time, so merged
-timestamps do not guarantee the exact causal order of device events.
+1. **Choose your sources.** View native device logs, a WebView console, or both
+   together in a stream ordered by timestamp.
+2. **Find relevant messages.** Search each source independently with fuzzy or
+   literal matching. Filter Android and WebView logs by severity, and native
+   Android logs by exact tag or PID.
+3. **Inspect what happened.** Pause the view while capture continues and inspect
+   message metadata, exceptions and original text.
+4. **Inspect JavaScript values.** Open the `>_` console on a WebView source,
+   select the page or an iframe, and run expressions in that context.
+5. **Share the context.** Copy or save selected entries or filtered logs as plain
+   text or structured JSON, preserving source identity and multiline traces.
 
 ![An iPhone WebView console showing JavaScript messages, warnings and an exception](docs/images/webview-console.png)
 
-WebView capture reads console output. It does not offer JavaScript execution,
-expandable object inspection, a DOM inspector or a network panel.
+Available in **English, Spanish, German, French, Italian, Japanese and Simplified
+Chinese**, with light, dark and system appearance. Original logs remain unchanged.
 
-Exports retain source identity: plain text prefixes each entry with its source
-name, and structured JSON uses schema version 2 with source metadata per entry.
-
-### Pause, inspect, resume
-
-**Pause** freezes the view while capture continues. **Back to live** is gently
-highlighted while paused; click it to resume and clear your selection.
-
-Hover over an entry's **ⓘ** button to inspect its metadata and interpretation.
-The card offers **Details**, **Original**, and **JSON** views. Click the info button
-again or use **×** to close it. Scrolling the list or selecting a row also closes it.
-Explanations describe patterns in the message; they are not definitive diagnoses.
-
-![Message details showing WebView exception metadata, interpretation and tabs for the original text and JSON](docs/images/message-details.png)
-
-### Copy or save
-
-Drag directly over message text for native text selection. This freezes the
-view while capture continues, including on touch devices.
-
-1. Select whole entries using **Select**, checkboxes, **Shift-click** to extend,
-   or **Ctrl/Cmd-click** to toggle. Drag outside message text to select a range.
-2. Choose **Plain text** or **Structured JSON**.
-3. Click **Copy** or **Save**.
-
-Selecting entries freezes the view so you can work without incoming messages
-moving the selection. **Select all filtered** selects the current results.
-Without a selection, **Save all displayed logs** saves the filtered view.
-Exports preserve whole entries, metadata and multiline messages, always oldest first regardless of the display order.
+See the [user guide](docs/usage.md) for selection shortcuts, filter behavior,
+message details, export options and preferences.
 
 ### Semantic Flows
 
@@ -258,21 +219,13 @@ blueprints from application code, including payload identifiers reused by later
 steps. [Semantic Flows design](docs/semantic-flows.md) records the broader design
 and implementation scope.
 
-### Choose your language
-
-**English · Español · Deutsch · Français · Italiano · 日本語 · 简体中文**
-
-Open **Settings** in the header to choose your language, appearance, message order,
-and buffer capacity. All four preferences are saved locally in this browser;
-System appearance follows your operating system. Changes apply immediately, and
-remain usable for the session if browser storage is blocked.
-
-<img src="docs/images/settings.png" alt="Settings popover with language, appearance, message order and buffer capacity" width="320">
-
-Your preferences survive reloads; captured logs are not saved. As always,
-original log messages and technical values are never translated.
-
 ## Good to know
+
+- The JavaScript console evaluates expressions in inspectable WebViews. Commands
+  can modify the app; page navigation requires choosing the context again.
+  Property previews are bounded and do not invoke getters. There is no visual
+  DOM inspector or network panel. Merged timestamps do not guarantee the exact
+  causal order of events across sources.
 
 - **Clear** empties the viewer, not the device's logs.
 - The buffer defaults to **2,000 messages**, with options up to **100,000**.
@@ -320,8 +273,11 @@ sources continue capturing when one WebView stops.
 
 ## Documentation
 
+Release notes and upcoming changes: [CHANGELOG.txt](CHANGELOG.txt).
+
 | Guide | What's inside |
 | --- | --- |
+| [User guide](docs/usage.md) | Sources, filters, selection, message details, export and preferences |
 | [Technical documentation](docs/technical.md) | Development setup, architecture, API, export schema and capture limits |
 | [Architecture and code map](docs/architecture.md) | Data flow, module ownership, resource cleanup and state invariants |
 | [API and exports](docs/api.md) | HTTP/SSE contracts, source metadata, JSON versions and limits |

@@ -1,5 +1,35 @@
 # Project workflow
 
+## Changelog and releases
+
+- Maintain `CHANGELOG.txt` in English. For every completed ticket or change with
+  user-visible impact, add or update a concise entry under `Unreleased` in the
+  same change. Group entries under Added, Changed, Fixed, Removed or Security;
+  omit empty groups. Describe resulting behavior, not implementation steps.
+- Consolidate related work rather than adding an entry for every commit. Pure
+  internal refactors, tests and minor documentation edits need no separate entry
+  unless they affect compatibility, installation or the contributor workflow.
+- Before each release, reconcile `Unreleased` with the commits and actual diffs
+  since the previous confirmed release tag. Commit history is a completeness
+  check, not a substitute for reviewed release notes. If there is no previous
+  release tag, review the history intended for the initial release.
+- Finalize the release notes with the exact version and release date in
+  `YYYY-MM-DD` format, newest version first, and leave a fresh `Unreleased`
+  section above them. Include the changelog in the release commit alongside the
+  version and lockfile updates. Never invent historical releases or dates.
+- Follow `docs/publishing.md`; do not claim publication from a local build,
+  version bump or Git tag alone.
+
+## Shared feature maturity styling
+
+- Use `src/components/FeatureStatusBadge.vue` for Alpha, Beta and Preview labels;
+  keep feature stages in `src/feature-status.ts`. A stable feature has no badge.
+- Apply the same stage at feature entry points and panel headings. Reuse the
+  component's light/dark colors, compact sizing and accessible explanations;
+  do not introduce bespoke badge styles or persistent warning banners.
+- Follow the feature maturity rules in `docs/design/README.md`, including keyboard
+  focus, localized tooltips and preserving existing source-row heights.
+
 ## Localization is required for every product text change
 
 - Every new or changed user-facing website text must be localized in the same change in English, Spanish, German, French, Italian, Japanese and Simplified Chinese. This includes headings, buttons, menus, tooltips, empty states, validation, notifications, errors and accessibility labels. Do not hard-code product prose in components or concatenate translated sentence fragments.

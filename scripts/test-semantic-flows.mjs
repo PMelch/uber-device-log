@@ -18,10 +18,10 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(() => { localStorage.setItem('uber-device-log.language', 'en'); localStorage.setItem('uber-device-log.lastDevice', 'ios:semantic-phone'); });
   await page.goto(url);
-  await page.getByRole('button', { name: 'Show WebView console for Shop WebView on iPhone Semantic Fixture', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Show WebView console for Shop WebView · example.test on iPhone Semantic Fixture', exact: true }).first().click();
   // Selecting the WebView can switch capture to it; explicitly include native logs too.
   const native = page.getByRole('checkbox', { name: 'Include Device logs', exact: true });
-  if (await native.count()) await native.check();
+  if (await native.count() && !await native.isChecked()) await page.locator('.precision-source-choice').filter({ has: native }).click();
   const waitSources = async () => {
     for (let attempt = 0; attempt < 60; attempt++) {
       const state = await (await fetch(`${url}/fixture/state`)).json();

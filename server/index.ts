@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { createUpdateCheck, detectInstallation } from './update-check.js';
+import { consoleRoutes } from './console-routes.js';
 import express from 'express';
 import { parseCliOptions } from './cli-options.js';
 import { FlowProject } from './flow-project.js';
@@ -13,6 +16,9 @@ const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--p
 const port = options.port;
 const flowProject = await FlowProject.create(options.project);
 const active = new Set<Stop>();
+const packageVersion = JSON.parse(readFileSync(`${root}/package.json`, 'utf8')).version as string;
+// Start once, without awaiting the registry; API requests only read this snapshot.
+const updateCheck = createUpdateCheck(packageVersion, detectInstallation(root, process.env));
 
 // Local development utility: neither discovery nor logs are exposed to the LAN.
 app.use((request, response, next) => {
@@ -26,6 +32,11 @@ app.use((request, response, next) => {
 });
 
 app.use('/api/flows', flowProject.router());
+
+app.get('/api/update', (_request, response) => {
+  response.setHeader('Cache-Control', 'no-store');
+  response.json(updateCheck.state);
+});
 
 app.get('/api/devices', async (_request, response) => {
   response.setHeader('Cache-Control', 'no-store');
@@ -61,6 +72,9 @@ app.get('/api/logs', async (request, response) => {
   response.once('close', () => active.delete(stop));
 });
 
+const consoles = consoleRoutes();
+app.use('/api/console', consoles.router);
+
 app.use('/api', (_request, response) => { response.sendStatus(404); });
 
 let closeVite: (() => Promise<void>) | undefined;
@@ -90,6 +104,7 @@ async function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
   for (const stop of active) stop();
+  consoles.close();
   await closeVite?.();
   server.close();
   server.closeAllConnections();

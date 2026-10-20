@@ -1,3 +1,4 @@
+import type { RuntimeConsole } from './runtime-console.js';
 import { randomUUID } from 'node:crypto';
 import type { EventEmitter } from 'node:events';
 import { acquireInspector } from './ios-inspector.js';
@@ -76,30 +77,41 @@ export function iosConsoleMessage(message: any, pid?: number): LogMessage {
   return {timestamp:Number.isNaN(time.getTime()) ? new Date().toISOString() : time.toISOString(),message:text + (stack ? `\n${stack}` : ''),level:levels[message.level] ?? 'I',tag:`console.${message.level || message.type || 'log'}`,pid};
 }
 
-export async function openIosWebViewLogs(id: string, view: WebView, onMessage: (message: LogMessage) => void, onEnd: (reason: Notification) => void, factory: Connect = connect): Promise<() => void> {
+export async function openIosWebViewLogs(id: string, view: WebView, onMessage: (message: LogMessage) => void, onEnd: (reason: Notification) => void, factory: Connect = connect, runtime?: RuntimeConsole): Promise<() => void> {
   if (!/^PID:\d+$/.test(view.socket) || !/^\d+$/.test(view.id)) throw new Error('Invalid iOS WebView target');
   const service = await acquire(id, factory), connection = randomUUID(), sender = randomUUID();
   return new Promise((resolve, reject) => {
     let closed = false, ready = false, sequence = 0;
+    const wrappers = new Map<number, { id: number; target: string }>();
     const commands = new Map<number, string>(), targets = new Set<string>();
     const timer = setTimeout(() => finish(new Error('iOS WebView console initialization timed out')), timeoutMs);
-    function stop() { if (closed) return; closed = true; clearTimeout(timer); close(service); }
+    function stop() { if (closed) return; closed = true; runtime?.close(); clearTimeout(timer); close(service); }
     function finish(error?: Error) {
       if (closed) return;
       stop();
       if (!ready) reject(error ?? new Error('iOS WebView ended before console initialization'));
       else onEnd(error ? notification('streamError', {platform:'iOS WebView',detail:error.message}) : notification('webviewEnded'));
     }
-    function wire(method: string, params: Record<string, unknown>) {
-      send(service, connection, '_rpc_forwardSocketData:', {WIRApplicationIdentifierKey:view.socket,WIRPageIdentifierKey:Number(view.id),WIRSenderKey:sender,WIRSocketDataKey:Buffer.from(JSON.stringify({id:++sequence,method,params}))});
+    function wire(method: string, params: Record<string, unknown>, inner?: { id: number; target: string }) {
+      const id = ++sequence;
+      if (inner) wrappers.set(id, inner);
+      send(service, connection, '_rpc_forwardSocketData:', {WIRApplicationIdentifierKey:view.socket,WIRPageIdentifierKey:Number(view.id),WIRSenderKey:sender,WIRSocketDataKey:Buffer.from(JSON.stringify({id,method,params}))});
     }
-    function enable(target: string) {
+    function enable(target: string, main = true) {
       if (targets.has(target)) return; targets.add(target);
+      runtime?.attach(target, packet => wire('Target.sendMessageToTarget', { targetId: target, message: JSON.stringify(packet) }, { id: packet.id!, target }), main);
       const command = ++sequence; commands.set(command, target);
       wire('Target.sendMessageToTarget', {targetId:target,message:JSON.stringify({id:command,method:'Console.enable',params:{}})});
     }
-    function protocol(data: any) {
+    function protocol(data: any, target = '') {
       if (closed) return;
+      if (runtime?.receive(data, target)) return;
+      const wrapper = !target && wrappers.get(data.id);
+      if (wrapper) {
+        wrappers.delete(data.id);
+        if (data.error) runtime?.receive({ id: wrapper.id, error: data.error }, wrapper.target);
+        return;
+      }
       if (data.error) { finish(new Error(data.error.message || 'WebInspector command failed')); return; }
       if (commands.has(data.id)) {
         commands.delete(data.id);
@@ -107,10 +119,11 @@ export async function openIosWebViewLogs(id: string, view: WebView, onMessage: (
       }
       if (data.method === 'Target.targetCreated') {
         const target = data.params?.targetInfo;
-        if (['page','frame'].includes(target?.type)) enable(target.targetId);
+        if (['page','frame'].includes(target?.type)) enable(target.targetId, target.type === 'page');
       } else if (data.method === 'Target.dispatchMessageFromTarget') {
-        if (targets.has(data.params?.targetId)) protocol(JSON.parse(data.params.message));
+        if (targets.has(data.params?.targetId)) protocol(JSON.parse(data.params.message), data.params.targetId);
       } else if (data.method === 'Target.targetDestroyed') {
+        runtime?.detach(data.params?.targetId);
         targets.delete(data.params?.targetId);
         if (!targets.size) finish();
       } else if (data.method === 'Console.messageAdded' && data.params?.message) {

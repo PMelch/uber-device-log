@@ -1,3 +1,4 @@
+import { createWebViewHub } from './webview-hub.js';
 import { createRequire } from 'node:module';
 import type { DeviceWithPath } from '@devicefarmer/adbkit';
 import logcat from '@devicefarmer/adbkit-logcat';
@@ -76,9 +77,16 @@ export type OpenLogs = (
   onEnd: (reason: Notification | string) => void,
 ) => Promise<Stop>;
 
+export const acquireWebView = createWebViewHub((device, message, end, runtime) => {
+  if (!device.webview) throw new Error('WebView required');
+  return device.platform === 'android'
+    ? openWebViewLogs(adb.getDevice(device.id), device.webview, message, end, runtime)
+    : openIosWebViewLogs(device.id, device.webview, message, end, undefined, runtime);
+});
+
 export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
+  if (device.webview) return (await acquireWebView(device, { message: onMessage, end: onEnd })).release;
   if (device.platform === 'android') {
-    if (device.webview) return openWebViewLogs(adb.getDevice(device.id), device.webview, onMessage, onEnd);
     // Own the socket for deterministic cleanup; openLogcat() returns a transformed
     // stream and hard-codes an info-level filter in the current adbkit release.
     const socket = await adb.getDevice(device.id).shell('logcat -B *:V');
@@ -96,7 +104,6 @@ export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
     return () => { socket.destroy(); };
   }
 
-  if (device.webview) return openIosWebViewLogs(device.id, device.webview, onMessage, onEnd);
   const service = await services.startSyslogService(device.id);
   // Appium's service has no public lifecycle events. Keep access to its socket
   // and decoder isolated here; package-lock pins the inspected implementation.

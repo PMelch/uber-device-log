@@ -7,6 +7,43 @@ on 29 September 2026; that is not a reservation or a guarantee of publish rights
 
 ## Verify the release
 
+### Prepare the changelog
+
+Maintain [CHANGELOG.txt](../CHANGELOG.txt) throughout development. Each completed
+user-visible change belongs under `Unreleased`, grouped by Added, Changed, Fixed,
+Removed or Security. Before publishing:
+
+1. Identify the previous confirmed release tag on the release branch. Review all
+   commits and relevant diffs since that tag against `Unreleased`, adding missing
+   changes and consolidating duplicates. Verify behavior in the code rather than
+   copying commit subjects. For an initial release with no previous tag, review
+   the history included in that release.
+2. Check that every note describes work included in this release. Uncommitted
+   work must be included in the release commit or left out of the release notes.
+   Keep changes intended for a later release under `Unreleased`.
+3. Move the included entries into a section named `VERSION - YYYY-MM-DD` using
+   the exact package version and intended release date. Put it immediately below
+   a fresh `Unreleased` section, with the newest version first. Do not invent old
+   release dates or treat existing Git tags as proof of npm publication.
+4. Include `CHANGELOG.txt` in the version/lockfile release commit. If publication
+   is postponed, correct the date before publishing. After successful publication,
+   verify the published version and ensure its `vVERSION` tag points to that
+   release commit; never move an existing published release tag.
+
+For example, after confirming the previous release really is `v0.7.0`:
+
+```sh
+PREVIOUS_RELEASE_TAG=v0.7.0
+git log --reverse --format='%h %s' "$PREVIOUS_RELEASE_TAG"..HEAD
+git diff --stat "$PREVIOUS_RELEASE_TAG"..HEAD
+git status --short
+```
+
+Review relevant full diffs as well as this summary. The changelog is maintained
+in the repository; the current npm package allowlist does not bundle it.
+
+### Run the checks
+
 Use Node.js 22.12+, npm 10+, and Bun for the dual-launcher smoke test:
 
 ```sh
@@ -22,10 +59,23 @@ starts the global `udl` command from outside the project, and verifies
 frontend assets, the discovery API and the Origin guard. It does not require
 physical devices; device capture still needs a separate hardware check.
 
-The `files` allowlist includes only the CLI, compiled server/shared JavaScript,
-built frontend/assets and README; npm additionally includes package.json and
-LICENSE. Source tests, design previews, local configs and credentials are excluded.
-The icon license is bundled with the built frontend. No source maps are shipped.
+The application's `files` allowlist includes only the CLI, compiled server/shared
+JavaScript, built frontend/assets and README; npm additionally includes package.json
+and LICENSE. Application tests, design previews, local configs and credentials are
+excluded. The icon license is bundled with the built frontend. Application source
+maps are not shipped.
+
+Dependencies, including `appium-ios-device`, are installed on the target host;
+no dependency trees or build-host native binaries are bundled in the archive.
+Keep both lockfiles synchronized with the security overrides. These overrides
+protect the development checkout, not downstream installs of this package.
+Appium currently pins shell-quote 1.10.0 upstream, so fresh npm/Bun installations
+can still receive that vulnerable version. The package smoke test reports this
+known finding explicitly; it does not claim a clean consumer security audit.
+It continues to reject vulnerable source-map-js copies and checks independent
+npm, Bun and global npm installation/startup. See the dated dependency audit
+for the bounded reachability assessment and unresolved node-forge finding.
+
 `prepack` rebuilds automatically; `prepublishOnly` runs the unit/regression tests.
 Do not use `--ignore-scripts` for release publishing or packing.
 
@@ -58,7 +108,7 @@ bun install --lockfile-only
 npm test
 npm run test:package
 npm pack --dry-run
-# Commit the version and both lockfiles, then:
+# Finalize CHANGELOG.txt; commit it, the version and both lockfiles, then:
 npm publish --access public
 ```
 

@@ -47,12 +47,18 @@ function mountController() {
   };
 }
 
-test('hover preview toggles closed on click and does not reopen while the pointer stays on the button', t => {
+test('activation pins a hover preview; a second activation dismisses it without hover reopening', t => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const h = mountController();
   try {
     h.controller.preview(h.pointer(), entry, device);
     t.mock.timers.tick(350);
+    assert.equal(h.current()?.entry.key, 1);
+    h.controller.toggle(h.click(), entry, device);
+    assert.equal(h.current()?.entry.key, 1);
+    assert.equal(h.controller.pinned.value, true);
+    h.controller.leave(h.pointer('pointerleave'));
+    t.mock.timers.tick(500);
     assert.equal(h.current()?.entry.key, 1);
     h.controller.toggle(h.click(), entry, device);
     assert.equal(h.current(), undefined);

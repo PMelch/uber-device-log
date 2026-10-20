@@ -21,6 +21,17 @@ curl -N --get http://127.0.0.1:4310/api/logs \
   --data-urlencode platform=android --data-urlencode id=DEVICE_ID
 ```
 
+## Update availability
+
+`GET /api/update` returns a non-cached snapshot of the single background npm
+registry check started with the server. It never starts or waits for a new check.
+Fields: `currentVersion`, nullable `latestVersion`, `installation` (`npx`, `bunx`,
+`npm-global`, `bun-global`, or `unknown`), `commands` (fixed update commands),
+nullable `changelogUrl`, and `status` (`checking`, `available`, `current`, or
+`unavailable`). Network, timeout, HTTP and invalid metadata failures resolve to
+`unavailable` without interrupting startup or capture. Only stable newer versions
+from the registry latest channel are advertised.
+
 ## Device discovery
 
 `GET /api/devices` returns HTTP 200 with `Cache-Control: no-store`:
@@ -148,6 +159,8 @@ paths are rejected. Filename/path checks and bounded file reads reject symlinks;
 creation is exclusive and updates use expected revisions plus atomic replacement.
 See `shared/flow-blueprints.ts` for graph, matcher and extraction limits.
 
+Files ending in `.draft.yaml` or `.draft.yml` are inactive and ignored during discovery. An invalid active YAML file still rejects activation of the new set; the last valid set remains active when available. The editor requires an active filename when saving.
+
 For working YAML and application event examples, use
 [`test_flow_project`](../test_flow_project/README.md). See the
 [agent extraction guide](semantic-flows-agent-guide.md) and
@@ -256,4 +269,25 @@ for native iOS and `device` otherwise; console receipt-time fallbacks are not
 individually flagged. The message-details JSON (`original` plus `parsed`) is a
 separate single-record diagnostic representation, not either versioned export.
 
-Files ending in `.draft.yaml` or `.draft.yml` are inactive and ignored during discovery. An invalid active YAML file still rejects activation of the new set; the last valid set remains active when available. The editor requires an active filename when saving.
+## WebView JavaScript console
+
+All routes below retain the server's localhost Host/Origin restriction. POST
+requests require `Content-Type: application/json`, with a 100 KiB body limit.
+Sessions are private random tokens, capped at eight and released after two
+minutes without requests. The client polls once per second while the panel is open.
+
+- `POST /api/console`: `{platform,id,socket,target}` must match a connected,
+  discovered WebView. Returns `{id,revision,connected,contexts}`. Contexts have
+  opaque `key` values; callers must not send raw protocol context IDs.
+- `GET /api/console/:id`: current revision, connection state and frame contexts.
+- `POST /api/console/:id/execute`: `{context,revision,expression}`. Requires an
+  explicit context from the current revision. Expressions are limited to 16,384
+  characters, with one evaluation at a time per WebView. Returns a bounded value
+  preview, exception flag, elapsed milliseconds and the originating revision.
+- `DELETE /api/console/:id`: release the session without stopping other capture
+  consumers. Returns 204, including for an already-closed session.
+
+Errors use stable `console*` notification codes plus an English fallback message.
+Commands never retry automatically. A protocol timeout does not cancel JavaScript
+already executing on the device. The server exposes only the operations above,
+not a general inspector protocol relay.
