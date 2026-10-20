@@ -123,3 +123,22 @@ from a previous context. Commands are never retried automatically, including
 when a response times out. A timeout does not stop code already running in the
 WebView. Closing the panel releases its session while log capture continues.
 History and results are held only in memory for the open panel.
+
+## Full WebView inspectors
+
+Use the inspector button beside `>_` in a WebView source row, or inside the
+JavaScript console, for the selected target.
+
+For Android, the action opens the matching Chrome DevTools frontend in another
+tab. It needs internet access to load Google's frontend and permission to access
+the local network if the browser asks. The target connection stays on this
+computer. If a tab is blocked, copy the prepared address from the helper and
+paste it into Chrome. The local viewer must remain running; inspector access
+expires after 30 minutes, so use the action again to prepare a fresh address.
+Only WebViews that advertise a supported DevTools frontend are available.
+
+For iOS, the helper shows Safari setup steps and copyable device and WebView
+details. On the Mac connected to the device, enable Safari's developer features;
+enable Web Inspector on the iOS device. In Safari's Develop menu, choose the
+device, then the corresponding app and page. There is no direct Safari deep link
+to an individual remote WebView.

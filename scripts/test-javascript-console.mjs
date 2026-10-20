@@ -83,6 +83,9 @@ try {
     await entryHint.waitFor({state:'hidden'});
     await trigger.click();
     const panel = page.locator('.js-console'); await panel.waitFor();
+    // Initial connection restores editor focus asynchronously. Let it finish
+    // before testing keyboard focus on the maturity tooltip.
+    await page.waitForFunction(() => document.activeElement === document.querySelector('.js-console textarea'));
     const badge = panel.locator('header .feature-status-badge');
     assert.equal(await badge.getAttribute('data-status'), 'alpha');
     await badge.focus();

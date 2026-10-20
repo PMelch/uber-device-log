@@ -1,5 +1,19 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  inspectorAction: "Inspect",
+  inspectorChromeSetup: "Chrome DevTools loads from Google and needs an internet connection. If Chrome asks, allow access to the local network.",
+  inspectorChrome: "Open Chrome DevTools",
+  inspectorSafari: "Inspect in Safari",
+  inspectorOpening: "Opening inspector…",
+  inspectorBlocked: "Your browser blocked the inspector tab. Copy the address and open it in Chrome.",
+  inspectorCopyAddress: "Copy inspector address",
+  inspectorCopyDetails: "Copy target details",
+  inspectorCopyFailed: "Copy failed. Select and copy the details below.",
+  inspectorSafariSetup: "On your Mac, enable Safari’s developer features in Settings → Advanced. On the iPhone or iPad, enable Web Inspector in Settings → Apps → Safari → Advanced. Connect and trust the device.",
+  inspectorSafariSelect: "In Safari on the Mac, open Develop → your device → the app and page shown below. The app must allow inspection.",
+  inspectorTarget: "Inspection target",
+  inspectorAddressHint: "Open this address in Chrome on the computer running this server.",
+
   updateAvailable: "Update available: {current} → {latest}",
   updateChangelog: "Changelog",
   updateInstructions: "Stop the running server. For npx/bunx, the command below starts the latest version. After a global update, start udl again. Keep any custom startup options.",

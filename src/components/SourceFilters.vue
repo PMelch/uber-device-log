@@ -10,11 +10,13 @@ import type { MessageKey } from '../i18n/en';
 import PrecisionMenu from './PrecisionMenu.vue';
 import { webViewLabel } from '../webview-label';
 import OverlayPanel from './OverlayPanel.vue';
+import InspectorAction from './InspectorAction.vue';
 const statusBadge = ref<InstanceType<typeof FeatureStatusBadge>>();
 const consoleDescriptionId = useId();
 const consoleStatus = featureStatuses.javascriptConsole;
 const props = defineProps<{
   source: LogSourceMetadata;
+  deviceName?: string;
   modelValue: SourceFilter;
   t: (key: MessageKey, params?: MessageParams) => string;
   levelLabel: (level: string) => string;
@@ -53,6 +55,7 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
       <span class="source-filter-name" :title="displayName"><span class="precision-platform" :class="source.webview ? 'precision-web' : `precision-${source.platform}`" aria-hidden="true"></span><span class="source-filter-title">{{ displayName }}</span></span>
       <span v-if="summary.length" class="source-filter-summary" role="group" :title="summary.join(' · ')" :aria-label="summary.join(' · ')"><span v-for="item in summary" :key="item" class="source-filter-chip" aria-hidden="true">{{ item }}</span></span>
       <button v-if="source.webview" class="source-console-button" :aria-label="consoleStatus ? t('featureStatusLabel', { feature: t('consoleTitle'), status: t(featureStatusCopy[consoleStatus].label) }) : t('consoleTitle')" :aria-describedby="consoleStatus ? consoleDescriptionId : undefined" @keydown.esc.stop.prevent="statusBadge?.hide()" @focus="statusBadge?.show()" @blur="statusBadge?.hide()" @pointerenter="statusBadge?.show()" @pointerleave="statusBadge?.hide()" @click="statusBadge?.hide(); emit('console')"><span aria-hidden="true">&gt;_</span><FeatureStatusBadge ref="statusBadge" :status="consoleStatus" :t="t" passive :description-id="consoleDescriptionId" /></button>
+      <InspectorAction v-if="source.webview" :source="source" :device-name="deviceName" :t="t" compact />
       <OverlayPanel :label="t('sourceFilterPanel', { source: displayName })">
         <template #trigger><span :class="{ 'source-filter-active': active }">{{ active ? t('activeFilters', { count: activeCount }) : t('filters') }}</span><span aria-hidden="true">⌄</span></template>
         <template #default="{ close }">

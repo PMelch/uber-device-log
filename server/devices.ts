@@ -1,3 +1,4 @@
+import { openAndroidInspector } from './android-inspector.js';
 import { createWebViewHub } from './webview-hub.js';
 import { createRequire } from 'node:module';
 import type { DeviceWithPath } from '@devicefarmer/adbkit';
@@ -116,3 +117,8 @@ export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
     service._decoder.destroy();
   };
 };
+
+export async function openInspector(device: Device) {
+  if (device.platform !== 'android' || !device.webview) throw new Error('An Android WebView is required');
+  return openAndroidInspector(adb.getDevice(device.id), device.webview);
+}

@@ -1,5 +1,22 @@
 import type { Messages } from './en';
 export const it = {
+  inspectorInvalid: "Richiesta di ispezione non valida. Seleziona una WebView Android disponibile.",
+  inspectorBusy: "Troppe sessioni di ispezione. Riprova più tardi.",
+  inspectorAction: "Ispeziona",
+  inspectorChromeSetup: "Chrome DevTools viene caricato da Google e richiede una connessione internet. Se Chrome lo richiede, consenti l’accesso alla rete locale.",
+  inspectorChrome: "Apri Chrome DevTools",
+  inspectorSafari: "Ispeziona in Safari",
+  inspectorOpening: "Apertura dell’ispettore…",
+  inspectorUnavailable: "Impossibile connettere l’ispettore. Aggiorna l’elenco dei dispositivi e riprova.",
+  inspectorBlocked: "Il browser ha bloccato la scheda dell’ispettore. Copia l’indirizzo e aprilo in Chrome.",
+  inspectorCopyAddress: "Copia indirizzo dell’ispettore",
+  inspectorCopyDetails: "Copia dettagli della destinazione",
+  inspectorCopyFailed: "Copia non riuscita. Seleziona e copia i dettagli qui sotto.",
+  inspectorSafariSetup: "Sul Mac, abilita le funzionalità per sviluppatori di Safari in Impostazioni → Avanzate. Su iPhone o iPad, abilita Web Inspector in Impostazioni → App → Safari → Avanzate. Collega il dispositivo e conferma l’attendibilità.",
+  inspectorSafariSelect: "In Safari sul Mac, apri Sviluppo → il tuo dispositivo → l’app e la pagina indicate qui sotto. L’app deve consentire l’ispezione.",
+  inspectorTarget: "Destinazione dell’ispezione",
+  inspectorAddressHint: "Apri questo indirizzo in Chrome sul computer che esegue questo server.",
+
   updateAvailable: "Aggiornamento disponibile: {current} → {latest}",
   updateChangelog: "Registro delle modifiche",
   updateInstructions: "Arresta il server. Con npx/bunx, il comando seguente avvia la versione più recente. Dopo un aggiornamento globale, avvia di nuovo udl. Mantieni le opzioni di avvio personalizzate.",

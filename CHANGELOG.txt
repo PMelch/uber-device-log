@@ -16,6 +16,10 @@ Security
   the target host without bundling build-host native binaries.
 
 Added
+- Open Chrome DevTools for a selected Android WebView from its source row or
+  JavaScript console. Provide a copyable inspector address and a Safari setup
+  guide with the selected iOS device and WebView details. Use a labeled, outlined
+  Inspect action beside the JavaScript console.
 - Check for new versions in the background at startup and show the installed and
   latest versions, changelog, and update instructions for the detected launcher
   or global installation. Offer alternatives when detection is inconclusive.

@@ -1,5 +1,22 @@
 import type { Messages } from './en';
 export const es = {
+  inspectorInvalid: "Solicitud de inspector no válida. Selecciona una WebView de Android disponible.",
+  inspectorBusy: "Hay demasiadas sesiones de inspector. Inténtalo más tarde.",
+  inspectorAction: "Inspeccionar",
+  inspectorChromeSetup: "Chrome DevTools se carga desde Google y necesita conexión a internet. Si Chrome lo solicita, permite el acceso a la red local.",
+  inspectorChrome: "Abrir Chrome DevTools",
+  inspectorSafari: "Inspeccionar en Safari",
+  inspectorOpening: "Abriendo inspector…",
+  inspectorUnavailable: "El inspector no pudo conectarse. Actualiza la lista de dispositivos e inténtalo de nuevo.",
+  inspectorBlocked: "El navegador bloqueó la pestaña del inspector. Copia la dirección y ábrela en Chrome.",
+  inspectorCopyAddress: "Copiar dirección del inspector",
+  inspectorCopyDetails: "Copiar detalles del destino",
+  inspectorCopyFailed: "No se pudo copiar. Selecciona y copia los detalles de abajo.",
+  inspectorSafariSetup: "En el Mac, activa las funciones de desarrollo de Safari en Ajustes → Avanzado. En el iPhone o iPad, activa el inspector web en Ajustes → Apps → Safari → Avanzado. Conecta el dispositivo y confirma la confianza.",
+  inspectorSafariSelect: "En Safari del Mac, abre Desarrollo → tu dispositivo → la app y página que aparecen abajo. La app debe permitir la inspección.",
+  inspectorTarget: "Destino de inspección",
+  inspectorAddressHint: "Abre esta dirección en Chrome en el ordenador que ejecuta este servidor.",
+
   updateAvailable: "Actualización disponible: {current} → {latest}",
   updateChangelog: "Registro de cambios",
   updateInstructions: "Detén el servidor. Con npx/bunx, el siguiente comando inicia la versión más reciente. Tras una actualización global, vuelve a iniciar udl. Conserva tus opciones de inicio personalizadas.",

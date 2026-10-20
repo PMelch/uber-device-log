@@ -110,8 +110,8 @@ export async function webViewTunnel(device: WebViewDevice, socket: string) {
   };
 }
 
-interface Target { id?: string; type?: string; title?: string; url?: string; webSocketDebuggerUrl?: string }
-async function targets(origin: string): Promise<Target[]> {
+export interface Target { devtoolsFrontendUrl?: string; id?: string; type?: string; title?: string; url?: string; webSocketDebuggerUrl?: string }
+export async function targets(origin: string): Promise<Target[]> {
   const response = await fetch(`${origin}/json/list`, { signal: AbortSignal.timeout(discoveryTimeout), redirect: 'error' });
   if (!response.ok) throw new Error(`WebView discovery HTTP ${response.status}`);
   const reader = response.body!.getReader();
@@ -133,7 +133,7 @@ async function targets(origin: string): Promise<Target[]> {
   return data;
 }
 
-function targetPath(target: Target): string | undefined {
+export function targetPath(target: Target): string | undefined {
   if (typeof target.webSocketDebuggerUrl !== 'string') return;
   try {
     const url = new URL(target.webSocketDebuggerUrl);

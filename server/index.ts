@@ -1,3 +1,4 @@
+import { inspectorRoutes } from './inspector-routes.js';
 import { readFileSync } from 'node:fs';
 import { createUpdateCheck, detectInstallation } from './update-check.js';
 import { consoleRoutes } from './console-routes.js';
@@ -66,6 +67,9 @@ app.get('/api/logs', async (request, response) => {
   response.once('close', () => active.delete(stop));
 });
 
+const inspectors = inspectorRoutes();
+app.use('/api/inspector', inspectors.router);
+
 const consoles = consoleRoutes();
 app.use('/api/console', consoles.router);
 
@@ -99,6 +103,7 @@ async function shutdown() {
   shuttingDown = true;
   for (const stop of active) stop();
   consoles.close();
+  inspectors.close();
   await closeVite?.();
   server.close();
   server.closeAllConnections();
