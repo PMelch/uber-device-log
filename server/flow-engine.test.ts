@@ -30,3 +30,38 @@ test('unrelated high-volume logs do not produce a capture gap',()=>{const {engin
 test('a late out-of-order record is retained without seeding downstream references',()=>{const {engine,advance}=setup();engine.ingest([log('init',{attempt:'a'}),log('ready',{attempt:'a',uid:'u'}),log('receipt',{uid:'u',payload:{tx:'t'}})]);advance(2001);const instance=engine.getState().instances[0]!;assert.equal(instance.completeness,'missing_steps');assert.equal(instance.observations.at(-1)?.stepId,'receipt');assert.equal(instance.observations.at(-1)?.accepted,false);engine.ingest([log('submit',{transaction_id:'t'})]);assert.equal(engine.getState().instances[0]?.outcome,'running');});
 test('identifier ambiguity across pinned revisions cannot complete both flows',()=>{const {engine}=setup();untilReceipt(engine);engine.setBlueprints([blueprint],'v2');untilReceipt(engine);engine.ingest([log('submit',{transaction_id:'t'})]);assert.ok(engine.getState().instances.every(i=>i.outcome==='running'&&i.completeness==='ambiguous'));});
 test('an alias collision is rejected before binding or publishing extraction',()=>{const {engine}=setup();untilReceipt(engine);engine.ingest([log('init',{attempt:'b'}),log('ready',{attempt:'b',uid:'u'})]);const rows=engine.getState().instances;assert.ok(rows.every(i=>i.completeness==='ambiguous'));assert.equal(rows.find(i=>i.bindings.attempt==='b')?.bindings.uid,undefined);});
+
+function overlapBlueprints(): [FlowBlueprint, FlowBlueprint] {
+ const match=(event:string)=>({json:{path:'event',equals:event}});
+ const extract={id:{json:'id',required:true}};
+ const base={version:1 as const,name:'Purchase',timeout:'5s',correlation:{scope:'device-session' as const,primary:'id'}};
+ return [{...base,id:'long',start:'init',steps:[{id:'init',name:'Init',match:match('init'),extract,next:['ready']},{id:'ready',name:'Ready',match:match('ready'),extract,next:['done']},{id:'done',name:'Done',match:match('done'),extract,outcome:'completed'}]},
+ {...base,id:'short',start:'init',steps:[{id:'init',name:'Init',match:match('init'),extract,next:['done']},{id:'done',name:'Done',match:match('done'),extract,outcome:'completed'}]}];
+}
+test('overlapping blueprints independently retain an early completion consumed by the shorter flow',()=>{
+ const engine=createFlowEngine(()=>0);engine.setBlueprints(overlapBlueprints(),'v1');
+ engine.ingest([log('init',{id:'purchase-1'}),log('done',{id:'purchase-1'}),log('ready',{id:'purchase-1'})]);
+ const rows=engine.getState().instances;
+ assert.equal(rows.length,2);assert.ok(rows.every(row=>row.outcome==='completed'));
+ assert.deepEqual(rows.find(row=>row.blueprint.id==='long')?.observations.map(row=>row.stepId),['init','ready','done']);
+ assert.deepEqual(rows.find(row=>row.blueprint.id==='short')?.observations.map(row=>row.stepId),['init','done']);
+ engine.tick();assert.equal(engine.getState().instances.length,2);
+});
+test('a shared start is not replayed to a blueprint when another blueprint later accepts the same record',()=>{
+ const [long,short]=overlapBlueprints();long.steps[0].next=['bridge'];long.steps.splice(1,0,{id:'bridge',name:'Bridge',match:{json:{path:'event',equals:'bridge'}},extract:{id:{json:'id',required:true}},next:['ready']});
+ short.start='ready';short.steps[0]={...short.steps[0],id:'ready',match:{json:{path:'event',equals:'ready'}}};
+ const e=createFlowEngine(()=>0);e.setBlueprints([long,short],'v1');e.ingest([log('init',{id:'x'}),log('ready',{id:'x'}),log('bridge',{id:'x'}),log('done',{id:'x'})]);
+ const rows=e.getState().instances;assert.equal(rows.length,2);assert.ok(rows.every(row=>row.outcome==='completed'&&row.completeness==='complete'));
+ assert.equal(rows.find(row=>row.blueprint.id==='short')?.observations.filter(row=>row.stepId==='ready').length,1);
+});
+test('pending evidence cannot start newly installed blueprints or revisions retroactively',()=>{
+ const [long]=overlapBlueprints();const e=createFlowEngine(()=>0);e.setBlueprints([long],'v1');e.ingest([log('init',{id:'x'}),log('done',{id:'x'})]);
+ const newStart={...long,start:'done',steps:[long.steps[2]]};
+ e.setBlueprints([newStart,{...newStart,id:'new-blueprint'}],'v2');e.tick();
+ assert.equal(e.getState().instances.length,1);assert.equal(e.getState().instances[0].revision,'v1');
+ e.ingest([log('ready',{id:'x'})]);assert.equal(e.getState().instances[0].outcome,'completed');assert.equal(e.getState().instances.length,1);
+});
+test('queued completion can finish a pinned instance even after its blueprint is removed',()=>{
+ const e=createFlowEngine(()=>0);e.setBlueprints(overlapBlueprints(),'v1');e.ingest([log('init',{id:'x'}),log('done',{id:'x'})]);e.setBlueprints([],'v2');e.ingest([log('ready',{id:'x'})]);
+ assert.equal(e.getState().instances.length,2);assert.ok(e.getState().instances.every(row=>row.outcome==='completed'&&row.revision==='v1'));
+});

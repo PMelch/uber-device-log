@@ -1,0 +1,87 @@
+version: 1
+id: purchase
+name: Purchase
+description: Follow a purchase from backend initialization to balance update.
+start: backend_init
+timeout: 90s
+correlation:
+  scope: device-session
+  primary: attemptId
+  aliases: [purchaseUid]
+steps:
+  - id: backend_init
+    shortLabel: ID1
+    name: Initialize purchase on backend
+    match: { source: any, json: { path: event, equals: purchase.init } }
+    extract:
+      attemptId: { json: attemptId, required: true }
+    next: [backend_ready]
+  - id: backend_ready
+    name: Receive backend UID
+    match: { source: any, json: { path: event, equals: purchase.ready } }
+    extract:
+      attemptId: { json: attemptId, required: true }
+      purchaseUid: { json: uid, required: true }
+    next: [store_ios, store_android]
+  - id: store_ios
+    name: Start App Store purchase
+    match: { source: any, json: { path: event, equals: store.ios.start } }
+    extract:
+      purchaseUid: { json: uid, required: true }
+    next: [receipt]
+  - id: store_android
+    name: Start Play Store purchase
+    match: { source: any, json: { path: event, equals: store.android.start } }
+    extract:
+      purchaseUid: { json: uid, required: true }
+    next: [receipt]
+  - id: receipt
+    name: Receive store result
+    match: { source: any, json: { path: event, equals: store.receipt } }
+    extract:
+      purchaseUid: { json: uid, required: true }
+      storeTransactionId: { json: payload.transactionId, required: true }
+      receipt: { json: receipt, sensitive: true }
+      payload: { json: payload, sensitive: true }
+    next: [receipt_debug, submit]
+  - id: receipt_debug
+    name: Optional receipt diagnostic
+    optional: true
+    match: { source: any, json: { path: event, equals: store.receipt.debug } }
+    extract:
+      purchaseUid: { json: uid, required: true }
+    next: [submit]
+  - id: submit
+    name: Send receipt and payload to backend
+    match:
+      source: any
+      all:
+        - json: { path: event, equals: purchase.submit }
+        - json: { path: transaction_id, equalsFrom: { step: receipt, field: storeTransactionId } }
+    next: [confirmed]
+  - id: confirmed
+    name: Backend confirms purchase
+    match: { source: any, json: { path: event, equals: purchase.confirmed } }
+    extract:
+      purchaseUid: { json: uid, required: true }
+    next: [balance]
+  - id: balance
+    name: Receive new balance over socket
+    match: { source: webview, json: { path: event, equals: balance.updated } }
+    extract:
+      purchaseUid: { json: purchaseUid, required: true }
+      balance: { json: balance }
+    outcome: completed
+errors:
+  - id: store_failure
+    appliesTo: active
+    match: { source: any, json: { path: event, equals: store.error } }
+    extract:
+      purchaseUid: { json: uid, required: true }
+      code: { json: code, required: true }
+      stack: { json: stack }
+    codeField: code
+    codes:
+      USER_CANCELLED: { description: User cancelled the purchase., outcome: cancelled }
+      PAYMENT_DECLINED: { description: Store declined payment., outcome: failed }
+    unknownOutcome: failed

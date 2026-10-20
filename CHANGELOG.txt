@@ -77,6 +77,9 @@ Changed
 - Expand contributor, architecture, API/export, testing and release documentation.
 
 Fixed
+- Preserve out-of-order events independently for overlapping Semantic Flows.
+  Keep queued events tied to their original blueprint revisions so running flows
+  can finish after definition changes without starting new flows retroactively.
 - Preserve keyboard focus in the JavaScript console when a connection finishes,
   so Escape dismisses a feature tooltip without closing the console.
 - Retain early events independently for overlapping flow blueprints, so a shorter
