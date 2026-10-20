@@ -22,6 +22,9 @@ export const fr = {
   updateInstructions: "Arrêtez le serveur. Avec npx/bunx, la commande ci-dessous lance la dernière version. Après une mise à jour globale, relancez udl. Conservez vos options de démarrage personnalisées.",
   updateUnknown: "La méthode d’installation n’a pas pu être détectée. Choisissez la commande correspondant à votre installation.",
   updateDismiss: "Fermer les instructions de mise à jour",
+  updateRemindLater: "Me le rappeler plus tard",
+  updateRemindLaterHint: "Masquer cette version pendant 24 heures",
+  updateDismissVersion: "Ne plus afficher cette version",
 
   featureAlpha: "Alpha",
   featureBeta: "Bêta",

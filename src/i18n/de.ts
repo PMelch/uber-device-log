@@ -22,6 +22,9 @@ export const de = {
   updateInstructions: "Beende den laufenden Server. Bei npx/bunx startet der folgende Befehl die neueste Version. Starte nach einem globalen Update udl erneut. Behalte eigene Startoptionen bei.",
   updateUnknown: "Die Installationsart konnte nicht erkannt werden. Wähle den Befehl passend zu deiner Installation.",
   updateDismiss: "Update-Anleitung schließen",
+  updateRemindLater: "Später erinnern",
+  updateRemindLaterHint: "Diese Version für 24 Stunden ausblenden",
+  updateDismissVersion: "Diese Version nicht mehr anzeigen",
 
   featureAlpha: "Alpha",
   featureBeta: "Beta",

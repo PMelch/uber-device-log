@@ -22,6 +22,9 @@ export const it = {
   updateInstructions: "Arresta il server. Con npx/bunx, il comando seguente avvia la versione più recente. Dopo un aggiornamento globale, avvia di nuovo udl. Mantieni le opzioni di avvio personalizzate.",
   updateUnknown: "Non è stato possibile rilevare il metodo di installazione. Scegli il comando corrispondente alla tua installazione.",
   updateDismiss: "Chiudi le istruzioni di aggiornamento",
+  updateRemindLater: "Ricordamelo più tardi",
+  updateRemindLaterHint: "Nascondi questa versione per 24 ore",
+  updateDismissVersion: "Non mostrare più questa versione",
 
   featureAlpha: "Alfa",
   featureBeta: "Beta",

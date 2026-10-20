@@ -19,6 +19,9 @@ export const en = {
   updateInstructions: "Stop the running server. For npx/bunx, the command below starts the latest version. After a global update, start udl again. Keep any custom startup options.",
   updateUnknown: "The installation method could not be detected. Choose the command that matches your installation.",
   updateDismiss: "Close update instructions",
+  updateRemindLater: "Remind later",
+  updateRemindLaterHint: "Hide this version for 24 hours",
+  updateDismissVersion: "Dismiss this version",
 
   featureAlpha: "Alpha",
   featureBeta: "Beta",

@@ -22,6 +22,9 @@ export const ja = {
   updateInstructions: "実行中のサーバーを停止してください。npx/bunx の場合、以下のコマンドで最新バージョンが起動します。グローバルインストールを更新した場合は、udl を再起動してください。独自の起動オプションは引き続き指定してください。",
   updateUnknown: "インストール方法を検出できませんでした。お使いのインストール方法に合うコマンドを選んでください。",
   updateDismiss: "更新手順を閉じる",
+  updateRemindLater: "後で通知する",
+  updateRemindLaterHint: "このバージョンを24時間非表示にする",
+  updateDismissVersion: "このバージョンを今後表示しない",
 
   featureAlpha: "アルファ",
   featureBeta: "ベータ",

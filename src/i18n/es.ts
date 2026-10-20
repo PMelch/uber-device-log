@@ -22,6 +22,9 @@ export const es = {
   updateInstructions: "Detén el servidor. Con npx/bunx, el siguiente comando inicia la versión más reciente. Tras una actualización global, vuelve a iniciar udl. Conserva tus opciones de inicio personalizadas.",
   updateUnknown: "No se pudo detectar el método de instalación. Elige el comando que corresponda a tu instalación.",
   updateDismiss: "Cerrar instrucciones de actualización",
+  updateRemindLater: "Recordar más tarde",
+  updateRemindLaterHint: "Ocultar esta versión durante 24 horas",
+  updateDismissVersion: "No volver a mostrar esta versión",
 
   featureAlpha: "Alfa",
   featureBeta: "Beta",

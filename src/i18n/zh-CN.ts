@@ -22,6 +22,9 @@ export const zhCN = {
   updateInstructions: "停止正在运行的服务器。使用 npx/bunx 时，以下命令会启动最新版本。全局安装更新完成后，请重新启动 udl。请保留自定义启动选项。",
   updateUnknown: "无法检测安装方式。请选择与您的安装方式对应的命令。",
   updateDismiss: "关闭更新说明",
+  updateRemindLater: "稍后提醒",
+  updateRemindLaterHint: "隐藏此版本24小时",
+  updateDismissVersion: "不再提醒此版本",
 
   featureAlpha: "Alpha",
   featureBeta: "Beta",

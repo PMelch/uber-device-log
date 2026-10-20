@@ -31,6 +31,17 @@ that prohibit localhost listeners need permission to run those tests; connection
 refusals or bind errors in such an environment are not physical-device failures.
 Some tests use Node mock timers and emit an experimental-API warning.
 
+## Update notification actions
+
+After building, run `node scripts/test-update-notice.mjs` with Playwright available
+(or set `PLAYWRIGHT_MODULE` to its module path and optionally `CHROME_EXECUTABLE`).
+The local fixture checks reminder/dismiss persistence, reactive 24-hour expiry,
+newer versions, keyboard activation/focus and layout at 1440, 390 and 320 pixels
+in all seven languages. Screenshots are written to `/tmp/update-actions-1440.png`
+and `/tmp/update-actions-390.png`. Unit coverage in
+`server/update-preference.test.ts` additionally checks exact time boundaries,
+malformed records and unavailable storage. No live registry is used.
+
 ## Coverage map
 
 | Area | Tests and what they establish |

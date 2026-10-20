@@ -76,7 +76,10 @@ latest stable version (four-second timeout). If an update is available, the app
 shows the current and new versions, a changelog link, and instructions for the
 detected npx, bunx, global npm or global Bun installation. If detection is
 inconclusive, it offers the supported commands. Updates are never installed
-automatically. Stop the running server before updating, then restart it; retain
+automatically. Choose **Remind later** to hide that version for 24 hours, or
+**Dismiss this version** to hide it permanently in this browser. A newer release
+still appears. These choices are saved locally when browser storage is available.
+Stop the running server before updating, then restart it; retain
 any custom command options such as `--port`. Offline checks fail silently. The
 request sends no logs or device information. Help/version commands do not check.
 
