@@ -11,6 +11,11 @@ Unreleased
 ----------
 
 Added
+- Add project-scoped Unity Editor log capture with a bundled local Editor-only
+  UPM package, explicit YAML opt-in, durable revocable pairing across restarts,
+  connection/loss status, seven-language
+  setup guidance and the existing filter/selection/export viewer. No player,
+  remote capture or Editor control; actual Unity compilation remains unverified.
 - Hide an update reminder for 24 hours or dismiss that version permanently in
   this browser. Newer versions still appear; update instructions remain unchanged.
 - Associate an instance with a project using --project and create a missing

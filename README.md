@@ -114,6 +114,14 @@ starts capture if it is connected and available. Otherwise the selection stays
 empty, while the saved device is retained for a later reload. Reattaching it
 during an open session does not automatically start capture.
 
+### Unity Editor logs
+
+Start UDL with `--project /path/to/UnityProject`, then use **Project sources → Unity Editor**
+to install the bundled local Editor-only UPM package and pair it with a short-lived code.
+Capture, filter and export structured Editor logs and multiline exceptions. No remote/player
+capture or Editor control is included. See [installation, security and validation limits](docs/unity.md).
+The C# package still requires compilation and smoke validation in an actual Unity Editor.
+
 ### Android Logcat on macOS, Windows and Linux
 
 The viewer captures Android Logcat through ADB (`adb logcat`), including severity,

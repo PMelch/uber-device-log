@@ -1,0 +1,8 @@
+{
+  "name": "com.uber-device-log.editor",
+  "version": "0.1.0",
+  "displayName": "Über Device Log (Editor)",
+  "description": "Opt-in local Unity Editor log forwarding.",
+  "unity": "2021.3",
+  "license": "Apache-2.0"
+}

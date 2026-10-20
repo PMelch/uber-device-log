@@ -1,0 +1,8 @@
+{
+  "name": "UberDeviceLog.Editor",
+  "rootNamespace": "UberDeviceLog",
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}

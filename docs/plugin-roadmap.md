@@ -1,6 +1,6 @@
 # Plugin architecture — design decisions and roadmap
 
-Status: design proposal following the implemented internal capture milestone described in [providers.md](providers.md). The features below are NOT implemented yet.
+Status: the internal capture milestone is described in [providers.md](providers.md). A bounded bundled [Unity Editor connector](unity.md) and Unity-local message catalogs are now implemented without migrating existing providers. The generic plugin platform and other roadmap features below remain proposals.
 
 ## Architecture
 

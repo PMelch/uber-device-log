@@ -48,7 +48,7 @@ async function freePort() {
   await new Promise(resolve => server.close(resolve));
   return port;
 }
-async function smoke(command, args, project) {
+async function smoke(command, args, project, unityEnabled = false) {
   const port = await freePort();
   const child = spawn(command, [...args, '--port', String(port), ...(project ? ['--project', project] : [])], { cwd: temporary, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
@@ -74,7 +74,10 @@ async function smoke(command, args, project) {
     assert.equal(devices.status, 200);
     assert.ok(Array.isArray((await devices.json()).devices));
     assert.equal((await fetch(`http://127.0.0.1:${port}/api/devices`, { headers: { Origin: 'https://untrusted.example' } })).status, 403);
-    if (project) assert.equal(readFileSync(join(temporary, project, '.udl', 'config.yaml'), 'utf8'), '');
+    const unity = await (await fetch(`http://127.0.0.1:${port}/api/unity/state`)).json();
+    assert.equal(unity.enabled, unityEnabled);
+    if (project) assert.ok(existsSync(unity.packagePath), 'Installed Unity package path must exist');
+    if (project) assert.equal(readFileSync(join(temporary, project, '.udl', 'config.yaml'), 'utf8'), unityEnabled ? 'unity: {enabled: true}\n' : '');
     else assert.equal(existsSync(join(temporary, '.udl')), false);
     console.log(`PASS ${command}: installed archive starts; UI, assets, discovery and origin guard work`);
   } finally {
@@ -94,7 +97,7 @@ try {
   const [pack] = JSON.parse(run('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary]));
   assert.equal((pack.bundled || []).length, 0, 'Dependencies must be installed on the target host, not bundled');
   for (const file of pack.files) {
-    assert.ok(/^(package\.json|README\.md|LICENSE|bin\/[^/]+\.mjs|build\/(server|shared)\/[^/]+\.js|dist\/.*)$/.test(file.path), `Unexpected package file: ${file.path}`);
+    assert.ok(/^(package\.json|README\.md|LICENSE|docs\/unity\.md|unity-package\/(?:package\.json|README\.md|Editor\/[^/]+\.(?:cs|asmdef))|bin\/[^/]+\.mjs|build\/(server|shared)\/[^/]+\.js|dist\/.*)$/.test(file.path), `Unexpected package file: ${file.path}`);
     assert.ok(!/(^|\/)(\.env[^/]*|\.npmrc|.*\.(pem|key))$/.test(file.path), `Sensitive package file: ${file.path}`);
     assert.ok(!/\.test\.[^/]+$/.test(file.path), `Application test in archive: ${file.path}`);
   }
@@ -114,6 +117,8 @@ try {
   assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help', '--project', project], temporary), /--project/);
   assert.equal(existsSync(join(temporary, project, '.udl')), false, 'Help must not initialize projects');
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], project);
+  writeFileSync(join(temporary, project, '.udl', 'config.yaml'), 'unity: {enabled: true}\n');
+  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], project, true);
   await smoke('bunx', ['--no-install', 'uber-device-log']);
   // bunx against an npm installation does not verify Bun's own dependency resolver.
   const bunDirectory = join(temporary, 'bun-install');

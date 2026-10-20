@@ -8,6 +8,7 @@ type Open = (device: Device, message: Listener['message'], end: Listener['end'],
 export function createWebViewHub(open: Open) {
   const entries = new Map<string, { runtime: RuntimeConsole; listeners: Set<Listener>; ready: Promise<() => void>; leases: number }>();
   return async (device: Device, listener?: Listener) => {
+    if (device.platform !== 'android' && device.platform !== 'ios') throw new Error('This source does not support JavaScript.');
     const key = JSON.stringify([device.platform, device.id, device.webview?.socket, device.webview?.id]);
     let entry = entries.get(key);
     if (!entry) {

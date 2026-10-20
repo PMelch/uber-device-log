@@ -9,6 +9,7 @@ import { listDevices, openLogs, type Stop } from './devices.js';
 import { streamLogs } from './stream.js';
 import { parseCliOptions } from './cli-options.js';
 import { initializeProject } from './project-context.js';
+import { unityRoutes } from './unity-routes.js';
 
 const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
 const project = initializeProject(options.project);
@@ -18,6 +19,7 @@ app.locals.project = project;
 const server = createServer(app);
 const port = options.port;
 const active = new Set<Stop>();
+const unity = unityRoutes(project, port);
 const packageVersion = JSON.parse(readFileSync(`${root}/package.json`, 'utf8')).version as string;
 // Start once, without awaiting the registry; API requests only read this snapshot.
 const updateCheck = createUpdateCheck(packageVersion, detectInstallation(root, process.env));
@@ -40,11 +42,23 @@ app.get('/api/update', (_request, response) => {
 
 app.get('/api/devices', async (_request, response) => {
   response.setHeader('Cache-Control', 'no-store');
-  response.json(await listDevices());
+  const result = await listDevices();
+  response.json({ ...result, devices: [...result.devices, ...unity.devices()] });
 });
 
 app.get('/api/logs', async (request, response) => {
   const { platform, id, webviewSocket, webviewId } = request.query;
+  if (platform === 'unity') {
+    const device = unity.devices().find(item => item.id === id && item.state === 'connected');
+    if (!device || webviewSocket !== undefined || webviewId !== undefined) {
+      response.status(409).json({ error: 'Unity Editor is unavailable.' });
+      return;
+    }
+    const stop = streamLogs(response, device, unity.openLogs);
+    active.add(stop);
+    response.once('close', () => active.delete(stop));
+    return;
+  }
   if ((webviewSocket !== undefined || webviewId !== undefined) &&
       ((platform !== 'android' && platform !== 'ios') || typeof webviewSocket !== 'string' || typeof webviewId !== 'string' || !webviewId)) {
     response.status(400).json({ error: 'A WebView application/socket and target ID are required.' });
@@ -71,6 +85,8 @@ app.get('/api/logs', async (request, response) => {
   active.add(stop);
   response.once('close', () => active.delete(stop));
 });
+
+app.use('/api/unity', unity.router);
 
 const inspectors = inspectorRoutes();
 app.use('/api/inspector', inspectors.router);
@@ -107,6 +123,7 @@ async function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
   for (const stop of active) stop();
+  unity.close();
   consoles.close();
   inspectors.close();
   await closeVite?.();

@@ -2,7 +2,9 @@
 
 The internal API version is **1**, defined in shared/providers.ts. This is not a
 published plugin SDK or an external module loader. No npm plugin discovery,
-sandbox, engine adapter or remote browser adapter is implemented.
+sandbox or remote browser adapter is implemented. A separate bundled [Unity Editor
+connector](unity.md) now integrates through the existing bounded SSE/viewer boundary;
+it does not migrate or change these four built-in providers.
 
 ## Production integration
 

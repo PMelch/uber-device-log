@@ -1,6 +1,6 @@
 import type { Notification } from './notifications';
 
-export type Platform = 'android' | 'ios';
+export type Platform = 'android' | 'ios' | 'unity';
 
 export interface WebView {
   id: string;

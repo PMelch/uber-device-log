@@ -6,7 +6,7 @@ export function logLevel(level?: string): string {
   return aliases[level ?? ''] ?? level ?? '';
 }
 export function filterLogLevels<T extends LogMessage>(messages: T[], platform: Platform | undefined, levels: readonly LogLevel[]): T[] {
-  if (platform !== 'android' || logLevels.every(level => levels.includes(level))) return messages;
+  if ((platform !== 'android' && platform !== 'unity') || logLevels.every(level => levels.includes(level))) return messages;
   return messages.filter(message => levels.includes(logLevel(message.level) as LogLevel));
 }
 export function isLogPidFilterValid(value: string): boolean {

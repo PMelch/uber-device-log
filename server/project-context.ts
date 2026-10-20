@@ -22,7 +22,7 @@ export function initializeProject(project?: string): ProjectContext | undefined 
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
     }
-    if (!statSync(configPath).isFile()) throw new Error('Project config.yaml must be a regular file.');
+    if (!lstatSync(configPath).isFile()) throw new Error('Project config.yaml must be a regular file.');
   } catch (error) {
     throw new Error(`Unable to initialize project "${directory}": ${error instanceof Error ? error.message : String(error)}`, { cause: error });
   }

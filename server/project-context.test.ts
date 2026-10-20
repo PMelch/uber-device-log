@@ -76,3 +76,12 @@ test('a symlinked .udl directory cannot create configuration outside the project
   assert.throws(() => initializeProject(directory), /must be a directory, not a symlink/);
   assert.equal(existsSync(join(target, 'config.yaml')), false);
 });
+
+
+test('a symlinked config is rejected without following it', t => {
+  const directory = fixture(t); mkdirSync(join(directory,'.udl'));
+  const target=join(directory,'outside');writeFileSync(target,'preserve');
+  symlinkSync(target,join(directory,'.udl','config.yaml'));
+  assert.throws(()=>initializeProject(directory), /regular file/);
+  assert.equal(readFileSync(target,'utf8'),'preserve');
+});
