@@ -1,5 +1,11 @@
 # Project workflow
 
+## Git worktrees
+
+- Prefer `.worktrees/<branch-name>/` inside the main project directory for Git
+  worktrees. Keep `.worktrees/` ignored by Git and use `git worktree move` when
+  relocating an existing worktree so Git metadata stays valid.
+
 ## Changelog and releases
 
 - Maintain `CHANGELOG.txt` in English. For every completed ticket or change with
