@@ -43,6 +43,7 @@ Added
   Console execution shares the existing capture connection.
 
 Fixed
+- Make the Settings gear icon larger and clearly recognizable on all platforms.
 - Populate the iOS JavaScript console context picker by initializing WebKit frame
   discovery before requesting execution contexts.
 - Retry failed JavaScript console context discovery when reconnecting, including

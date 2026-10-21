@@ -25,7 +25,13 @@ function languageChanged(event: Event) {
 </script>
 <template>
   <details ref="root" class="precision-settings" @keydown.esc.stop.prevent="close(true)">
-    <summary ref="trigger" :aria-label="t('settings')"><span aria-hidden="true">⚙</span> {{ t('settings') }}</summary>
+    <summary ref="trigger" :aria-label="t('settings')">
+      <svg class="settings-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9.5 3h5l.6 2.4 1.6.9 2.4-.7 2.5 4.3-1.8 1.7v1.8l1.8 1.7-2.5 4.3-2.4-.7-1.6.9-.6 2.4h-5l-.6-2.4-1.6-.9-2.4.7-2.5-4.3 1.8-1.7v-1.8L2.4 9.9l2.5-4.3 2.4.7 1.6-.9Z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+      {{ t('settings') }}
+    </summary>
     <section class="settings-panel" :aria-label="t('settings')">
       <header><strong>{{ t('settings') }}</strong><button type="button" :aria-label="t('settingsClose')" @click="close(true)">×</button></header>
       <label for="settings-language">{{ t('language') }}</label>
