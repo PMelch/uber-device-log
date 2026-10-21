@@ -4,7 +4,7 @@ import type { ConsoleContext, ConsoleErrorCode, ConsoleResult, ConsoleState, Con
 type Packet = { id?: number; method?: string; params?: any; result?: any; error?: { message?: string } };
 type Sender = (packet: Packet) => void;
 export class ConsoleError extends Error {
-  constructor(public code: ConsoleErrorCode) { super(code); }
+  constructor(public code: ConsoleErrorCode, public protocolMessage?: string) { super(code); }
 }
 /** Protocol requests never retry: evaluating an expression may have side effects. */
 export class RuntimeConsole {
@@ -14,6 +14,9 @@ export class RuntimeConsole {
   private contexts = new Map<string, ConsoleContext & { id: number; target: string; uniqueId?: string }>();
   private frames = new Map<string, { name: string; url: string; top: boolean }>();
   private enabled = false;
+  private initialized = new Set<string>();
+  private pageEnabled = new Set<string>();
+  private initializing = new Map<string, Promise<void>>();
   private mainTargets = new Set<string>();
   private busy = false;
   revision = 0;
@@ -28,35 +31,59 @@ export class RuntimeConsole {
   }
   detach(target: string) {
     this.senders.delete(target); this.mainTargets.delete(target);
+    this.initialized.delete(target); this.pageEnabled.delete(target); this.initializing.delete(target);
     for (const [key, context] of this.contexts) if (context.target === target) this.contexts.delete(key);
     for (const [id, request] of this.pending) if (request.target === target) { clearTimeout(request.timer); request.reject(new ConsoleError('consoleStale')); this.pending.delete(id); }
     this.revision++;
   }
   close() { for (const target of this.senders.keys()) this.detach(target); }
   async enable() {
-    if (this.enabled) return;
     this.enabled = true;
     await Promise.all([...this.senders.keys()].map(target => this.enableTarget(target)));
   }
-  private async enableTarget(target: string) {
-    try {
-      await this.request(target, 'Runtime.enable');
-      await this.request(target, 'Page.enable').catch(() => {});
-      const data = await this.request(target, this.platform === 'ios' ? 'Page.getResourceTree' : 'Page.getFrameTree').catch(() => ({}));
-      const visit = (tree: any, parent = false) => {
-        if (!tree?.frame) return;
-        this.frames.set(String(tree.frame.id), { name: tree.frame.name || '', url: tree.frame.url || '', top: !parent && this.mainTargets.has(target) });
-        for (const child of tree.childFrames ?? []) visit(child, true);
-      };
-      visit(data.frameTree);
-    } catch { /* Unsupported or vanished targets remain unavailable in the picker. */ }
+  private enableTarget(target: string): Promise<void> {
+    if (this.initialized.has(target)) return Promise.resolve();
+    const existing = this.initializing.get(target);
+    if (existing) return existing;
+    // Reconnect may retry domain setup after failure, but never expression execution.
+    let initialization!: Promise<void>;
+    initialization = (async () => {
+      try {
+        // WebKit needs Page enabled before Runtime reports existing frame contexts.
+        const domains = this.platform === 'ios' ? ['Page.enable', 'Runtime.enable'] : ['Runtime.enable', 'Page.enable'];
+        for (const method of domains) {
+          if (method === 'Page.enable' && this.platform === 'ios' && this.pageEnabled.has(target)) continue;
+          if (method === 'Page.enable') {
+            await this.request(target, method).catch(error => {
+              // A lost acknowledgement can leave WebKit enabled before reconnect.
+              if (this.platform === 'android' || (error instanceof ConsoleError && error.protocolMessage === 'Page domain already enabled')) return;
+              throw error;
+            });
+          } else await this.request(target, method);
+          if (this.initializing.get(target) !== initialization) return;
+          if (method === 'Page.enable' && this.platform === 'ios') this.pageEnabled.add(target);
+        }
+        const data = await this.request(target, this.platform === 'ios' ? 'Page.getResourceTree' : 'Page.getFrameTree').catch(() => ({}));
+        if (this.initializing.get(target) !== initialization) return;
+        const visit = (tree: any, parent = false) => {
+          if (!tree?.frame) return;
+          this.frames.set(String(tree.frame.id), { name: tree.frame.name || '', url: tree.frame.url || '', top: !parent && this.mainTargets.has(target) });
+          for (const child of tree.childFrames ?? []) visit(child, true);
+        };
+        visit(data.frameTree);
+        this.initialized.add(target);
+      } catch { /* Unsupported or vanished targets remain unavailable until reconnect. */ }
+      finally { if (this.initializing.get(target) === initialization) this.initializing.delete(target); }
+    })();
+    this.initializing.set(target, initialization);
+    return initialization;
   }
   receive(packet: Packet, target = ''): boolean {
     if (packet.id !== undefined && packet.id >= 1_000_000) {
       const request = this.pending.get(packet.id);
       if (request && request.target === target) {
         clearTimeout(request.timer); this.pending.delete(packet.id);
-        packet.error ? request.reject(new ConsoleError('consoleUnavailable')) : request.resolve(packet.result ?? {});
+        packet.error ? request.reject(new ConsoleError('consoleUnavailable', packet.error.message)) : request.resolve(packet.result ?? {});
       }
       return true;
     }

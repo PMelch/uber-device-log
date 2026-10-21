@@ -68,6 +68,15 @@ udl --help        # Show available options
 udl --version     # Show the installed version
 ```
 
+Use `udl --project /path/to/project` (or `--project=/path/to/project`) to associate
+the running instance with an existing project directory. Relative paths resolve
+from the launch directory. On startup, UDL creates `.udl/` and an empty
+`.udl/config.yaml` if missing, preserving existing configuration. This file is
+reserved for future project-specific settings. Invalid paths or initialization
+failures stop startup. Without `--project`, the instance runs without a project
+and creates no project configuration. From source, use
+`npm run dev -- --project /path/to/project`.
+
 With a one-off launcher, use `npx uber-device-log --port 4311` or
 `bunx uber-device-log --port 4311`. Both require Node.js; omit Bun's `--bun` flag.
 
