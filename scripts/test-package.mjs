@@ -20,7 +20,7 @@ function inspectDependencySecurity(directory) {
       const manifestPath = join(child, 'package.json');
       if (existsSync(manifestPath)) {
         const { name, version } = JSON.parse(readFileSync(manifestPath, 'utf8'));
-        const minimum = { 'shell-quote': [1, 11, 0], 'source-map-js': [1, 2, 2] }[name];
+        const minimum = { 'shell-quote': [1, 11, 0], 'source-map-js': [1, 2, 2], 'follow-redirects': [1, 16, 1] }[name];
         if (minimum) {
           found.add(name);
           const parts = version.split('.').map(Number);
@@ -39,6 +39,7 @@ function inspectDependencySecurity(directory) {
   }
   walk(directory);
   assert.ok(found.has('shell-quote'), 'Must inspect the installed Appium shell-quote dependency');
+  assert.ok(found.has('follow-redirects'), 'Must inspect the installed Appium follow-redirects dependency');
 }
 async function freePort() {
   const server = createServer();

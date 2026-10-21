@@ -9,6 +9,11 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Security
+- Update Vite and follow-redirects to patched releases in both development
+  lockfiles, and verify patched redirect handling in fresh package installations.
+  The unresolved node-forge advisory remains; no dependencies are bundled.
+
 Removed
 - Remove the promotional tagline from the app header.
 

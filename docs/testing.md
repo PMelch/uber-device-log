@@ -75,7 +75,10 @@ The script builds, packs into a temporary directory, validates the archive allow
 installs without development dependencies, checks help/version, and launches with
 npx, bunx and a temporary global `udl` installation from outside the checkout. It
 also installs the archive independently with Bun, rejects bundled dependencies
-and vulnerable source-map-js copies, and reports installed shell-quote versions.
+and vulnerable source-map-js or follow-redirects copies, and reports installed
+shell-quote versions. Redirect regressions use two loopback HTTP servers and
+synthetic credentials to check stripping of object/array headers and custom
+sensitive header names containing regular-expression metacharacters.
 The upstream shell-quote pin remains a known consumer finding; root overrides
 apply only to the development checkout. A successful smoke test is not a clean
 security audit.
