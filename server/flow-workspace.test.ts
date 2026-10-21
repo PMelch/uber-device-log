@@ -27,5 +27,13 @@ test('flow workspace keeps configuration, diagnostics, and captured data separat
     assert.doesNotMatch(html, /<script>|<img |never-render-this/);
     assert.ok(html.includes(translate('en', 'flowsExpected')));
     assert.ok(html.includes(translate('en', 'flowsCompletenessMissingStart')));
+    const fork = await render({ snapshot: { enabled: true, files: [], blueprints: [], diagnostics: [], revision: '1', projectName: 'project', directory: '.udl/flows' }, instances: [{ id: 'purchase-2', blueprint: { id: 'purchase', name: 'Purchase', steps: [{ id: 'start', name: 'Start', match: {}, next: ['pay', 'cancel'] }, { id: 'pay', name: 'Pay', match: {}, next: ['done'] }, { id: 'cancel', name: 'Cancel', match: {} }, { id: 'done', name: 'Done', match: {} }] }, outcome: 'running', completeness: 'complete', startedAt: 0, updatedAt: 1000, expected: ['pay', 'cancel'], observations: [{ stepId: 'start', accepted: true, payload: {} }], deviceId: 'phone-1', revision: 'rev-1' }] });
+    assert.match(fork, /<path[^>]* d="M [^"]* C /);
+    assert.ok(fork.includes('Pay') && fork.includes('Cancel'));
+    assert.equal(fork.includes(translate('en', 'flowsNotOnRoute')), false);
+    const optionalFork = await render({ snapshot: { enabled: true, files: [], blueprints: [], diagnostics: [], revision: '1', projectName: 'project', directory: '.udl/flows' }, instances: [{ id: 'purchase-3', blueprint: { id: 'purchase', name: 'Purchase', steps: [{ id: 'receipt', name: 'Receipt', match: {}, next: ['receipt_debug', 'submit'] }, { id: 'receipt_debug', name: 'Receipt debug', match: {}, optional: true, next: ['submit'] }, { id: 'submit', name: 'Submit', match: {} }] }, outcome: 'running', completeness: 'complete', startedAt: 0, updatedAt: 1000, expected: ['receipt_debug', 'submit'], observations: [{ stepId: 'receipt', accepted: true, payload: {} }], deviceId: 'phone-1', revision: 'rev-1' }] });
+    assert.ok(optionalFork.includes('Receipt debug'));
+    assert.ok(optionalFork.includes('Submit'));
+    assert.ok((optionalFork.match(/<path /g) ?? []).length >= 2);
   } finally { await server.close(); }
 });

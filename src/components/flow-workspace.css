@@ -27,3 +27,37 @@
 :root[data-theme=dark] .flow-path .is-observed .flow-node{color:#8cddb5;background:#233c30;border-color:#426951}
 .flow-path li.is-continuation{flex:0 0 48px}
 .flow-path li.is-continuation .flow-node{color:var(--pl-soft);background:transparent;border-style:dashed}
+.flow-sequence{display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;padding-top:17px}
+.flow-sequence:has(.is-branching){flex-wrap:nowrap;overflow-x:auto;align-items:flex-start}
+.flow-sequence .flow-path{padding-top:0;flex:0 1 auto}
+.flow-sequence .flow-path.is-branching{display:flex;flex-wrap:nowrap;flex:0 0 auto;width:max-content;min-width:max-content}
+.flow-sequence .flow-path.is-branching li{flex:0 0 132px;width:132px}
+.flow-sequence .flow-path.is-branching li:last-child:after{content:'';height:1px;background:var(--pl-line);position:absolute;left:32px;right:-6px;top:19px;pointer-events:none}
+.flow-path.is-branching li:nth-child(3n):after{display:block}
+.flow-fork{display:flex;align-items:center;flex:0 0 auto}
+.flow-fork svg{display:block;overflow:visible;flex:0 0 auto}
+.flow-fork path{fill:none;stroke:var(--pl-line);stroke-width:1.75;stroke-linecap:round}
+.flow-fork-lanes{display:flex;flex-direction:column}
+.flow-lane{display:flex;align-items:center;gap:8px;min-width:0}
+.flow-lane button{display:flex;align-items:center;gap:8px;text-align:left;border:0!important;padding:4px!important;background:transparent!important;min-height:0}
+.flow-lane .flow-node{width:30px;height:30px;min-width:30px;min-height:30px;max-width:30px;padding:3px;font-size:10px}
+.flow-lane .is-expected .flow-node,.flow-diagram .is-expected .flow-node{color:var(--pl-accent);border:1px solid var(--pl-accent);background:var(--pl-accent-bg)}
+.flow-lane button>span:last-child{display:block;max-width:168px;font-size:10px;overflow-wrap:anywhere}
+.flow-lane-more{color:var(--pl-soft);display:inline-flex;align-items:center;font-size:18px;line-height:1}
+.flow-fail-mark{display:inline-flex;align-items:center;gap:8px;color:var(--pl-error);margin-left:8px}
+.flow-detail-grid{grid-template-columns:minmax(320px,48%) minmax(0,1fr)}
+.flow-timeline{overflow:auto;align-items:flex-start}
+.flow-diagram{position:relative}
+.flow-diagram svg{position:absolute;inset:0;overflow:visible;pointer-events:none}
+.flow-diagram path{fill:none;stroke:var(--pl-line);stroke-width:1.75;stroke-linecap:round}
+.flow-diagram path.is-live{stroke:var(--pl-accent)}
+.flow-diagram path.is-other{stroke-dasharray:4 4;opacity:.55}
+.flow-diagram .flow-diagram-node{position:absolute;width:168px;margin:0;min-height:0;display:flex;align-items:flex-start;gap:8px;text-align:left;z-index:1}
+.flow-diagram button.flow-diagram-node{border:0!important;background:transparent!important;padding:0!important}
+.flow-diagram button.flow-diagram-node[aria-pressed=true]{background:var(--pl-wash)!important;border-radius:8px}
+.flow-diagram .is-other{opacity:.42}
+.flow-diagram-label{min-width:0;font-size:11px}
+.flow-diagram-label strong{display:block;font-weight:500}
+.flow-blueprint-diagram{margin:0 0 22px;max-width:100%;overflow:auto}
+@media(max-width:760px){.flow-sequence{align-items:flex-start}.flow-sequence .flow-path.is-branching{display:flex;flex-wrap:nowrap;width:max-content;grid-template-columns:none}.flow-detail-grid{grid-template-columns:minmax(0,1fr)}}
+@media(pointer:coarse){.flow-lane button,.flow-diagram button.flow-diagram-node{min-height:44px}}

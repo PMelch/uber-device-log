@@ -9,6 +9,11 @@ including changes in the current working tree, not an already published version.
 Unreleased
 ----------
 
+Changed
+- Draw an open semantic-flow fork as rounded lanes on the flow card, and lay the
+  timeline and blueprint graph out as a branching diagram. Dim a route that was
+  not taken instead of labeling it as another branch.
+
 Security
 - Pin patched shell-quote and source-map-js versions in the development checkout.
   Published installations still depend on Appium's upstream shell-quote pin;
