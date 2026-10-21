@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { FlowBlueprint, FlowDiagnostic, FlowInstance, FlowObservation, FlowOutcome, FlowSnapshot, FlowStep } from '../../shared/flow-types';
+import { flowSummary } from '../flow-path';
 import { translate, translateMessage, type Locale } from '../i18n';
 import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
@@ -38,6 +39,10 @@ function elapsed(value: FlowInstance) {
 function observed(value: FlowInstance, id: string) { return value.observations.some(observation => observation.stepId === id && observation.accepted !== false); }
 function failedStep(value: FlowInstance, item: FlowStep) { return value.outcome === 'failed' && (item.outcome === 'failed' && observed(value, item.id) || value.observations.some(observation => observation.stepId === item.id && observation.errorCode)); }
 function stepLabel(item: FlowStep, definition: FlowBlueprint) { return item.shortLabel ?? `S${definition.steps.findIndex(value => value.id === item.id) + 1}`; }
+function summary(value: FlowInstance) {
+  const witnessed = new Set(value.observations.filter(item => item.accepted !== false).map(item => item.stepId));
+  return flowSummary(path(value), witnessed, value.expected);
+}
 function path(value: FlowInstance): FlowStep[] {
   const degrees = new Map(value.blueprint.steps.map(item => [item.id, 0]));
   for (const item of value.blueprint.steps) for (const next of item.next ?? []) degrees.set(next, (degrees.get(next) ?? 0) + 1);
@@ -151,7 +156,7 @@ async function request(action: 'validate' | 'save') {
         <article v-for="instance in visible" :key="instance.id" class="flow-card" :data-outcome="instance.outcome">
           <header><div class="flow-card-heading"><h2>{{ instance.blueprint.name }}</h2><span class="flow-id">#{{ instance.id }}</span><span class="flow-badge" :data-outcome="instance.outcome">{{ t(outcomes[instance.outcome]) }}</span></div><div class="flow-actions"><button type="button" @click="navigate('timeline', instance)">{{ t('flowsTimeline') }}</button><button type="button" @click="navigate('info', instance)">{{ t('flowsInfo') }}</button></div></header>
           <div class="flow-meta"><span>{{ instance.deviceId }}</span><span>{{ elapsed(instance) }}</span><span v-if="completeness[instance.completeness]" class="flow-warning">{{ t(completeness[instance.completeness]!) }}</span></div>
-          <ol class="flow-path"><li v-for="item in path(instance)" :key="item.id" :class="{ 'is-observed': observed(instance, item.id), 'is-expected': instance.expected.includes(item.id), 'is-failed': failedStep(instance, item) }"><button type="button" @click="navigate('timeline', instance); inspect(item.id)"><span class="flow-node">{{ stepLabel(item, instance.blueprint) }}</span><span>{{ item.name }}<small>{{ t(stepState(instance, item)) }}</small></span></button></li><li v-if="instance.outcome === 'failed'" class="is-failed"><span class="flow-node" aria-hidden="true">!</span><span>{{ instance.errorCode ?? t('flowsStatusFailed') }}</span></li></ol>
+          <ol class="flow-path"><li v-for="item in summary(instance).shown" :key="item.id" :class="{ 'is-observed': observed(instance, item.id), 'is-expected': instance.expected.includes(item.id), 'is-failed': failedStep(instance, item) }"><button type="button" @click="navigate('timeline', instance); inspect(item.id)"><span class="flow-node">{{ stepLabel(item, instance.blueprint) }}</span><span>{{ item.name }}<small>{{ t(stepState(instance, item)) }}</small></span></button></li><li v-if="summary(instance).continues" class="is-continuation" :aria-label="t('flowsPathContinues')"><span class="flow-node" aria-hidden="true">…</span></li><li v-if="instance.outcome === 'failed'" class="is-failed"><span class="flow-node" aria-hidden="true">!</span><span>{{ instance.errorCode ?? t('flowsStatusFailed') }}</span></li></ol>
           <p v-if="instance.errorCode || instance.errorDescription" class="flow-error-detail"><code>{{ instance.errorCode }}</code> {{ instance.errorDescription }}</p>
         </article>
       </template>

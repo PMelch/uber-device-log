@@ -6,6 +6,7 @@ export const en = {
   flowsNotOnRoute: "Other branch",
   flowsSkippedOptional: "Optional step not observed",
   flowsNotObserved: "Not observed",
+  flowsPathContinues: "More steps follow",
   flowsTabLogs: "Logs",
   flowsTabFlows: "Flows",
   flowsWorkspace: "Semantic Flows",

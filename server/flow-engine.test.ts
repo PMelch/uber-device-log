@@ -65,3 +65,25 @@ test('queued completion can finish a pinned instance even after its blueprint is
  const e=createFlowEngine(()=>0);e.setBlueprints(overlapBlueprints(),'v1');e.ingest([log('init',{id:'x'}),log('done',{id:'x'})]);e.setBlueprints([],'v2');e.ingest([log('ready',{id:'x'})]);
  assert.equal(e.getState().instances.length,2);assert.ok(e.getState().instances.every(row=>row.outcome==='completed'&&row.revision==='v1'));
 });
+const screenBranch: FlowBlueprint = { version: 1, id: 'screen', name: 'Screen', start: 'start', timeout: '5s', correlation: { scope: 'device-session', primary: 'sku' }, steps: [
+ { id: 'start', name: 'Start', match: { json: { path: 'event', equals: 'start' } }, extract: { sku: { json: 'sku', required: true } }, next: ['mid'] },
+ { id: 'mid', name: 'Mid', match: { json: { path: 'event', equals: 'mid' } }, extract: { sku: { json: 'sku', required: true } }, next: ['screen'] },
+ { id: 'screen', name: 'Screen', match: { json: { path: 'event', equals: 'screen' } }, outcome: 'completed' },
+]};
+test('a step with no correlation key attaches only to the single instance waiting for it', () => {
+ const engine = createFlowEngine(() => 0);
+ engine.setBlueprints([screenBranch], 'v1');
+ engine.ingest([log('start', { sku: 'goldenspin' }), log('mid', { sku: 'goldenspin' }), log('start', { sku: 'coins' }), log('screen', {})]);
+ const rows = engine.getState().instances;
+ assert.equal(rows.find(row => row.bindings.sku === 'goldenspin')?.outcome, 'completed');
+ assert.equal(rows.find(row => row.bindings.sku === 'coins')?.outcome, 'running');
+ assert.deepEqual(rows.find(row => row.bindings.sku === 'coins')?.observations.map(row => row.stepId), ['start']);
+});
+test('a keyless step does not choose between two instances waiting for it', () => {
+ const engine = createFlowEngine(() => 0);
+ engine.setBlueprints([screenBranch], 'v1');
+ engine.ingest([log('start', { sku: 'a' }), log('mid', { sku: 'a' }), log('start', { sku: 'b' }), log('mid', { sku: 'b' }), log('screen', {})]);
+ const rows = engine.getState().instances;
+ assert.equal(rows.length, 2);
+ assert.ok(rows.every(row => row.outcome === 'running' && row.completeness === 'ambiguous' && row.observations.at(-1)?.stepId === 'mid'));
+});

@@ -6,6 +6,7 @@ export const zhCN = {
   flowsNotOnRoute: "其他分支",
   flowsSkippedOptional: "未观察到可选步骤",
   flowsNotObserved: "未观察到",
+  flowsPathContinues: "后面还有更多步骤",
   flowsTabLogs: "日志",
   flowsTabFlows: "流程",
   flowsWorkspace: "Semantic Flows",

@@ -25,3 +25,5 @@
 @media(pointer:coarse){.flow-workspace button,.flow-workspace summary{min-height:44px}.flow-workspace input,.flow-workspace textarea{font-size:16px}}
 :root[data-theme=dark] .flow-badge[data-outcome=completed]{color:#89dab1;background:#233b30}
 :root[data-theme=dark] .flow-path .is-observed .flow-node{color:#8cddb5;background:#233c30;border-color:#426951}
+.flow-path li.is-continuation{flex:0 0 48px}
+.flow-path li.is-continuation .flow-node{color:var(--pl-soft);background:transparent;border-style:dashed}

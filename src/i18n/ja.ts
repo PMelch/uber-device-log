@@ -6,6 +6,7 @@ export const ja = {
   flowsNotOnRoute: "別の分岐",
   flowsSkippedOptional: "任意ステップが未観測",
   flowsNotObserved: "未観測",
+  flowsPathContinues: "この後にもステップがあります",
   flowsTabLogs: "ログ",
   flowsTabFlows: "フロー",
   flowsWorkspace: "Semantic Flows",

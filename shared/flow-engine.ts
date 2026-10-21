@@ -62,6 +62,12 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     }
     return found || references(matcher);
   }
+  // A discriminating step may carry none of the correlation keys. It can continue the one instance waiting for it. Two waiters stay unresolved.
+  function keyless(node: FlowStep | FlowError, blueprint: FlowBlueprint, payload: Record<string, unknown>) {
+    const declared = node.extract ?? {};
+    const names = keys(blueprint);
+    return !names.some(key => Object.hasOwn(declared, key) || payload[key] !== undefined);
+  }
   function parseBody(message: LogMessage) { try { return JSON.parse(message.message); } catch { return undefined; } }
   function active(instance: FlowInstance) { return instance.epoch === epoch && (instance.outcome === 'running' || instance.outcome === 'timed_out'); }
   function definitions() {
@@ -158,17 +164,21 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
           if (payload && identity(instance, payload, node.match)) candidates.push({ instance, node, payload });
         }
       }
+      const unbound: Candidate[] = [];
       if (!candidates.length) for (const instance of existingAll) {
         for (const node of instance.blueprint.steps.filter(step => instance.expected.includes(step.id))) {
           if (!matches(node.match, message, body, instance)) continue;
           const payload = extract(node.extract, message, body);
-          if (payload && identity(instance, payload, node.match)) candidates.push({ instance, node, payload });
+          if (!payload) continue;
+          if (identity(instance, payload, node.match)) candidates.push({ instance, node, payload });
+          else if (keyless(node, instance.blueprint, payload)) unbound.push({ instance, node, payload });
         }
       }
-      if (candidates.length > 1) {
-        candidates.forEach(candidate => candidate.instance.completeness = 'ambiguous');
+      if (candidates.length > 1 || (!candidates.length && unbound.length > 1)) {
+        (candidates.length ? candidates : unbound).forEach(candidate => candidate.instance.completeness = 'ambiguous');
         consumed.add(variants[0].blueprint.id); continue;
       }
+      if (!candidates.length && unbound.length === 1) candidates.push(unbound[0]);
       if (candidates.length === 1) {
         const { instance, node, payload } = candidates[0];
         if (instance.completeness === 'ambiguous') { consumed.add(variants[0].blueprint.id); continue; }

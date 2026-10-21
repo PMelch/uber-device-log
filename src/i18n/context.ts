@@ -18,6 +18,7 @@ export const translationContext = {
   flowsNotOnRoute: c("Timeline step status.", "Step belongs to an alternative blueprint branch that this flow instance did not take."),
   flowsSkippedOptional: c("Timeline step status.", "An optional step has no observed evidence in this instance; do not imply an application error or that the step definitely did not run."),
   flowsNotObserved: c("Timeline step status.", "A mandatory step is absent from captured evidence. Separate from the currently expected next step or an alternative route."),
+  flowsPathContinues: c("Flow card step row, accessible name of the ellipsis after the next expected step.", "Later blueprint steps are omitted from the card. They have not happened. The full sequence remains in Timeline and Info."),
   flowsTabLogs: c("Semantic Flows workspace, blueprint editor or flow details.", "Tab selecting the existing raw logs view."),
   flowsTabFlows: c("Semantic Flows workspace, blueprint editor or flow details.", "Tab selecting semantic flow analysis."),
   flowsWorkspace: c("Semantic Flows workspace, blueprint editor or flow details.", "Accessible name for the complete semantic flow analysis region. Feature name Semantic Flows stays verbatim."),

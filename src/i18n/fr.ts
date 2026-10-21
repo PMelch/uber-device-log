@@ -6,6 +6,7 @@ export const fr = {
   flowsNotOnRoute: "Autre branche",
   flowsSkippedOptional: "Étape facultative non observée",
   flowsNotObserved: "Non observé",
+  flowsPathContinues: "D'autres étapes suivent",
   flowsTabLogs: "Journaux",
   flowsTabFlows: "Flux",
   flowsWorkspace: "Semantic Flows",
