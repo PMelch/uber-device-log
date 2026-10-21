@@ -17,7 +17,8 @@ Added
   Android USB authorization are unavailable, with copyable commands, manual-copy
   fallback and instructions for Windows, Linux and macOS in all seven languages.
   Use compact, expandable steps with a clear explanation of the current connection
-  problem, platform switching and separate troubleshooting guidance.
+  problem in a distinct panel with a platform icon, platform switching and
+  separate troubleshooting guidance.
 - Hide an update reminder for 24 hours or dismiss that version permanently in
   this browser. Newer versions still appear; update instructions remain unchanged.
 - Associate an instance with a project using --project and create a missing

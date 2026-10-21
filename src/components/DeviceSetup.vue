@@ -37,7 +37,10 @@ watch(() => props.setup?.issues, async () => {
           <button v-for="platform in platforms" :key="platform" type="button" :aria-pressed="activePlatform === platform" @click="selectedPlatform = platform">{{ platform === 'android' ? 'Android' : 'iOS' }}<span class="setup-status-dot" aria-hidden="true" /></button>
         </div>
         <section v-for="issue in activeIssues" :key="issue.reason" class="setup-guide" :data-issue="issue.reason" :aria-label="t(setupTitles[issue.reason])">
-          <div class="setup-reason"><p class="setup-reason-label">{{ t('setupReasonLabel') }}</p><h3>{{ t(setupTitles[issue.reason]) }}</h3><p>{{ t(setupDescriptions[issue.reason]) }}</p></div>
+          <div class="setup-reason">
+            <span class="setup-reason-icon" aria-hidden="true"><span class="precision-platform" :class="'precision-' + issue.platform" /></span>
+            <div class="setup-reason-text"><p class="setup-reason-label">{{ t('setupReasonLabel') }}</p><h3>{{ t(setupTitles[issue.reason]) }}</h3><p class="setup-reason-description">{{ t(setupDescriptions[issue.reason]) }}</p></div>
+          </div>
           <div class="setup-guide-body">
             <details v-for="(step, index) in setupGuide(setup.host, issue).steps" :key="step.message" class="setup-step" :open="index === 0">
               <summary><span class="setup-number" aria-hidden="true">{{ index + 1 }}</span><span>{{ t(setupStepTitles[step.message] ?? step.message) }}</span><span class="setup-chevron" aria-hidden="true">⌄</span></summary>
@@ -85,9 +88,13 @@ watch(() => props.setup?.issues, async () => {
 #precision-design .setup-platforms button { display:inline-flex; align-items:center; gap:8px; padding:10px 0; border-bottom:2px solid transparent; }
 #precision-design .setup-platforms button[aria-pressed=true] { color:var(--pl-accent); border-bottom-color:var(--pl-accent); }
 .setup-status-dot { width:6px; height:6px; border-radius:50%; background:var(--pl-warn); }
-.setup-reason { margin-bottom:20px; }
-#precision-design .setup-reason-label { font-size:12px; margin-bottom:6px; }
-.setup-reason h3 { font-size:14px; font-weight:500; margin:0; }
+.setup-reason { display:flex; align-items:flex-start; gap:14px; margin-bottom:22px; padding:18px; border:1px solid var(--pl-line); border-radius:10px; background:var(--pl-wash); }
+.setup-reason-icon { display:grid; place-items:center; flex:none; width:36px; height:36px; border:1px solid var(--pl-line); border-radius:9px; background:var(--pl-panel); color:var(--pl-soft); }
+#precision-design .setup-reason-icon .precision-platform { width:19px; height:19px; flex:none; color:inherit; }
+.setup-reason-text { min-width:0; }
+#precision-design .setup-reason .setup-reason-label { margin:0 0 5px; font-size:11px; font-weight:500; line-height:1.5; color:var(--pl-soft); }
+.setup-reason h3 { font-size:15px; line-height:1.45; font-weight:600; margin:0; color:var(--pl-text); overflow-wrap:anywhere; }
+#precision-design .setup-reason .setup-reason-description { margin:7px 0 0; max-width:72ch; line-height:1.65; overflow-wrap:anywhere; }
 .setup-step,.setup-troubleshooting { border-top:1px solid var(--pl-line); }
 #precision-design .setup-step > summary { padding:14px 0; justify-content:flex-start; }
 #precision-design .setup-step .setup-number { display:grid; place-items:center; width:25px; height:25px; flex:none; border:1px solid var(--pl-line); border-radius:50%; font-size:12px; color:var(--pl-soft); }
@@ -103,5 +110,6 @@ watch(() => props.setup?.issues, async () => {
 #precision-design .setup-content footer p,#precision-design .setup-package-note { font-size:12px; }
 .setup-content footer { margin:12px -20px 0; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-top:1px solid var(--pl-line); border-radius:0 0 10px 10px; background:var(--pl-wash); }
 @media(max-width:700px) { .setup-content { padding:0 14px; }.setup-step-body { padding-left:0; }.setup-content footer { margin-inline:-14px; padding:14px; flex-wrap:wrap; }.setup-content footer p { flex-basis:100%; } }
+@media(max-width:480px) { .setup-reason { gap:10px; padding:14px 12px; }.setup-reason-icon { width:30px; height:30px; border-radius:7px; } }
 @media(pointer:coarse) { #precision-design .device-setup summary,#precision-design .setup-retry,#precision-design .setup-hide { min-height:44px; }.setup-distro select { font-size:16px; } }
 </style>
