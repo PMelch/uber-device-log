@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const fr = {
+  settingsVersion: "Version",
   setupHideGuides: "Masquer les instructions",
   settingsShowConnectionGuides: "Afficher les instructions de connexion",
   setupReasonLabel: "Pourquoi votre appareil n’a pas été détecté",

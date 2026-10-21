@@ -10,6 +10,7 @@ Unreleased
 ----------
 
 Added
+- Show the installed app version in the Settings footer.
 - Hide connection guides from their footer and restore them in Settings, with
   the visibility preference remembered in this browser.
 - Show the app logo in the browser tab, adapting to light and dark browser themes.

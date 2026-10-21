@@ -12,6 +12,7 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  settingsVersion: c("Settings panel footer, beside the installed app version.", "Label identifying the installed Über Device Log application version. Read-only information, not an update action. No placeholders; the separate version identifier remains verbatim."),
   setupHideGuides: c("Device connection guide footer.", "Button hides all connection guides until re-enabled in Settings. This is a browser preference, not a dismissal of the current error only. Does not stop device discovery or logging. No placeholders."),
   settingsShowConnectionGuides: c("Settings panel: checkbox below buffer capacity.", "Checkbox controls whether connection guides are shown when connection problems exist. Enabled by default, saved in this browser when storage is available. Re-enable here after hiding from the guide footer. Does not control discovery or capture. No placeholders."),
   setupReasonLabel: c("Device prerequisite help: compact connection cards.", "Label above the localized explanation of the current connection problem. Explicitly identify it as the reason device discovery failed, not a setup step. Raw diagnostic data is not displayed here."),

@@ -7,6 +7,7 @@ const props = defineProps<{ locale: Locale; theme: Theme; order: MessageOrder; b
 const emit = defineEmits<{ order: [value: MessageOrder]; locale: [value: Locale]; theme: [value: Theme]; bufferSize: [value: number]; performance: [value: boolean]; connectionGuides: [value: boolean] }>();
 const root = ref<HTMLDetailsElement>();
 const developmentBuild = import.meta.env.DEV;
+const appVersion = import.meta.env.VITE_APP_VERSION;
 const trigger = ref<HTMLElement>();
 defineExpose({ focus: () => trigger.value?.focus() });
 const t = (key: Parameters<typeof translate>[1]) => translate(props.locale, key);
@@ -40,6 +41,7 @@ function languageChanged(event: Event) {
       <label class="settings-toggle" for="settings-connection-guides"><input id="settings-connection-guides" type="checkbox" :checked="showConnectionGuides" @change="emit('connectionGuides', ($event.target as HTMLInputElement).checked)" />{{ t('settingsShowConnectionGuides') }}</label>
       <label v-if="developmentBuild" class="settings-performance-toggle settings-toggle" for="settings-performance"><input id="settings-performance" type="checkbox" :checked="performance" @change="emit('performance', ($event.target as HTMLInputElement).checked)" />{{ t('performanceToggle') }}</label>
       <p>{{ t('settingsStorage') }}</p>
+      <footer class="settings-version"><span>{{ t('settingsVersion') }}</span><span>{{ appVersion }}</span></footer>
     </section>
   </details>
 </template>

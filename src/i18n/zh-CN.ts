@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const zhCN = {
+  settingsVersion: "版本",
   setupHideGuides: "隐藏指南",
   settingsShowConnectionGuides: "显示连接指南",
   setupReasonLabel: "未找到设备的原因",

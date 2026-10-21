@@ -1,5 +1,6 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  settingsVersion: "Version",
   setupHideGuides: "Hide guides",
   settingsShowConnectionGuides: "Show connection guides",
   setupReasonLabel: "Why your device could not be found",

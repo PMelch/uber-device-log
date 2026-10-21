@@ -238,6 +238,7 @@ body { margin: 0; }
 #precision-design .settings-panel select { width: 100%; min-height: 42px; padding: 8px; border: 1px solid var(--pl-line); border-radius: 6px; background: var(--pl-panel); color: var(--pl-text); font: inherit; }
 #precision-design .settings-panel select:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 2px; }
 #precision-design .settings-panel p { margin-top: 14px; font-size: 12px; }
+#precision-design .settings-version { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--pl-line); color: var(--pl-soft); font-size: 11px; }
 
 /* Keep device selection beside the stream when both panes have enough room. */
 #precision-design .precision-workspace { flex: 1; min-width: 0; display: flex; }

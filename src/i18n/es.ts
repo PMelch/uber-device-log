@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const es = {
+  settingsVersion: "Versión",
   setupHideGuides: "Ocultar instrucciones",
   settingsShowConnectionGuides: "Mostrar instrucciones de conexión",
   setupReasonLabel: "Por qué no se ha encontrado tu dispositivo",

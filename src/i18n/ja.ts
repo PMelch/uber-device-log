@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const ja = {
+  settingsVersion: "バージョン",
   setupHideGuides: "手順を非表示",
   settingsShowConnectionGuides: "接続手順を表示",
   setupReasonLabel: "デバイスが見つからなかった理由",
