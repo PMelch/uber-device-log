@@ -214,6 +214,8 @@ sample events. See [the test project](test_flow_project/README.md) for emitting 
 examples through a real inspected WebView, or explicitly start the isolated
 [synthetic browser fixture](docs/semantic-flows-browser-tests.md) without hardware.
 
+Start with the [Flow format reference](docs/flow-format.md) for a quickstart, every YAML field, branches, correlation and error handling.
+
 Use the [agent extraction guide](docs/semantic-flows-agent-guide.md) to derive
 blueprints from application code, including payload identifiers reused by later
 steps. [Semantic Flows design](docs/semantic-flows.md) records the broader design
@@ -294,6 +296,7 @@ Release notes and upcoming changes: [CHANGELOG.txt](CHANGELOG.txt).
 | [Architecture and code map](docs/architecture.md) | Data flow, module ownership, resource cleanup and state invariants |
 | [API and exports](docs/api.md) | HTTP/SSE contracts, source metadata, JSON versions and limits |
 | [Testing](docs/testing.md) | Coverage map, focused tests, browser fixtures and hardware checks |
+| [Flow format reference](docs/flow-format.md) | Version 1 quickstart, complete field reference and tested examples |
 | [Flow blueprint extraction](docs/semantic-flows-agent-guide.md) | Agent workflow for deriving evidence-backed YAML from application code |
 | [Flow browser regression](docs/semantic-flows-browser-tests.md) | Isolated synthetic fixture and desktop/mobile browser checks |
 | [Public website](docs/website.md) | Separate static build and deployment |

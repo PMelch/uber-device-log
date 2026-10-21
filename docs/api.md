@@ -116,6 +116,8 @@ language changes; unknown codes and legacy strings retain their fallback verbati
 
 ## Semantic Flows
 
+For writing YAML definitions, see the [Flow format reference](flow-format.md).
+
 Launch with `--project=<directory>` or its alias `--flows=<directory>` to enable
 a local project. `.udl/config.yaml` supports `blueprints: <relative directory>`;
 an empty configuration defaults to `.udl/flows`. Files are non-recursive `.yaml` or

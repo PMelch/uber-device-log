@@ -12,7 +12,13 @@ Unreleased
 Changed
 - Draw an open semantic-flow fork as rounded lanes on the flow card, and lay the
   timeline and blueprint graph out as a branching diagram. Dim a route that was
-  not taken instead of labeling it as another branch.
+  not taken instead of labeling it as another branch. Keep the first card lane
+  straight and round additional paths away from it, including forks with more
+  than two alternatives. Round detours and joins in the detail graph as well.
+
+Fixed
+- Keep semantic-flow connectors at their graph dimensions inside the app, so
+  global icon sizing no longer offsets or clips branches and detail diagrams.
 
 Security
 - Pin patched shell-quote and source-map-js versions in the development checkout.

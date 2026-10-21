@@ -165,3 +165,47 @@ test('a bypass edge stays outside the sibling step', () => {
     }
   }
 });
+
+
+test('forks keep a straight first lane and round into every additional configured path', () => {
+  for (const count of [2, 3, 4, 8]) {
+    const steps = Array.from({ length: count }, (_, i) => ({ id: `branch-${i}` }));
+    const fork = cardFork([{ id: 'start' }, ...steps], steps);
+    assert.equal(fork.lanes.length, count);
+    const connectors = forkConnectors(count, 48, 96);
+    assert.equal(connectors.paths.length, count);
+    for (let index = 0; index < count; index++) {
+      const points = curveSamples(connectors.paths[index]);
+      assert.deepEqual(points[0], { x: 2, y: 48 });
+      assert.deepEqual(points.at(-1), { x: 46, y: 48 + index * 96 });
+      if (index === 0) assert.ok(points.every(point => Math.abs(point.y - 48) < 0.001));
+    }
+    const graph = layoutFlowGraph([
+      { id: 'start', next: steps.map(step => step.id) },
+      ...steps.map(step => ({ ...step, next: ['join'] })),
+      { id: 'join' },
+    ]);
+    const branches = graph.nodes.filter(node => node.id.startsWith('branch-'));
+    assert.equal(new Set(branches.map(node => node.lane)).size, count);
+    assert.equal(new Set(branches.map(node => node.rank)).size, 1);
+    assert.equal(graph.edges.length, count * 2);
+    for (const edge of graph.edges) for (const point of curveSamples(edge.d)) {
+      for (const node of graph.nodes.filter(node => node.id !== edge.from && node.id !== edge.to)) {
+        assert.equal(point.x >= node.x && point.x <= node.x + 168 && point.y >= node.y && point.y <= node.y + 72, false, `${count} paths: ${edge.from}->${edge.to} crosses ${node.id}`);
+      }
+    }
+  }
+});
+
+test('join detours use rounded corners with nonzero entry and exit tangents', () => {
+  const layout = layoutFlowGraph([
+    { id: 'start', next: ['a', 'b', 'c', 'd'] },
+    ...['a', 'b', 'c', 'd'].map(id => ({ id, next: ['done'] })),
+    { id: 'done' },
+  ]);
+  for (const edge of layout.edges) {
+    for (const match of edge.d.matchAll(/C ([\d.]+) ([\d.]+), ([\d.]+) ([\d.]+), ([\d.]+) ([\d.]+)/g)) {
+      assert.ok(match[3] !== match[5] || match[4] !== match[6], `${edge.from}->${edge.to} stops at a sharp corner`);
+    }
+  }
+});

@@ -23,12 +23,12 @@ export function flowEdgeTone(observations: readonly { stepId: string; accepted?:
 /** Rounded split from the trunk into one curve per lane. */
 export function forkConnectors(count: number, width = 48, pitch = 74) {
   const height = Math.max(pitch, count * pitch);
-  const startY = height / 2;
+  const startY = pitch / 2;
   const paths = Array.from({ length: count }, (_, index) => {
     const y = (index + 0.5) * (height / count);
     return `M 2 ${startY} C ${width * 0.66} ${startY}, ${width * 0.34} ${y}, ${width - 2} ${y}`;
   });
-  return { width, height, paths };
+  return { width, height, startY, paths };
 }
 
 export interface FlowGraphLayout {
@@ -115,12 +115,12 @@ function routeEdge(from: FlowGraphLayout['nodes'][number], to: FlowGraphLayout['
   if (!hits(direct)) return { d: direct, extent: Math.max(x1, x2) + 8 };
   const yChannel = Math.max(y1 + 12, ...others.map(node => node.y + NODE_H + 2));
   if (yChannel < y2 - 2) {
-    const channel = `M ${x1} ${y1} C ${x1} ${(y1 + yChannel) / 2}, ${x1} ${yChannel}, ${x1} ${yChannel} C ${(x1 + x2) / 2} ${yChannel}, ${x2} ${yChannel}, ${x2} ${yChannel} C ${x2} ${(yChannel + y2) / 2}, ${x2} ${y2}, ${x2} ${y2}`;
+    const channel = roundedRoute([[x1, y1], [x1, yChannel], [x2, yChannel], [x2, y2]]);
     if (!hits(channel)) return { d: channel, extent: Math.max(x1, x2) + 8 };
   }
   const yLeave = from.y + NODE_H + 6;
   if (yLeave < y2 - 2) {
-    const dogleg = `M ${x1} ${y1} C ${x1} ${(y1 + yLeave) / 2}, ${x1} ${yLeave}, ${x1} ${yLeave} C ${(x1 + x2) / 2} ${yLeave}, ${x2} ${yLeave}, ${x2} ${yLeave} C ${x2} ${(yLeave + y2) / 2}, ${x2} ${y2}, ${x2} ${y2}`;
+    const dogleg = roundedRoute([[x1, y1], [x1, yLeave], [x2, yLeave], [x2, y2]]);
     if (!hits(dogleg)) return { d: dogleg, extent: Math.max(x1, x2) + 8 };
   }
   let gutter = Math.max(...nodes.map(node => node.x + NODE_W)) + 20;
@@ -128,11 +128,28 @@ function routeEdge(from: FlowGraphLayout['nodes'][number], to: FlowGraphLayout['
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const yLeave = from.y + NODE_H + 6;
     const yEnter = Math.max(yLeave, y2 - 6);
-    chosen = `M ${x1} ${y1} C ${x1} ${(y1 + yLeave) / 2}, ${x1} ${yLeave}, ${x1} ${yLeave} C ${(x1 + gutter) / 2} ${yLeave}, ${gutter} ${yLeave}, ${gutter} ${yLeave} C ${gutter} ${(yLeave + yEnter) / 2}, ${gutter} ${yEnter}, ${gutter} ${yEnter} C ${(gutter + x2) / 2} ${yEnter}, ${x2} ${yEnter}, ${x2} ${yEnter} C ${x2} ${(yEnter + y2) / 2}, ${x2} ${y2}, ${x2} ${y2}`;
+    chosen = roundedRoute([[x1, y1], [x1, yLeave], [gutter, yLeave], [gutter, yEnter], [x2, yEnter], [x2, y2]]);
     if (!hits(chosen)) return { d: chosen, extent: gutter + 16 };
     gutter += 40;
   }
   return { d: chosen, extent: gutter + 16 };
+}
+
+/** Round orthogonal detours without changing the reserved channels between node boxes. */
+function roundedRoute(points: [number, number][]) {
+  const route = points.filter((point, index) => !index || point[0] !== points[index - 1][0] || point[1] !== points[index - 1][1]);
+  let d = `M ${route[0][0]} ${route[0][1]}`;
+  for (let index = 1; index < route.length - 1; index++) {
+    const previous = route[index - 1], corner = route[index], next = route[index + 1];
+    const before = Math.hypot(corner[0] - previous[0], corner[1] - previous[1]);
+    const after = Math.hypot(next[0] - corner[0], next[1] - corner[1]);
+    const radius = Math.min(12, before / 2, after / 2);
+    const entry = corner.map((value, axis) => value + (previous[axis] - value) * radius / before);
+    const exit = corner.map((value, axis) => value + (next[axis] - value) * radius / after);
+    d += ` L ${entry[0]} ${entry[1]} C ${corner[0]} ${corner[1]}, ${corner[0]} ${corner[1]}, ${exit[0]} ${exit[1]}`;
+  }
+  const end = route.at(-1)!;
+  return `${d} L ${end[0]} ${end[1]}`;
 }
 
 function curvePoints(d: string) {

@@ -4,6 +4,8 @@ This guide is for coding agents working in an application's repository. Use it t
 
 ## Format status and task boundary
 
+Use the [Flow format reference](flow-format.md) for the complete version 1 field contract and tested authoring examples.
+
 Semantic Flows version 1 is implemented. Use [`shared/flow-types.ts`](../shared/flow-types.ts), [`shared/flow-blueprints.ts`](../shared/flow-blueprints.ts), [`shared/flow-engine.ts`](../shared/flow-engine.ts) and their tests as the format and behavior authority. [API documentation](api.md#semantic-flows) describes project loading and validation. The [design document](semantic-flows.md) preserves some future-facing targets; do not copy unsupported syntax or treat its proposed endpoints and limits as implemented.
 
 Supported definitions use a directed acyclic step graph, explicit optional bypasses, structured text/regex/JSON matchers and per-instance `equalsFrom` references. A referenced extraction's producer must occur on every incoming route to its consumer. Error rules currently reject `equalsFrom` references: use an available primary/alias extraction to correlate errors, or document missing instrumentation. Regex extraction requires an existing named capture group. The parser validates these constraints; YAML parsing alone does not.
