@@ -18,6 +18,8 @@ Removed
 - Remove the promotional tagline from the app header.
 
 Added
+- Refresh README and website screenshots, and highlight the built-in software
+  setup guides in the README and all seven website languages.
 - Show the installed app version in the Settings footer.
 - Hide connection guides from their footer and restore them in Settings, with
   the visibility preference remembered in this browser.

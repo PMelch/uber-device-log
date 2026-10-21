@@ -12,6 +12,8 @@
 A browser-based **Android Logcat, iOS syslog and WebView console viewer**,
 with setup guidance for **macOS, Windows and Linux**. Connect a phone, find the message that matters,
 and share the relevant entries as plain text or structured JSON.
+Detailed [software setup guides](#guided-software-setup) are built into the app,
+with download links and copyable commands for the device tools you need.
 
 [Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
 
@@ -113,6 +115,19 @@ The app remembers the last selected device. On reload, it selects that device an
 starts capture if it is connected and available. Otherwise the selection stays
 empty, while the saved device is retained for a later reload. Reattaching it
 during an open session does not automatically start capture.
+
+### Guided software setup
+
+The app includes detailed, step-by-step instructions for installing
+**Android SDK Platform Tools (ADB)** and configuring **Apple device support**
+on macOS, Windows and Linux. If a required tool or service is unavailable, the
+viewer shows the relevant guide for the computer running UDL, with download links,
+copyable commands, authorization/pairing steps and troubleshooting help.
+
+You install the software yourself; copying a command does not execute it. After
+setup, choose **Check again**. If you hide the guides, restore them with
+**Settings → Show connection guides**. Install Node.js separately before starting
+UDL; the built-in guides cover the device connection prerequisites.
 
 ### Android Logcat on macOS, Windows and Linux
 
