@@ -21,6 +21,8 @@ import OverlayPanel from './components/OverlayPanel.vue';
 import LogMessageText from './components/LogMessageText.vue';
 import LogDetails from './components/LogDetails.vue';
 import UpdateNotice from './components/UpdateNotice.vue';
+import DeviceSetup from './components/DeviceSetup.vue';
+import { setupWarnings } from './device-setup';
 import { useLogDetails } from './composables/useLogDetails';
 
 const { locale, setLocale, t, n, localizeMessage, deviceState, levelLabel } = useI18n();
@@ -28,6 +30,10 @@ const { locale, setLocale, t, n, localizeMessage, deviceState, levelLabel } = us
 const devices = ref<Device[]>([]);
 const consoleSource = ref('');
 const warnings = ref<(DeviceList['warnings'][number] | UiMessage)[]>([]);
+const setup = ref<DeviceList['setup']>();
+const deviceRefresh = ref<HTMLButtonElement>();
+const sidebarRefresh = ref<HTMLButtonElement>();
+function focusDeviceRefresh() { (window.innerWidth >= 1100 ? sidebarRefresh.value : deviceRefresh.value)?.focus(); }
 const selected = ref('');
 const messages = shallowRef<(LogMessage & { key: number })[]>([]);
 const { bufferSize, theme, newestPosition, performanceEnabled } = usePreferences();
@@ -206,7 +212,8 @@ async function refresh() {
     const result: DeviceList = await response.json();
     if (disposed) return;
     devices.value = result.devices;
-    warnings.value = result.warnings;
+    setup.value = result.setup;
+    warnings.value = setupWarnings(result.warnings, result.setup);
     const restored = rememberedDevice.restoreOnce(result.devices);
     if (!selected.value && restored) { includedKeys.value = [restored]; selected.value = restored; }
     if (selected.value && currentDevice.value?.state !== 'connected') {
@@ -228,6 +235,7 @@ async function refresh() {
       }
     }
   } catch (error) {
+    if (!disposed) setup.value = undefined;
     if (!disposed) warnings.value = [uiMessage('discoveryFailed', { detail: error instanceof Error ? error.message : String(error) })];
   } finally {
     loading.value = false;
@@ -569,7 +577,7 @@ onUnmounted(() => {
     </div></header>
     <div class="precision-workspace">
       <aside class="precision-device-sidebar" :aria-label="t('availableDevices')">
-        <div class="device-sidebar-heading"><h2>{{ t('availableDevices') }}</h2><button class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button></div>
+        <div class="device-sidebar-heading"><h2>{{ t('availableDevices') }}</h2><button ref="sidebarRefresh" class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button></div>
         <p v-if="!devices.length" class="device-sidebar-empty">{{ t('authorizeDevice') }}</p>
         <div class="device-sidebar-list">
           <template v-for="device in devices" :key="keyOf(device)">
@@ -597,9 +605,10 @@ onUnmounted(() => {
           </PrecisionMenu>
         </div>
         <button type="button" class="precision-action precision-disconnect" :disabled="!selected" @click="disconnect">{{ t('disconnectDevice') }}</button>
-        <button class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button>
+        <button ref="deviceRefresh" class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button>
       </div>
       <p v-for="(warning, index) in warnings" :key="index" class="warning" role="status">{{ localizeMessage(warning) }}</p>
+      <DeviceSetup :setup="setup" :loading="loading" :connected="devices.some(device => device.state === 'connected')" :t="t" @retry="refresh" @resolved="focusDeviceRefresh" />
       <section class="precision-console" :aria-label="t('deviceMessages')">
         <section v-if="sourceOptions.length" class="precision-source-controls" :aria-label="t('includeSources')">
           <div class="precision-source-choices"><strong>{{ t('includeSources') }}</strong>

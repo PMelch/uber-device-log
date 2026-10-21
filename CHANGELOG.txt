@@ -10,6 +10,9 @@ Unreleased
 ----------
 
 Added
+- Show host-specific Android and iOS setup help when device tools, transport or
+  Android USB authorization are unavailable, with copyable commands, manual-copy
+  fallback and instructions for Windows, Linux and macOS in all seven languages.
 - Hide an update reminder for 24 hours or dismiss that version permanently in
   this browser. Newer versions still appear; update instructions remain unchanged.
 - Associate an instance with a project using --project and create a missing

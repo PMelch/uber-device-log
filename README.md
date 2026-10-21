@@ -144,6 +144,14 @@ Windows needs compatible Apple mobile-device support. macOS is the primary
 validation environment; Windows/Linux and physical-device capture still need
 validation. No Appium server is required. iOS simulators are not listed.
 
+If ADB cannot start, an iOS device transport cannot be reached, or Android reports
+missing authorization or USB permissions, the viewer shows setup instructions for
+the computer running UDL (Windows, Linux or macOS). Copy icons copy commands
+without executing them; a manual-copy field appears if clipboard access fails.
+Use **Check again** after setup; environment changes may require restarting UDL
+from the configured terminal. Working sources remain usable, and a successful
+empty device list alone does not imply a missing driver or dependency.
+
 ### Android WebView consoles
 
 Inspectable WebViews appear beneath their Android device with their page title

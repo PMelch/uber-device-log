@@ -23,6 +23,19 @@ export interface Device {
 export interface DeviceList {
   devices: Device[];
   warnings: (Notification | string)[];
+  /** Host of the UDL process, independent of the browser's operating system. */
+  setup?: DeviceSetup;
+}
+
+export interface DeviceSetup {
+  host: 'windows' | 'linux' | 'macos' | 'other';
+  issues: DeviceSetupIssue[];
+}
+export interface DeviceSetupIssue {
+  platform: Platform;
+  reason: 'adbMissing' | 'androidUnavailable' | 'iosUnavailable' | 'androidUnauthorized' | 'androidPermissions';
+  /** Original diagnostic, rendered as plain text, never translated. */
+  detail: string;
 }
 
 export interface LogMessage {

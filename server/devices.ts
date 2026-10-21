@@ -11,6 +11,7 @@ import type { Device, DeviceList, LogMessage } from '../shared/types.js';
 import { discoverIosWebViews, openIosWebViewLogs } from './ios-webviews.js';
 import { discoverWebViews, openWebViewLogs } from './webviews.js';
 import { notification, type Notification } from '../shared/notifications.js';
+import { deviceSetup } from './device-setup.js';
 
 // Load CJS explicitly: Node 22 cannot infer Adb as an ESM named export,
 // and adbkit's default-export typings differ from its runtime exports object.
@@ -60,7 +61,7 @@ export function listDevices(): Promise<DeviceList> {
       try { device.webviews = device.platform === 'ios' ? await discoverIosWebViews(device.id) : await discoverWebViews(adb.getDevice(device.id)); if (device.platform === 'ios') knownIosWebViews.set(device.id, device.webviews); }
       catch (error) { if (device.platform === 'ios') device.webviews = knownIosWebViews.get(device.id); warnings.push(notification('webviewDiscoveryUnavailable', { device: device.name, detail: errorText(error) })); }
     }));
-    return { devices, warnings };
+    return { devices, warnings, setup: deviceSetup(results) };
   }).finally(() => { pendingDiscovery = undefined; });
   return pendingDiscovery;
 }
