@@ -185,7 +185,6 @@ export const en = {
   webviewDiscoveryUnavailable: "WebView discovery unavailable on {device}: {detail}",
   webviewLive: "Live — reading WebView console.",
   language: 'Language',
-  tagline: 'Android & iOS logs, in one place.',
   connectedDevice: 'Connected device',
   chooseDevice: 'Choose connected device',
   selectDevice: 'Select a device',

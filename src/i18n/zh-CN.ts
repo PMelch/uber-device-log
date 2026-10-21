@@ -192,7 +192,6 @@ export const zhCN = {
   webviewDiscoveryUnavailable: "无法检测 {device} 上的 WebView：{detail}",
   webviewLive: "实时 — 正在读取 WebView 控制台。",
   language: '语言',
-  tagline: '在一处查看 Android 和 iOS 日志。',
   connectedDevice: '已连接的设备',
   chooseDevice: '选择已连接的设备',
   selectDevice: '选择设备',

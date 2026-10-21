@@ -196,7 +196,6 @@ export const translationContext = {
   webviewLive: c("Footer status when the WebView Runtime event subscription is enabled.", "Console capture is active; includes console calls and uncaught JavaScript errors."),
 
   language: c('Language selector label in the Settings popover.', 'The language of the application interface, not of captured logs.'),
-  tagline: c('Header beside the product name.', 'The viewer brings Android and iOS logs into one interface. Retain platform names.'),
   connectedDevice: c('Label above the device picker.', 'The device whose logs the user wants to view.'),
   chooseDevice: c('Accessible name of the device picker.', 'Choose a connected phone or emulator for log capture.'),
   selectDevice: c('Device picker with available devices but no selection.', 'Prompt to choose a device; selection starts its log stream.'),

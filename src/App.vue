@@ -579,7 +579,7 @@ onUnmounted(() => {
 
 <template>
   <div id="precision-design" :data-platform="selectedSources.some(source => source.device.webview) ? 'webview' : logDevice?.platform" :class="{ selecting: selectionMode }">
-    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><UpdateNotice :t="t" /><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings ref="settings" :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" :show-connection-guides="showConnectionGuides" @connection-guides="showConnectionGuides = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
+    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><UpdateNotice :t="t" /><UserSettings ref="settings" :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" :show-connection-guides="showConnectionGuides" @connection-guides="showConnectionGuides = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
     </div></header>
     <div class="precision-workspace">
       <aside class="precision-device-sidebar" :aria-label="t('availableDevices')">

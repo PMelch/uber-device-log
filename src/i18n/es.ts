@@ -192,7 +192,6 @@ export const es = {
   webviewDiscoveryUnavailable: "No se pueden detectar WebViews en {device}: {detail}",
   webviewLive: "En directo — leyendo la consola de WebView.",
   language: 'Idioma',
-  tagline: 'Registros de Android e iOS en un solo lugar.',
   connectedDevice: 'Dispositivo conectado',
   chooseDevice: 'Elegir dispositivo conectado',
   selectDevice: 'Seleccionar dispositivo',

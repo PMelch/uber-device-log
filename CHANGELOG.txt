@@ -9,6 +9,9 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Removed
+- Remove the promotional tagline from the app header.
+
 Added
 - Show the installed app version in the Settings footer.
 - Hide connection guides from their footer and restore them in Settings, with

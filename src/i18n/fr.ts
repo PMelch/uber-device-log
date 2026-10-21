@@ -192,7 +192,6 @@ export const fr = {
   webviewDiscoveryUnavailable: "Détection des WebViews indisponible sur {device} : {detail}",
   webviewLive: "En direct — lecture de la console WebView.",
   language: 'Langue',
-  tagline: 'Les journaux Android et iOS au même endroit.',
   connectedDevice: 'Appareil connecté',
   chooseDevice: 'Choisir un appareil connecté',
   selectDevice: 'Sélectionner un appareil',

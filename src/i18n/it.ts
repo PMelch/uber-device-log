@@ -192,7 +192,6 @@ export const it = {
   webviewDiscoveryUnavailable: "Rilevamento delle WebView non disponibile su {device}: {detail}",
   webviewLive: "In diretta — lettura della console WebView.",
   language: 'Lingua',
-  tagline: 'Log Android e iOS in un unico posto.',
   connectedDevice: 'Dispositivo connesso',
   chooseDevice: 'Scegli dispositivo connesso',
   selectDevice: 'Seleziona dispositivo',

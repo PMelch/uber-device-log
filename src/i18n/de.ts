@@ -192,7 +192,6 @@ export const de = {
   webviewDiscoveryUnavailable: "WebView-Erkennung auf {device} nicht verfügbar: {detail}",
   webviewLive: "Live — WebView-Konsole wird gelesen.",
   language: 'Sprache',
-  tagline: 'Android- und iOS-Logs an einem Ort.',
   connectedDevice: 'Verbundenes Gerät',
   chooseDevice: 'Verbundenes Gerät auswählen',
   selectDevice: 'Gerät auswählen',

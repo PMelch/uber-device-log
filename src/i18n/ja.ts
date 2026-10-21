@@ -192,7 +192,6 @@ export const ja = {
   webviewDiscoveryUnavailable: "{device} の WebView を検出できません: {detail}",
   webviewLive: "ライブ — WebView コンソールを読み取り中。",
   language: '言語',
-  tagline: 'Android と iOS のログを、一か所で。',
   connectedDevice: '接続デバイス',
   chooseDevice: '接続済みのデバイスを選択',
   selectDevice: 'デバイスを選択',
