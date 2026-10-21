@@ -1,7 +1,9 @@
 import { onUnmounted, ref, watch } from 'vue';
-import { preferenceKeys, readPreference, resolveBufferSize, resolveMessageOrder, resolveTheme, savePreference } from '../preferences';
+import { preferenceKeys, readPreference, resolveBufferSize, resolveMessageOrder, resolveTheme, resolveConnectionGuides, savePreference } from '../preferences';
 
 export function usePreferences() {
+  const showConnectionGuides = ref(resolveConnectionGuides(readPreference(preferenceKeys.connectionGuides)));
+  watch(showConnectionGuides, value => savePreference(preferenceKeys.connectionGuides, String(value)), { flush: 'sync' });
   const performanceEnabled = ref(import.meta.env.DEV && readPreference(preferenceKeys.performance) === 'true');
   watch(performanceEnabled, value => savePreference(preferenceKeys.performance, String(value)), { flush: 'sync' });
   const newestPosition = ref(resolveMessageOrder(readPreference(preferenceKeys.order)));
@@ -20,5 +22,5 @@ export function usePreferences() {
   applyTheme();
   system?.addEventListener('change', applyTheme);
   onUnmounted(() => system?.removeEventListener('change', applyTheme));
-  return { bufferSize, theme, newestPosition, performanceEnabled };
+  return { bufferSize, theme, newestPosition, performanceEnabled, showConnectionGuides };
 }

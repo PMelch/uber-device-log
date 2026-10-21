@@ -10,6 +10,23 @@ export const setupTitles: Record<DeviceSetupIssue['reason'], MessageKey> = {
   adbMissing: 'setupAndroidMissing', androidUnavailable: 'setupAndroidUnavailable',
   androidUnauthorized: 'setupUnauthorized', androidPermissions: 'setupPermissions', iosUnavailable: 'setupIosUnavailable',
 };
+export const setupDescriptions: Record<DeviceSetupIssue['reason'], MessageKey> = {
+  adbMissing: 'setupAndroidDescription', androidUnavailable: 'setupAndroidUnavailableDescription',
+  androidUnauthorized: 'setupUnauthorizedDescription', androidPermissions: 'setupPermissionsDescription', iosUnavailable: 'setupIosDescription',
+};
+export const setupStepTitles: Partial<Record<MessageKey, MessageKey>> = {
+  setupInstallAndroid: 'setupStepDownload', setupWindowsAdb: 'setupStepConnectAdb', setupMacAdb: 'setupStepConnectAdb',
+  setupLinuxAdb: 'setupStepLinuxAdb', setupAuthorize: 'setupStepAuthorize', setupLinuxPermissions: 'setupStepPermissions',
+  setupCheckAndroid: 'setupStepVerifyAndroid', setupWindowsDriver: 'setupStepDriver', setupAppleWindows: 'setupStepAppleWindows',
+  setupTrust: 'setupStepTrust', setupMacIos: 'setupStepMacIos', setupLinuxIos: 'setupStepLinuxIos',
+  setupCheckIos: 'setupStepPairIos', setupLinuxService: 'setupStepService', setupWindowsService: 'setupStepService',
+  setupRestart: 'setupStepRestart', setupFallback: 'setupStepFallback',
+};
+export function setupGuide(host: DeviceSetup['host'], issue: DeviceSetupIssue) {
+  const steps = setupSteps(host, issue);
+  const optional: MessageKey[] = ['setupCheckAndroid', 'setupWindowsDriver', 'setupMacIos'];
+  return { steps: steps.filter(step => !optional.includes(step.message)), troubleshooting: steps.filter(step => optional.includes(step.message)) };
+}
 export function setupSteps(host: DeviceSetup['host'], issue: DeviceSetupIssue): SetupStep[] {
   if (host === 'other') return [{message:'setupFallback', link: issue.platform === 'android' ? tools : apple}];
   if (issue.platform === 'ios') {

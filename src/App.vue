@@ -36,7 +36,13 @@ const sidebarRefresh = ref<HTMLButtonElement>();
 function focusDeviceRefresh() { (window.innerWidth >= 1100 ? sidebarRefresh.value : deviceRefresh.value)?.focus(); }
 const selected = ref('');
 const messages = shallowRef<(LogMessage & { key: number })[]>([]);
-const { bufferSize, theme, newestPosition, performanceEnabled } = usePreferences();
+const { bufferSize, theme, newestPosition, performanceEnabled, showConnectionGuides } = usePreferences();
+const settings = ref<InstanceType<typeof UserSettings>>();
+async function hideConnectionGuides() {
+  showConnectionGuides.value = false;
+  await nextTick();
+  settings.value?.focus();
+}
 const developmentBuild = import.meta.env.DEV;
 const { sample: performanceSample, rows: performanceRows, received: recordIncoming, measure: measurePerformance } = usePerformance(performanceEnabled, () => ({
   retained: messages.value.length, matching: displayedMessages.value.length, rendered: virtualRows.value.length,
@@ -573,7 +579,7 @@ onUnmounted(() => {
 
 <template>
   <div id="precision-design" :data-platform="selectedSources.some(source => source.device.webview) ? 'webview' : logDevice?.platform" :class="{ selecting: selectionMode }">
-    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><UpdateNotice :t="t" /><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
+    <header class="precision-top"><div class="precision-brand"><span class="precision-brandmark" aria-hidden="true">›_</span><span>Über <span class="brand-secondary">Device Log</span></span></div><div class="precision-toptools"><UpdateNotice :t="t" /><span class="precision-topnote">{{ t('tagline') }}</span><UserSettings ref="settings" :locale="locale" :theme="theme" :order="newestPosition" @order="newestPosition = $event" :buffer-size="bufferSize" :performance="performanceEnabled" @performance="performanceEnabled = $event" :show-connection-guides="showConnectionGuides" @connection-guides="showConnectionGuides = $event" @locale="setLocale" @theme="theme = $event" @buffer-size="bufferSize = $event" />
     </div></header>
     <div class="precision-workspace">
       <aside class="precision-device-sidebar" :aria-label="t('availableDevices')">
@@ -608,7 +614,7 @@ onUnmounted(() => {
         <button ref="deviceRefresh" class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button>
       </div>
       <p v-for="(warning, index) in warnings" :key="index" class="warning" role="status">{{ localizeMessage(warning) }}</p>
-      <DeviceSetup :setup="setup" :loading="loading" :connected="devices.some(device => device.state === 'connected')" :t="t" @retry="refresh" @resolved="focusDeviceRefresh" />
+      <DeviceSetup v-if="showConnectionGuides" :setup="setup" :loading="loading" :connected="devices.some(device => device.state === 'connected')" :t="t" @hide="hideConnectionGuides" @retry="refresh" @resolved="focusDeviceRefresh" />
       <section class="precision-console" :aria-label="t('deviceMessages')">
         <section v-if="sourceOptions.length" class="precision-source-controls" :aria-label="t('includeSources')">
           <div class="precision-source-choices"><strong>{{ t('includeSources') }}</strong>

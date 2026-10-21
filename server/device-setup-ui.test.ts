@@ -4,7 +4,7 @@ import { createServer } from 'vite';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { catalogs, translate, type Locale } from '../src/i18n';
-import { setupSteps, setupWarnings } from '../src/device-setup';
+import { setupSteps, setupWarnings, setupDescriptions, setupGuide } from '../src/device-setup';
 import { notification } from '../shared/notifications';
 import type { DeviceSetup, DeviceSetupIssue } from '../shared/types';
 
@@ -39,14 +39,31 @@ test('setup renders all host and language variants safely, hides healthy states 
       for (const locale of Object.keys(catalogs) as Locale[]) {
         const html = await render(host,locale);
         assert.ok(html.includes(translate(locale,'setupTitle')));
-        assert.ok(html.includes(translate(locale,'setupCopy')));
         assert.ok(html.includes('aria-hidden="true"'));
         assert.ok(!html.includes('spawn <custom-adb>'));
-        assert.ok(html.includes('spawn &lt;custom-adb&gt; ENOENT'));
+        assert.ok(!html.includes('spawn &lt;custom-adb&gt; ENOENT'));
+        assert.ok(!html.includes('setup-technical'));
+        assert.ok(!html.includes(translate(locale,'setupHardwareNote')));
+        const steps = [...html.matchAll(/<details class="setup-step"[^>]*>/g)];
+        assert.ok(steps.length > 0);
+        assert.match(steps[0][0], /\bopen\b/);
+        assert.ok(steps.slice(1).every(step => !/\bopen\b/.test(step[0])));
       }
     }
     assert.ok(!(await render('windows','en',[])).includes('setup-overview'));
     assert.doesNotMatch((await render('windows','en',[missing],true)).match(/<details class="setup-overview"[^>]*>/)![0], /\bopen\b/);
     assert.match((await render('windows','en')).match(/<details class="setup-overview"[^>]*>/)![0], /\bopen\b/);
+    for (const issue of [missing, ios, {...missing,reason:'androidUnavailable'}, {...missing,reason:'androidUnauthorized'}, {...missing,reason:'androidPermissions'}] as DeviceSetupIssue[]) {
+      for (const locale of Object.keys(catalogs) as Locale[]) {
+        const html = await render('windows', locale, [issue]);
+        assert.ok(html.includes(translate(locale, 'setupReasonLabel')));
+        assert.ok(html.includes(translate(locale, setupDescriptions[issue.reason])));
+        assert.ok(html.indexOf('setup-reason') < html.indexOf('class="setup-step"'));
+        assert.ok(!html.includes('setup-platforms'));
+      }
+    }
+    const guide = setupGuide('windows', missing);
+    assert.deepEqual(guide.troubleshooting.map(step => step.message), ['setupCheckAndroid', 'setupWindowsDriver']);
+    assert.ok(!guide.steps.some(step => guide.troubleshooting.includes(step)));
   } finally { await server.close(); }
 });
