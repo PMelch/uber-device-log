@@ -1,6 +1,6 @@
 # Plugin architecture — design decisions and roadmap
 
-Status: the internal capture milestone is described in [providers.md](providers.md). A bounded bundled [Unity Editor connector](unity.md) and Unity-local message catalogs are now implemented without migrating existing providers. The generic plugin platform and other roadmap features below remain proposals.
+Status: the internal capture milestone is described in [providers.md](providers.md). A bounded bundled [Unity Editor connector](unity.md) and Unity-local message catalogs are now implemented without migrating existing providers. A bundled stub can now be paired using `udl plugin pair stub --project=<folder>` and reads a configurable scalar YAML key at startup (see README). This is a local project association without external loading, transport or log capture. The generic plugin platform and other roadmap features below remain proposals.
 
 ## Architecture
 

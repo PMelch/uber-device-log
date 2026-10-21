@@ -72,7 +72,7 @@ Use `udl --project /path/to/project` (or `--project=/path/to/project`) to associ
 the running instance with an existing project directory. Relative paths resolve
 from the launch directory. On startup, UDL creates `.udl/` and an empty
 `.udl/config.yaml` if missing, preserving existing configuration. This file is
-reserved for future project-specific settings. Invalid paths or initialization
+used for project-specific settings, including bundled plugin configuration. Invalid paths or initialization
 failures stop startup. Without `--project`, the instance runs without a project
 and creates no project configuration. From source, use
 `npm run dev -- --project /path/to/project`.
@@ -277,3 +277,35 @@ private information before sharing log excerpts.
 ## License
 
 [Apache License 2.0](LICENSE).
+
+### Stub plugin
+
+Pair the bundled stub with an existing project directory (no running server required):
+
+```sh
+udl plugin pair stub --project="/path/to/project"
+udl --project="/path/to/project"
+```
+
+Pairing preserves existing YAML settings and comments and creates these defaults
+in `.udl/config.yaml` when missing:
+
+```yaml
+plugins:
+  stub:
+    configKey: plugins.stub.value
+    value: Hello from stub
+    paired: true
+```
+
+`configKey` is a dotted YAML mapping path in the same file. It can point to any
+existing scalar setting, including `false`, `0`, an empty string or `null`.
+UDL reads the setting on project startup; restart after changing it. Startup
+confirms the plugin and key in the terminal without printing the value. Set
+`paired: false` to disable the plugin. Pairing is a persistent local project
+association, not network authentication. Only the bundled `stub` is supported;
+this stub does not produce logs or load external code. Invalid configuration
+stops pairing/startup with a CLI error.
+
+From a source checkout, run `npm run build` first and replace `udl` with
+`node bin/uber-device-log.mjs` in these commands.

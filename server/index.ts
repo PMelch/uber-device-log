@@ -8,11 +8,14 @@ import { fileURLToPath } from 'node:url';
 import { listDevices, openLogs, type Stop } from './devices.js';
 import { streamLogs } from './stream.js';
 import { parseCliOptions } from './cli-options.js';
+import { loadPairedPlugins } from './plugins.js';
 import { initializeProject } from './project-context.js';
 import { unityRoutes } from './unity-routes.js';
 
 const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
 const project = initializeProject(options.project);
+const plugins = loadPairedPlugins(project);
+for (const plugin of plugins) console.log(`Plugin "${plugin.name}" connected; read config key "${plugin.configKey}".`);
 const root = fileURLToPath(new URL(process.argv.includes('--production') ? '../..' : '..', import.meta.url));
 const app = express();
 app.locals.project = project;

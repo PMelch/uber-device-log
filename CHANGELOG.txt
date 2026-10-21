@@ -11,6 +11,8 @@ Unreleased
 ----------
 
 Added
+- Pair the bundled stub plugin with a project using udl plugin pair stub
+  --project=<folder>; read a configurable YAML key when that project starts.
 - Add project-scoped Unity Editor log capture with a bundled local Editor-only
   UPM package, explicit YAML opt-in, durable revocable pairing across restarts,
   connection/loss status, seven-language
