@@ -24,6 +24,17 @@ test('console API validates discovered targets, JSON-only writes, private tokens
     assert.equal((await fetch(base + '/unknown')).status, 409);
     const missing = await post(`/${session.id}/execute`, { context: 'made-up', revision: 0, expression: 'x++' });
     assert.equal((await missing.json()).code, 'consoleStale');
+    runtime.attach('page', packet => runtime.receive({ id: packet.id, result: packet.method === 'Runtime.evaluate' ? { result: { type: 'object', objectId: 'root' } } : { result: [{ name: 'answer', value: { type: 'number', value: 42 } }] } }, 'page'));
+    runtime.receive({ method: 'Runtime.executionContextCreated', params: { context: { id: 1, auxData: { isDefault: true } } } }, 'page');
+    const evaluation = await (await post(`/${session.id}/execute`, { context: runtime.state().contexts[0].key, revision: runtime.revision, expression: 'CONFIG' })).json();
+    const inspected = await (await post(`/${session.id}/properties`, { handle: evaluation.value.handle, revision: runtime.revision, offset: 0 })).json();
+    assert.equal(inspected.children[0].value.text, '42');
+    const second = await (await post('', { platform: 'android', id: 'phone', socket: 'socket', target: 'page' })).json();
+    const denied = await (await post(`/${second.id}/properties`, { handle: evaluation.value.handle, revision: runtime.revision })).json();
+    assert.equal(denied.code, 'consoleStale');
+    assert.equal((await fetch(base + '/' + session.id + '/results', { method: 'DELETE' })).status, 204);
+    const cleared = await (await post(`/${session.id}/properties`, { handle: evaluation.value.handle, revision: runtime.revision })).json();
+    assert.equal(cleared.code, 'consoleStale');
     assert.equal((await fetch(base + '/' + session.id, { method: 'DELETE' })).status, 204);
     assert.equal(releases, 1);
     assert.equal((await fetch(base + '/' + session.id)).status, 409);

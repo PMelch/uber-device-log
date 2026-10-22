@@ -8,7 +8,7 @@ export function consoleRoutes(dependencies = { acquireWebView, listDevices }) {
   let opening = 0;
   const router = express.Router();
   const sessions = new Map<string, Awaited<ReturnType<typeof acquireWebView>> & { touched: number }>();
-  const remove = (id: string) => { sessions.get(id)?.release(); sessions.delete(id); };
+  const remove = (id: string) => { sessions.get(id)?.runtime.releaseOwner(id); sessions.get(id)?.release(); sessions.delete(id); };
   const timer = setInterval(() => { for (const [id, s] of sessions) if (Date.now() - s.touched > 120_000) remove(id); }, 30_000);
   timer.unref();
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
@@ -44,8 +44,20 @@ export function consoleRoutes(dependencies = { acquireWebView, listDevices }) {
     const s = sessions.get(req.params.id);
     if (!s) { res.status(409).json(notification('consoleUnavailable')); return; }
     s.touched = Date.now();
-    try { res.json(await s.runtime.evaluate(req.body?.context, req.body?.revision, req.body?.expression)); }
+    try { res.json(await s.runtime.evaluate(req.body?.context, req.body?.revision, req.body?.expression, req.params.id)); }
     catch (error) { res.status(409).json(notification(error instanceof ConsoleError ? error.code : 'consoleUnavailable')); }
+  });
+  router.post('/:id/properties', async (req, res) => {
+    const s = sessions.get(req.params.id);
+    if (!s) { res.status(409).json(notification('consoleUnavailable')); return; }
+    s.touched = Date.now();
+    try { res.json(await s.runtime.properties(req.body?.handle, req.body?.revision, req.body?.offset ?? 0, req.params.id)); }
+    catch (error) { res.status(409).json(notification(error instanceof ConsoleError ? error.code : 'consoleUnavailable')); }
+  });
+  router.delete('/:id/results', (req, res) => {
+    const s = sessions.get(req.params.id);
+    if (!s) { res.status(409).json(notification('consoleUnavailable')); return; }
+    s.runtime.releaseOwner(req.params.id); s.touched = Date.now(); res.sendStatus(204);
   });
   router.delete('/:id', (req, res) => { remove(req.params.id); res.sendStatus(204); });
   router.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => { res.status(400).json(notification('consoleInvalid')); });

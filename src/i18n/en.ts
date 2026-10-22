@@ -111,7 +111,10 @@ export const en = {
   consoleHistory: "Command history",
   consoleClear: "Clear output",
   consoleOld: "Previous context",
-  consolePreview: "Property preview · limited depth · getters are not called",
+  consoleInspect: "Inspect properties",
+  consoleMoreProperties: "Load more properties",
+  consolePropertiesLoading: "Loading properties…",
+  consolePreview: "Expand objects to inspect properties · values are read when loaded · getters are not called",
   consoleTruncated: "Preview limited",
   consoleCopy: "Copy preview as JSON",
 

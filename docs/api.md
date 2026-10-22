@@ -229,6 +229,14 @@ minutes without requests. The client polls once per second while the panel is op
   explicit context from the current revision. Expressions are limited to 16,384
   characters, with one evaluation at a time per WebView. Returns a bounded value
   preview, exception flag, elapsed milliseconds and the originating revision.
+- `POST /api/console/:id/properties`: `{handle,revision,offset}` loads up to 50
+  own property descriptors from an opaque session-owned result handle. Returns
+  `{children,total,revision,nextOffset?}`; omit `nextOffset` at the end. Nested
+  objects carry their own handles. Getters and expressions are not evaluated.
+  Values are read at request time. Up to 50 result groups per session and 10,000
+  handles per runtime are retained; navigation invalidates handles.
+- `DELETE /api/console/:id/results`: release that session's result handles,
+  preserving the session and capture. Returns 204.
 - `DELETE /api/console/:id`: release the session without stopping other capture
   consumers. Returns 204, including for an already-closed session.
 

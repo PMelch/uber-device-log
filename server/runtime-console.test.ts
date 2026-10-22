@@ -244,3 +244,71 @@ for (const platform of ['android', 'ios'] as const) test(`${platform} contexts f
   if (platform === 'android') assert.equal(f.runtime.state().contexts.find(c => c.frame === 'nested')?.key, key);
   f.runtime.close();
 });
+
+for (const platform of ['android', 'ios'] as const) test(`${platform} inspects retained objects in pages without reevaluating or invoking getters`, async () => {
+  const f = fixture(platform); f.context(1);
+  f.reply(p => p.method === 'Runtime.evaluate' ? { result: { type: 'object', objectId: 'root' } } : p.method === 'Runtime.getProperties' ? { result: Array.from({ length: 123 }, (_, i) => i === 2 ? { name: 'getter', get: {} } : { name: String(i), value: { type: 'object', objectId: 'root' } }) } : {});
+  const r = await f.runtime.evaluate(f.runtime.state().contexts[0].key, 0, 'CONFIG', 'owner');
+  assert.ok(r.value.handle);
+  const first = await f.runtime.properties(r.value.handle!, 0, 0, 'owner');
+  assert.equal(first.children.length, 50); assert.equal(first.nextOffset, 50); assert.equal(first.total, 123);
+  assert.equal(first.children[2].value.type, 'accessor');
+  assert.equal(first.children[0].value.handle, r.value.handle);
+  const last = await f.runtime.properties(r.value.handle!, 0, 100, 'owner');
+  assert.equal(last.children.length, 23); assert.equal(last.nextOffset, undefined);
+  await assert.rejects(f.runtime.properties(r.value.handle!, 0, 0, 'other'), /consoleStale/);
+  assert.equal(f.sent.filter(p => p.method === 'Runtime.evaluate').length, 1);
+  assert.ok(!f.sent.some(p => p.method === 'Runtime.callFunctionOn'));
+  f.runtime.releaseOwner('owner');
+  await assert.rejects(f.runtime.properties(r.value.handle!, 0, 0, 'owner'), /consoleStale/);
+  f.runtime.close();
+});
+
+test('inspection handles expire on navigation and oldest results are released at the retention limit', async () => {
+  const f = fixture(); f.context(1);
+  f.reply(p => p.method === 'Runtime.evaluate' ? { result: { type: 'function', objectId: 'function' } } : {});
+  const key = f.runtime.state().contexts[0].key;
+  const first = await f.runtime.evaluate(key, 0, 'fn', 'owner');
+  for (let i = 0; i < 50; i++) await f.runtime.evaluate(key, 0, 'fn', 'owner');
+  await assert.rejects(f.runtime.properties(first.value.handle!, 0, 0, 'owner'), /consoleStale/);
+  assert.equal(f.sent.filter(p => p.method === 'Runtime.releaseObjectGroup').length, 1);
+  const last = await f.runtime.evaluate(key, 0, 'fn', 'owner');
+  await assert.rejects(f.runtime.properties(last.value.handle!, 0, -1, 'owner'), /consoleInvalid/);
+  f.runtime.receive({ method: 'Page.frameNavigated', params: { frame: { id: 'root' } } }, 'page');
+  await assert.rejects(f.runtime.properties(last.value.handle!, f.runtime.revision, 0, 'owner'), /consoleStale/);
+  assert.equal(f.sent.filter(p => p.method === 'Runtime.releaseObjectGroup').length, 52);
+  f.runtime.close();
+});
+
+for (const stage of ['Runtime.evaluate', 'Runtime.getProperties']) test(`clearing results during ${stage} invalidates the pending evaluation`, async () => {
+  const f = fixture(); f.context(1);
+  let delayed: any;
+  f.reply(p => {
+    if (p.method === stage) { delayed = p; return undefined; }
+    return p.method === 'Runtime.evaluate' ? { result: { type: 'object', objectId: 'root' } } : {};
+  });
+  const pending = f.runtime.evaluate(f.runtime.state().contexts[0].key, 0, 'CONFIG', 'owner');
+  await Promise.resolve();
+  assert.ok(delayed);
+  f.runtime.releaseOwner('owner');
+  f.runtime.receive({ id: delayed.id, result: stage === 'Runtime.evaluate' ? { result: { type: 'object', objectId: 'root' } } : { result: [] } }, 'page');
+  await assert.rejects(pending, /consoleStale/);
+  f.runtime.close();
+});
+
+test('primitive and failed evaluations do not evict retained object results', async () => {
+  const f = fixture(); f.context(1);
+  const key = f.runtime.state().contexts[0].key;
+  f.reply(p => p.method === 'Runtime.evaluate' ? { result: { type: 'function', objectId: 'fn' } } : {});
+  const first = await f.runtime.evaluate(key, 0, 'fn', 'owner');
+  for (let i = 1; i < 50; i++) await f.runtime.evaluate(key, 0, 'fn', 'owner');
+  f.reply(p => p.method === 'Runtime.evaluate' ? { result: { type: 'number', value: 42 } } : {});
+  await f.runtime.evaluate(key, 0, '42', 'owner');
+  f.reply(p => {
+    if (p.method === 'Runtime.evaluate') { f.runtime.receive({ id: p.id, error: { message: 'failed' } }, 'page'); return undefined; }
+    return {};
+  });
+  await assert.rejects(f.runtime.evaluate(key, 0, 'bad', 'owner'), /consoleUnavailable/);
+  assert.equal((await f.runtime.properties(first.value.handle!, 0, 0, 'owner')).total, 0);
+  f.runtime.close();
+});

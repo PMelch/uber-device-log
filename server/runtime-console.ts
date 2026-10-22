@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { ConsoleContext, ConsoleErrorCode, ConsoleResult, ConsoleState, ConsoleValue } from '../shared/console.js';
+import type { ConsoleProperties, ConsoleContext, ConsoleErrorCode, ConsoleResult, ConsoleState, ConsoleValue } from '../shared/console.js';
 
 type Packet = { id?: number; method?: string; params?: any; result?: any; error?: { message?: string } };
 type Sender = (packet: Packet) => void;
@@ -19,7 +19,44 @@ export class RuntimeConsole {
   private initializing = new Map<string, Promise<void>>();
   private mainTargets = new Set<string>();
   private busy = false;
+  private groups = new Map<string, { owner: string; target: string; handles: Map<string, string> }>();
+  private handles = new Map<string, { group: string; objectId: string }>();
   revision = 0;
+  releaseOwner(owner: string) { for (const [id, group] of this.groups) if (group.owner === owner) this.releaseGroup(id); }
+  private releaseGroup(id: string) {
+    const group = this.groups.get(id);
+    if (!group) return;
+    this.groups.delete(id);
+    for (const handle of group.handles.values()) this.handles.delete(handle);
+    void this.request(group.target, 'Runtime.releaseObjectGroup', { objectGroup: id }).catch(() => {});
+  }
+  private invalidateHandles() { for (const id of this.groups.keys()) this.releaseGroup(id); }
+  private retain(object: any, groupId: string): string | undefined {
+    const group = this.groups.get(groupId);
+    if (!object?.objectId || !group) return undefined;
+    const existing = group.handles.get(object.objectId);
+    if (existing) return existing;
+    if (this.handles.size >= 10000) return undefined;
+    const handle = randomUUID();
+    group.handles.set(object.objectId, handle); this.handles.set(handle, { group: groupId, objectId: object.objectId });
+    return handle;
+  }
+  async properties(handle: string, revision: number, offset = 0, owner = ''): Promise<ConsoleProperties> {
+    if (!Number.isSafeInteger(offset) || offset < 0) throw new ConsoleError('consoleInvalid');
+    const entry = this.handles.get(handle), group = entry && this.groups.get(entry.group);
+    if (!entry || !group || group.owner !== owner || revision !== this.revision) throw new ConsoleError('consoleStale');
+    const response = await this.request(group.target, 'Runtime.getProperties', { objectId: entry.objectId, ownProperties: true, generatePreview: false });
+    if (revision !== this.revision || !this.groups.has(entry.group)) throw new ConsoleError('consoleStale');
+    const list = (response.result ?? response.properties ?? []).filter((p: any) => p.isOwn !== false);
+    const children = list.slice(offset, offset + 50).map((p: any) => {
+      const object = p.value;
+      if (!object) return { name: String(p.name), value: { type: 'accessor', text: 'get/set' } };
+      const text = String(object.unserializableValue ?? object.description ?? (Object.hasOwn(object, 'value') ? JSON.stringify(object.value) : object.type ?? 'undefined'));
+      const handle = this.retain(object, entry.group);
+      return { name: String(p.name), value: { type: object.subtype || object.type || 'undefined', text: text.slice(0, 16000), ...(text.length > 16000 || (object.objectId && !handle) ? { truncated: true } : {}), ...(handle ? { handle } : {}) } };
+    });
+    return { children, total: list.length, revision, ...(offset + children.length < list.length ? { nextOffset: offset + children.length } : {}) };
+  }
   constructor(private platform: 'android' | 'ios', private timeout = 8000) {}
   state(): ConsoleState {
     const contexts = [...this.contexts.values()].map(({ id: _id, target: _target, uniqueId: _uniqueId, ...context }) => {
@@ -56,7 +93,7 @@ export class RuntimeConsole {
     this.initialized.delete(target); this.pageEnabled.delete(target); this.initializing.delete(target);
     for (const [key, context] of this.contexts) if (context.target === target) this.contexts.delete(key);
     for (const [id, request] of this.pending) if (request.target === target) { clearTimeout(request.timer); request.reject(new ConsoleError('consoleStale')); this.pending.delete(id); }
-    this.revision++;
+    this.invalidateHandles(); this.revision++;
   }
   close() { for (const target of this.senders.keys()) this.detach(target); }
   async enable() {
@@ -115,20 +152,20 @@ export class RuntimeConsole {
       if (!c || c.auxData?.isDefault === false || c.isPageContext === false || (this.platform === 'ios' && c.type && c.type !== 'normal')) return false;
       if (![...this.contexts.values()].some(item => item.target === target && item.id === c.id)) {
         if (this.platform === 'ios') {
-          for (const [oldKey, old] of this.contexts) if (old.target === target && old.frame === String(c.frameId)) { this.contexts.delete(oldKey); this.revision++; }
+          for (const [oldKey, old] of this.contexts) if (old.target === target && old.frame === String(c.frameId)) { this.contexts.delete(oldKey); this.invalidateHandles(); this.revision++; }
         }
         const key = randomUUID();
         this.contexts.set(key, { key, id: c.id, uniqueId: c.uniqueId, target, frame: String(c.auxData?.frameId ?? c.frameId ?? ''), name: c.name || '', url: c.origin || '', top: false });
       }
     } else if (packet.method === 'Runtime.executionContextsCleared' || packet.method === 'Runtime.executionContextDestroyed') {
       for (const [key, context] of this.contexts) if (context.target === target && (packet.method.endsWith('Cleared') || context.id === p.executionContextId)) this.contexts.delete(key);
-      this.revision++;
+      this.invalidateHandles(); this.revision++;
     } else if (packet.method === 'Page.frameDetached') {
       for (const [key, context] of this.contexts) if (context.frame === String(p.frameId)) this.contexts.delete(key);
-      this.frames.delete(String(p.frameId)); this.revision++;
+      this.frames.delete(String(p.frameId)); this.invalidateHandles(); this.revision++;
     } else if (packet.method === 'Page.frameNavigated') {
       // Frame navigation invalidates approval even when a backend reuses context IDs.
-      this.revision++;
+      this.invalidateHandles(); this.revision++;
       const f = p.frame;
       if (f && this.platform === 'ios') for (const [key, context] of this.contexts) if (context.target === target && (!f.parentId || context.frame === String(f.id))) this.contexts.delete(key);
       if (f) this.frames.set(String(f.id), { name: f.name || '', url: f.url || '', top: !f.parentId && this.mainTargets.has(target), parent: f.parentId });
@@ -145,18 +182,21 @@ export class RuntimeConsole {
       try { send({ id, method, params }); } catch { clearTimeout(timer); this.pending.delete(id); reject(new ConsoleError('consoleUnavailable')); }
     });
   }
-  async evaluate(key: string, revision: number, expression: string): Promise<ConsoleResult> {
+  async evaluate(key: string, revision: number, expression: string, owner = ''): Promise<ConsoleResult> {
     if (this.busy) throw new ConsoleError('consoleBusy');
     const context = this.contexts.get(key);
     if (!context || revision !== this.revision) throw new ConsoleError('consoleStale');
     if (typeof expression !== 'string' || !expression.trim() || expression.length > 16384) throw new ConsoleError('consoleInvalid');
     this.busy = true;
     const start = Date.now(), group = randomUUID();
+    this.groups.set(group, { owner, target: context.target, handles: new Map() });
+    let succeeded = false;
     let remaining = 150, characters = 65536;
     const snapshot = async (object: any, depth: number, seen: Set<string>): Promise<ConsoleValue> => {
       const text = String(object?.unserializableValue ?? object?.description ?? (Object.hasOwn(object ?? {}, 'value') ? JSON.stringify(object.value) : object?.type ?? 'undefined'));
       const limit = Math.min(16000, characters); characters -= Math.min(limit, text.length);
-      const value: ConsoleValue = { type: object?.subtype || object?.type || 'undefined', text: text.slice(0, limit), ...(text.length > limit ? { truncated: true } : {}) };
+      const value: ConsoleValue = { ...(object?.objectId ? { handle: this.retain(object, group) } : {}), type: object?.subtype || object?.type || 'undefined', text: text.slice(0, limit), ...(text.length > limit ? { truncated: true } : {}) };
+      if (object?.objectId && !value.handle) value.truncated = true;
       if (!object?.objectId || object.type === 'function') return value;
       if (depth >= 3 || remaining <= 0 || characters <= 0 || Date.now() - start > 4000 || seen.has(object.objectId)) return { ...value, truncated: true };
       const nextSeen = new Set(seen).add(object.objectId);
@@ -175,13 +215,18 @@ export class RuntimeConsole {
     };
     try {
       const data = await this.request(context.target, 'Runtime.evaluate', { expression, ...(context.uniqueId && this.platform === 'android' ? { uniqueContextId: context.uniqueId } : { contextId: context.id }), objectGroup: group, returnByValue: false, ...(this.platform === 'android' ? { generatePreview: false } : {}) });
-      if (revision !== this.revision || !this.contexts.has(key)) throw new ConsoleError('consoleStale');
+      if (revision !== this.revision || !this.contexts.has(key) || !this.groups.has(group)) throw new ConsoleError('consoleStale');
       const value = await snapshot(data.exceptionDetails?.exception ?? data.result, 0, new Set());
-      if (revision !== this.revision) throw new ConsoleError('consoleStale');
+      if (revision !== this.revision || !this.groups.has(group)) throw new ConsoleError('consoleStale');
+      if (this.groups.get(group)!.handles.size) {
+        while ([...this.groups.values()].filter(g => g.owner === owner).length > 50) {
+          this.releaseGroup([...this.groups].find(([id, g]) => id !== group && g.owner === owner)![0]);
+        }
+      }
+      succeeded = true;
       return { value, exception: !!(data.wasThrown || data.exceptionDetails), elapsed: Date.now() - start, revision };
     } finally {
-      // Release temporary remote handles without retaining results in the inspected app.
-      void this.request(context.target, 'Runtime.releaseObjectGroup', { objectGroup: group }).catch(() => {});
+      if (!succeeded || !this.groups.get(group)?.handles.size) this.releaseGroup(group);
       this.busy = false;
     }
   }

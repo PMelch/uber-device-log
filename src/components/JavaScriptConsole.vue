@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
-import type { ConsoleResult, ConsoleState, ConsoleErrorCode } from '../../shared/console';
+import type { ConsoleResult, ConsoleState, ConsoleErrorCode, ConsoleValue as ConsoleValueData, ConsoleProperties } from '../../shared/console';
 import type { LogSource } from '../../shared/types';
 import { translate, type Locale } from '../i18n';
 import type { MessageKey } from '../i18n/en';
@@ -17,13 +17,13 @@ const panel = ref<HTMLDialogElement>();
 const editor = ref<HTMLTextAreaElement>();
 const selected = ref(props.initial), session = ref(''), context = ref(''), code = ref('');
 const state = ref<ConsoleState>({ revision: 0, connected: false, contexts: [] });
-const error = ref<ConsoleErrorCode>(), busy = ref(false), connecting = ref(false), copied = ref(-1);
+const error = ref<ConsoleErrorCode>(), busy = ref(false), connecting = ref(false), clearing = ref(false), copied = ref(-1);
 const history = ref<string[]>([]);
 const results = ref<(ConsoleResult & { expression: string; scope: string; session: string })[]>([]);
 let generation = 0, disposed = false, timer: ReturnType<typeof setTimeout> | undefined;
 const previousFocus = document.activeElement as HTMLElement | null;
 const target = computed(() => props.sources.find(s => s.key === selected.value));
-const ready = computed(() => !!session.value && !!context.value && state.value.connected && !busy.value && !connecting.value);
+const ready = computed(() => !!session.value && !!context.value && state.value.connected && !busy.value && !connecting.value && !clearing.value);
 const errors = new Set<ConsoleErrorCode>(['consoleUnavailable', 'consoleStale', 'consoleTimeout', 'consoleBusy', 'consoleInvalid']);
 async function request(path: string, body?: unknown, method?: string) {
   const response = await fetch(`/api/console${path}`, { method: method ?? (body ? 'POST' : 'GET'), headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
@@ -74,8 +74,25 @@ async function execute() {
   } catch (e) { if (version === generation) { report(e); if (e === 'consoleStale') context.value = ''; } }
   finally { if (!disposed) busy.value = false; }
 }
+async function inspect(result: typeof results.value[number], value: ConsoleValueData, offset: number): Promise<ConsoleProperties> {
+  const token = session.value, version = generation;
+  if (!value.handle || result.session !== token || result.revision !== state.value.revision) throw 'consoleStale';
+  const page: ConsoleProperties = await request(`/${token}/properties`, { handle: value.handle, revision: result.revision, offset });
+  if (disposed || version !== generation || result.revision !== state.value.revision || !results.value.includes(result)) throw 'consoleStale';
+  value.children = offset === 0 ? page.children : [...(value.children ?? []), ...page.children];
+  value.truncated = page.nextOffset !== undefined;
+  return page;
+}
+async function clearResults() {
+  if (busy.value || clearing.value) return;
+  const token = session.value, version = generation;
+  clearing.value = true; results.value = []; copied.value = -1;
+  try { if (token) await request(`/${token}/results`, undefined, 'DELETE'); }
+  catch (e) { if (version === generation) report(e); }
+  finally { clearing.value = false; }
+}
 async function copy(index: number) {
-  try { await navigator.clipboard.writeText(JSON.stringify(results.value[index]?.value, null, 2)); copied.value = index; }
+  try { await navigator.clipboard.writeText(JSON.stringify(results.value[index]?.value, (key, value) => key === 'handle' ? undefined : value, 2)); copied.value = index; }
   catch { copied.value = -1; }
 }
 watch(selected, connect);
@@ -101,14 +118,14 @@ onUnmounted(() => { disposed = true; ++generation; clearTimeout(timer); release(
         <div class="console-result-meta"><span>{{ result.scope }}</span><span>{{ result.value.type }} · {{ result.elapsed }} ms</span></div>
         <small v-if="result.session !== session || result.revision !== state.revision">{{ t('consoleOld') }}</small>
         <pre class="console-expression">&gt; {{ result.expression }}</pre>
-        <ConsoleValue :value="result.value" :limited="t('consoleTruncated')" />
+        <ConsoleValue :value="result.value" :limited="t('consoleTruncated')" :t="t" :available="result.session === session && result.revision === state.revision && state.connected" :inspect="(value, offset) => inspect(result, value, offset)" />
         <button class="console-copy" @click="copy(index)">{{ t(copied === index ? 'copiedAction' : 'consoleCopy') }}</button>
       </article>
     </div>
     <footer>
       <p v-if="error" class="console-error" role="alert">{{ t(error) }}</p>
       <div class="console-editor"><textarea ref="editor" v-model="code" :aria-label="t('consoleCode')" spellcheck="false" maxlength="16384" placeholder="document.title" @keydown.enter="($event.metaKey || $event.ctrlKey) && ($event.preventDefault(), execute())" /></div>
-      <div class="console-actions"><select :aria-label="t('consoleHistory')" value="" @change="code = ($event.target as HTMLSelectElement).value; ($event.target as HTMLSelectElement).value = ''"><option value="" disabled>{{ t('consoleHistory') }}</option><option v-for="(command, index) in history" :key="index" :value="command">{{ command }}</option></select><button @click="results = []; copied = -1">{{ t('consoleClear') }}</button><button class="console-run" :disabled="!ready || !code.trim()" title="⌘ / Ctrl + Enter" @click="execute">{{ t(busy ? 'consoleRunning' : 'consoleRun') }} <span aria-hidden="true">↵</span></button></div>
+      <div class="console-actions"><select :aria-label="t('consoleHistory')" value="" @change="code = ($event.target as HTMLSelectElement).value; ($event.target as HTMLSelectElement).value = ''"><option value="" disabled>{{ t('consoleHistory') }}</option><option v-for="(command, index) in history" :key="index" :value="command">{{ command }}</option></select><button class="console-clear" :disabled="busy || clearing" @click="clearResults">{{ t('consoleClear') }}</button><button class="console-run" :disabled="!ready || !code.trim()" title="⌘ / Ctrl + Enter" @click="execute">{{ t(busy ? 'consoleRunning' : 'consoleRun') }} <span aria-hidden="true">↵</span></button></div>
       <small>{{ t('consolePreview') }}</small>
     </footer>
   </dialog>

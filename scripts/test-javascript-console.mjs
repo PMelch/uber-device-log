@@ -9,6 +9,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright')
 const root = resolve(fileURLToPath(new URL('../dist/', import.meta.url)));
 const clients = new Set();
 let next = 0, revision = 0, executions = [], sessions = 0;
+let executionDelay = 0, clearDelay = 0;
 const consoleState = () => ({ revision, connected: true, contexts: [
  { key: 'top', name: '', url: 'https://app.example.com', frame: 'main', top: true, depth: 0 },
  { key: 'frame', name: 'checkout', url: 'https://pay.example.com', frame: 'child', top: false, depth: 1 }
@@ -23,12 +24,19 @@ function deliver(response, count) {
 const server = createServer(async (request, response) => {
   if (request.url.startsWith('/api/console')) {
     response.setHeader('Content-Type', 'application/json');
-    if (request.method === 'DELETE') { response.writeHead(204); response.end(); return; }
+    if (request.method === 'DELETE') { if (request.url.endsWith('/results') && clearDelay) await new Promise(resolve => setTimeout(resolve, clearDelay)); response.writeHead(204); response.end(); return; }
     if (request.method === 'POST') {
       let raw = ''; for await (const chunk of request) raw += chunk;
+      if (request.url.endsWith('/properties')) {
+        const { handle, offset } = JSON.parse(raw);
+        const children = handle === 'nested-object' ? [{ name: 'deepValue', value: { type: 'number', text: '99' } }] :
+          offset === 0 ? [{name:'nested', value:{type:'object',text:'Object',handle:'nested-object'}}, ...Array.from({length:49}, (_,i) => ({name:`field${i}`,value:{type:'number',text:String(i)}}))] : [{name:'lastField',value:{type:'string',text:'"complete"'}}];
+        response.end(JSON.stringify({ children, revision, total: handle === 'nested-object' ? 1 : 51, ...(handle !== 'nested-object' && offset === 0 ? {nextOffset:50} : {}) })); return;
+      }
       if (request.url.endsWith('/execute')) {
         const command = JSON.parse(raw); executions.push(command);
-        response.end(JSON.stringify({ revision, elapsed: 12, exception: command.expression === 'missing()', value: command.expression === 'missing()' ? {type:'error',text:'ReferenceError: missing is not defined'} : {type:'object',text:'Object',children:[{name:'answer',value:{type:'number',text:'42'}}]} })); return;
+        if (executionDelay) await new Promise(resolve => setTimeout(resolve, executionDelay));
+        response.end(JSON.stringify({ revision, elapsed: 12, exception: command.expression === 'missing()', value: command.expression === 'missing()' ? {type:'error',text:'ReferenceError: missing is not defined'} : {type:'object',text:'Object',handle:'root-object',truncated:true,children:[{name:'answer',value:{type:'number',text:'42'}}]} })); return;
       }
       response.end(JSON.stringify({ id: String(++sessions), ...consoleState() })); return;
     }
@@ -96,11 +104,23 @@ try {
     assert.match(await panel.locator('option[value=frame]').textContent(), /^\u00a0{3}↳ checkout/);
     await panel.locator('select').nth(1).selectOption('frame');
     await panel.locator('textarea').fill('window.state');
+    executionDelay = 300;
     await panel.locator('.console-run').click();
+    assert.equal(await panel.locator('.console-clear').isDisabled(), true);
     await panel.locator('article').waitFor();
     assert.equal(executions.at(-1).context, 'frame');
     await panel.locator('article summary').click();
     assert.match(await panel.locator('article').innerText(), /answer:.*42/s);
+    const evaluated = executions.length;
+    await panel.locator('article .console-inspect').first().click();
+    await panel.locator('article .console-more').click();
+    await panel.locator('article .console-property').filter({has:page.locator('code', {hasText: /^lastField:$/})}).waitFor();
+    assert.match(await panel.locator('article').innerText(), /lastField:.*complete/s);
+    await panel.locator('article details details > summary').first().click();
+    await panel.locator('article .console-inspect').first().click();
+    await panel.locator('article code').filter({hasText:/^deepValue:$/}).waitFor();
+    assert.match(await panel.locator('article').innerText(), /deepValue:.*99/s);
+    assert.equal(executions.length, evaluated, 'Inspection must never evaluate the expression again');
     const after = await page.locator('.logs').evaluate(el => ({ width: el.offsetWidth, height: el.offsetHeight, y: el.getBoundingClientRect().top + window.scrollY })); assert.deepEqual(after, before);
     const count = executions.length;
     revision++;
@@ -125,6 +145,12 @@ try {
     await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
     assert.equal(await panel.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(28, 30, 36)');
     assert.equal(await badge.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(59, 48, 29)');
+    clearDelay = 300;
+    await panel.locator('.console-clear').click();
+    assert.equal(await panel.locator('.console-run').isDisabled(), true);
+    assert.equal(await panel.locator('.console-clear').isDisabled(), true);
+    await page.waitForFunction(() => !document.querySelector('.console-clear')?.disabled);
+    assert.equal(await panel.locator('article').count(), 0);
     await page.keyboard.press('Escape');
     await panel.waitFor({state:'detached'});
     assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
@@ -152,6 +178,16 @@ try {
   assert.equal(result.value.children.find(p => p.name === 'title').value.text, '"Frame title"');
   assert.equal(result.value.children.find(p => p.name === 'same').value.text, 'false');
   assert.equal(result.value.children.find(p => p.name === 'untouched').value.type, 'accessor');
+  const large = await runtime.evaluate(child.key, runtime.revision, '(() => { window.inspectionRuns = (window.inspectionRuns || 0) + 1; const value = Object.fromEntries(Array.from({length:75}, (_,i) => ["field" + i, i])); value.nested = {answer: 99}; Object.defineProperty(value, "untouched", {enumerable:true,get() {throw new Error("getter invoked")}}); return value; })()', 'browser');
+  const firstPage = await runtime.properties(large.value.handle, runtime.revision, 0, 'browser');
+  const secondPage = await runtime.properties(large.value.handle, runtime.revision, firstPage.nextOffset, 'browser');
+  assert.equal(firstPage.children.length, 50);
+  assert.equal(secondPage.children.find(p => p.name === 'field74').value.text, '74');
+  const nested = secondPage.children.find(p => p.name === 'nested');
+  const nestedPage = await runtime.properties(nested.value.handle, runtime.revision, 0, 'browser');
+  assert.equal(nestedPage.children[0].value.text, '99');
+  const runs = await runtime.evaluate(child.key, runtime.revision, 'window.inspectionRuns');
+  assert.equal(runs.value.text, '1');
   const old = runtime.revision;
   await page.reload();
   await assert.rejects(runtime.evaluate(child.key, old, '1'), /consoleStale/);

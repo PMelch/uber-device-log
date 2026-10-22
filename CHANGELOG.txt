@@ -10,6 +10,8 @@ Unreleased
 ----------
 
 Changed
+- Inspect JavaScript result objects on demand, load further properties in pages,
+  and explore nested objects without evaluating the expression again or invoking getters.
 - Show JavaScript console contexts in frame hierarchy order, with nested frames
   indented beneath their parents and the main page first.
 
