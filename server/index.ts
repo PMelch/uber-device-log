@@ -11,13 +11,13 @@ import { fileURLToPath } from 'node:url';
 import { listDevices, openLogs, type Stop } from './devices.js';
 import { streamLogs } from './stream.js';
 
+const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
+const project = initializeProject(options.project);
 const root = fileURLToPath(new URL(process.argv.includes('--production') ? '../..' : '..', import.meta.url));
 const app = express();
-const server = createServer(app);
-const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
-const port = options.port;
-const project = initializeProject(options.project);
 app.locals.project = project;
+const server = createServer(app);
+const port = options.port;
 const flowProject = await FlowProject.create(project?.directory);
 const active = new Set<Stop>();
 const packageVersion = JSON.parse(readFileSync(`${root}/package.json`, 'utf8')).version as string;

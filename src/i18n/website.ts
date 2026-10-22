@@ -1,5 +1,8 @@
 // Website-only catalogs: deliberately not imported by the packaged application.
 const en = {
+  "siteGuidesTitle": "Setup help, built in.",
+  "siteGuidesBody": "Missing device tools? The app includes detailed, step-by-step instructions for installing Android SDK Platform Tools (ADB) and setting up Apple device support on macOS, Windows and Linux. When required tools or services are unavailable, it shows the relevant guide with download links and copyable commands.",
+  "siteGuidesLink": "About the setup guides ↗",
   "siteSkip": "Skip to content",
   "language": "Language",
   "siteFeatures": "Features",
@@ -52,6 +55,9 @@ const en = {
   "siteHybridBody": "A hybrid app brings a web app running in a WebView together with native code. Web app logging alone shows only part of the picture. Über Device Log provides combined logging: see JavaScript console output alongside native logs from the same device, merged by timestamp with each source identified. If your app uses multiple inspectable WebViews, you can include their consoles too.",
 } as const;
 const de = {
+  "siteGuidesTitle": "Einrichtungshilfe direkt in der App.",
+  "siteGuidesBody": "Fehlen die nötigen Gerätewerkzeuge? Die App enthält ausführliche Schritt-für-Schritt-Anleitungen zur Installation der Android SDK Platform Tools (ADB) und zur Einrichtung der Apple-Geräteunterstützung unter macOS, Windows und Linux. Wenn benötigte Werkzeuge oder Dienste nicht verfügbar sind, erscheint die passende Anleitung mit Downloadlinks und kopierbaren Befehlen.",
+  "siteGuidesLink": "Mehr zu den Einrichtungsanleitungen ↗",
   "siteSkip": "Zum Inhalt",
   "language": "Sprache",
   "siteFeatures": "Funktionen",
@@ -104,6 +110,9 @@ const de = {
   "siteHybridBody": "Eine Hybrid-App verbindet eine Web-App in einer WebView mit nativem Code. Web-App-Logging allein zeigt nur einen Teil des Geschehens. Über Device Log führt die Logs zusammen: JavaScript-Konsolenausgaben erscheinen neben nativen Logs desselben Geräts, nach Zeitstempel sortiert und mit erkennbarer Quelle. Nutzt deine App mehrere inspizierbare WebViews, kannst du auch deren Konsolen einbeziehen.",
 } as const;
 const es = {
+  "siteGuidesTitle": "Ayuda de configuración integrada.",
+  "siteGuidesBody": "¿Faltan herramientas para conectar el dispositivo? La app incluye instrucciones detalladas paso a paso para instalar Android SDK Platform Tools (ADB) y configurar la compatibilidad con dispositivos Apple en macOS, Windows y Linux. Si faltan herramientas o servicios necesarios, muestra la guía correspondiente con enlaces de descarga y comandos que puedes copiar.",
+  "siteGuidesLink": "Acerca de las guías de configuración ↗",
   "siteSkip": "Ir al contenido",
   "language": "Idioma",
   "siteFeatures": "Funciones",
@@ -156,6 +165,9 @@ const es = {
   "siteHybridBody": "Una app híbrida combina una aplicación web en una WebView con código nativo. Los logs de la aplicación web solo muestran una parte. Über Device Log combina los logs: consulta la salida de consola JavaScript junto con los logs nativos del mismo dispositivo, ordenados por marca de tiempo y con cada origen identificado. Si tu app utiliza varias WebViews inspeccionables, también puedes incluir sus consolas.",
 } as const;
 const fr = {
+  "siteGuidesTitle": "Une aide à la configuration intégrée.",
+  "siteGuidesBody": "Il vous manque des outils pour connecter votre appareil ? L’app propose des instructions détaillées, étape par étape, pour installer Android SDK Platform Tools (ADB) et configurer la prise en charge des appareils Apple sous macOS, Windows et Linux. Si des outils ou services nécessaires sont indisponibles, elle affiche le guide adapté avec des liens de téléchargement et des commandes à copier.",
+  "siteGuidesLink": "À propos des guides de configuration ↗",
   "siteSkip": "Aller au contenu",
   "language": "Langue",
   "siteFeatures": "Fonctionnalités",
@@ -208,6 +220,9 @@ const fr = {
   "siteHybridBody": "Une app hybride associe une application web dans une WebView à du code natif. Les logs de l’application web ne montrent qu’une partie du contexte. Über Device Log réunit les logs : consultez les sorties de console JavaScript avec les logs natifs du même appareil, triés par horodatage et avec chaque source identifiée. Si votre app utilise plusieurs WebViews inspectables, vous pouvez aussi inclure leurs consoles.",
 } as const;
 const it = {
+  "siteGuidesTitle": "Aiuto per la configurazione integrato.",
+  "siteGuidesBody": "Mancano gli strumenti per collegare il dispositivo? L’app include istruzioni dettagliate passo passo per installare Android SDK Platform Tools (ADB) e configurare il supporto per i dispositivi Apple su macOS, Windows e Linux. Se gli strumenti o i servizi necessari non sono disponibili, mostra la guida pertinente con link per il download e comandi da copiare.",
+  "siteGuidesLink": "Informazioni sulle guide di configurazione ↗",
   "siteSkip": "Vai al contenuto",
   "language": "Lingua",
   "siteFeatures": "Funzionalità",
@@ -260,6 +275,9 @@ const it = {
   "siteHybridBody": "Un’app ibrida combina un’app web in una WebView con codice nativo. I log dell’app web mostrano solo parte del contesto. Über Device Log combina i log: visualizza l’output della console JavaScript insieme ai log nativi dello stesso dispositivo, ordinati per timestamp e con ogni origine identificata. Se la tua app usa più WebView ispezionabili, puoi includere anche le loro console.",
 } as const;
 const zhCN = {
+  "siteGuidesTitle": "内置设置指南。",
+  "siteGuidesBody": "缺少连接设备所需的工具？应用内置详细的分步说明，帮助你在 macOS、Windows 和 Linux 上安装 Android SDK Platform Tools（ADB）并配置 Apple 设备支持。所需工具或服务不可用时，应用会显示相应指南，提供下载链接和可复制的命令。",
+  "siteGuidesLink": "了解设置指南 ↗",
   "siteSkip": "跳转到内容",
   "language": "语言",
   "siteFeatures": "功能",
@@ -312,6 +330,9 @@ const zhCN = {
   "siteHybridBody": "混合应用将 WebView 中运行的 Web 应用与原生代码结合在一起。仅查看 Web 应用日志只能了解部分情况。Über Device Log 提供合并日志视图：将 JavaScript 控制台输出与同一设备的原生日志按时间戳合并，并标明每个来源。如果应用使用多个可检查的 WebView，也可以将它们的控制台一并纳入。",
 } as const;
 const ja = {
+  "siteGuidesTitle": "設定ガイドをアプリに内蔵。",
+  "siteGuidesBody": "デバイス接続用のツールが見つかりませんか？ アプリには、macOS、Windows、Linux で Android SDK Platform Tools（ADB）をインストールし、Apple デバイスのサポートを設定するための詳しい手順が用意されています。必要なツールやサービスが利用できない場合、ダウンロードリンクとコピー可能なコマンドを含む適切なガイドを表示します。",
+  "siteGuidesLink": "設定ガイドについて ↗",
   siteSkip: '本文へスキップ',
   language: '言語',
   siteFeatures: '機能',

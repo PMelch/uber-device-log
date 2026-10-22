@@ -20,7 +20,7 @@ function inspectDependencySecurity(directory) {
       const manifestPath = join(child, 'package.json');
       if (existsSync(manifestPath)) {
         const { name, version } = JSON.parse(readFileSync(manifestPath, 'utf8'));
-        const minimum = { 'shell-quote': [1, 11, 0], 'source-map-js': [1, 2, 2] }[name];
+        const minimum = { 'shell-quote': [1, 11, 0], 'source-map-js': [1, 2, 2], 'follow-redirects': [1, 16, 1] }[name];
         if (minimum) {
           found.add(name);
           const parts = version.split('.').map(Number);
@@ -39,6 +39,7 @@ function inspectDependencySecurity(directory) {
   }
   walk(directory);
   assert.ok(found.has('shell-quote'), 'Must inspect the installed Appium shell-quote dependency');
+  assert.ok(found.has('follow-redirects'), 'Must inspect the installed Appium follow-redirects dependency');
 }
 async function freePort() {
   const server = createServer();
@@ -48,9 +49,9 @@ async function freePort() {
   await new Promise(resolve => server.close(resolve));
   return port;
 }
-async function smoke(command, args, withFlows = false) {
+async function smoke(command, args, project, withFlows = false) {
   const port = await freePort();
-  const child = spawn(command, [...args, '--port', String(port), ...(withFlows ? ['--project=fixture-project'] : [])], { cwd: temporary, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(command, [...args, '--port', String(port), ...(project ? ['--project', project] : [])], { cwd: temporary, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
   child.stdout.on('data', data => { output += data; });
   child.stderr.on('data', data => { output += data; });
@@ -75,9 +76,11 @@ async function smoke(command, args, withFlows = false) {
     assert.ok(Array.isArray((await devices.json()).devices));
     assert.equal((await fetch(`http://127.0.0.1:${port}/api/devices`, { headers: { Origin: 'https://untrusted.example' } })).status, 403);
     const snapshot = await (await fetch(`http://127.0.0.1:${port}/api/flows/snapshot`)).json();
-    assert.equal(snapshot.enabled, withFlows);
+    assert.equal(snapshot.enabled, Boolean(project));
     if (withFlows) { assert.equal(snapshot.blueprints.length, 3); assert.equal(snapshot.diagnostics.length, 0); assert.ok(snapshot.blueprints.some(item => item.id === 'purchase')); }
     console.log(`PASS ${command}: installed archive starts; UI, assets, discovery, origin guard and ${withFlows ? 'project blueprints' : 'log-only mode'} work`);
+    if (project && !withFlows) assert.equal(readFileSync(join(temporary, project, '.udl', 'config.yaml'), 'utf8'), '');
+    else if (!project) assert.equal(existsSync(join(temporary, '.udl')), false);
   } finally {
     if (child.exitCode === null && !spawnError) {
       if (process.platform === 'win32') execFileSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
@@ -112,7 +115,12 @@ try {
   assert.equal(run('node', [join(installed, manifest.bin['uber-device-log']), '--version'], temporary).trim(), manifest.version);
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log']);
   cpSync(join(root, 'test_flow_project'), join(temporary, 'fixture-project'), { recursive: true });
-  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], true);
+  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], 'fixture-project', true);
+  const project = 'example project';
+  mkdirSync(join(temporary, project));
+  assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help', '--project', project], temporary), /--project/);
+  assert.equal(existsSync(join(temporary, project, '.udl')), false, 'Help must not initialize projects');
+  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], project);
   await smoke('bunx', ['--no-install', 'uber-device-log']);
   // bunx against an npm installation does not verify Bun's own dependency resolver.
   const bunDirectory = join(temporary, 'bun-install');

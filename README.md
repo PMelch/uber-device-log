@@ -12,6 +12,8 @@
 A browser-based **Android Logcat, iOS syslog and WebView console viewer**,
 with setup guidance for **macOS, Windows and Linux**. Connect a phone, find the message that matters,
 and share the relevant entries as plain text or structured JSON.
+Detailed [software setup guides](#guided-software-setup) are built into the app,
+with download links and copyable commands for the device tools you need.
 
 [Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
 
@@ -68,6 +70,15 @@ udl --help        # Show available options
 udl --version     # Show the installed version
 ```
 
+Use `udl --project /path/to/project` (or `--project=/path/to/project`) to associate
+the running instance with an existing project directory. Relative paths resolve
+from the launch directory. On startup, UDL creates `.udl/` and an empty
+`.udl/config.yaml` if missing, preserving existing configuration. This file is
+reserved for future project-specific settings. Invalid paths or initialization
+failures stop startup. Without `--project`, the instance runs without a project
+and creates no project configuration. From source, use
+`npm run dev -- --project /path/to/project`.
+
 With a one-off launcher, use `npx uber-device-log --port 4311` or
 `bunx uber-device-log --port 4311`. Both require Node.js; omit Bun's `--bun` flag.
 
@@ -76,7 +87,10 @@ latest stable version (four-second timeout). If an update is available, the app
 shows the current and new versions, a changelog link, and instructions for the
 detected npx, bunx, global npm or global Bun installation. If detection is
 inconclusive, it offers the supported commands. Updates are never installed
-automatically. Stop the running server before updating, then restart it; retain
+automatically. Choose **Remind later** to hide that version for 24 hours, or
+**Dismiss this version** to hide it permanently in this browser. A newer release
+still appears. These choices are saved locally when browser storage is available.
+Stop the running server before updating, then restart it; retain
 any custom command options such as `--port`. Offline checks fail silently. The
 request sends no logs or device information. Help/version commands do not check.
 
@@ -101,6 +115,19 @@ The app remembers the last selected device. On reload, it selects that device an
 starts capture if it is connected and available. Otherwise the selection stays
 empty, while the saved device is retained for a later reload. Reattaching it
 during an open session does not automatically start capture.
+
+### Guided software setup
+
+The app includes detailed, step-by-step instructions for installing
+**Android SDK Platform Tools (ADB)** and configuring **Apple device support**
+on macOS, Windows and Linux. If a required tool or service is unavailable, the
+viewer shows the relevant guide for the computer running UDL, with download links,
+copyable commands, authorization/pairing steps and troubleshooting help.
+
+You install the software yourself; copying a command does not execute it. After
+setup, choose **Check again**. If you hide the guides, restore them with
+**Settings → Show connection guides**. Install Node.js separately before starting
+UDL; the built-in guides cover the device connection prerequisites.
 
 ### Android Logcat on macOS, Windows and Linux
 
@@ -131,6 +158,14 @@ On macOS, the app uses the system's Apple device service. Linux needs `usbmuxd`;
 Windows needs compatible Apple mobile-device support. macOS is the primary
 validation environment; Windows/Linux and physical-device capture still need
 validation. No Appium server is required. iOS simulators are not listed.
+
+If ADB cannot start, an iOS device transport cannot be reached, or Android reports
+missing authorization or USB permissions, the viewer shows setup instructions for
+the computer running UDL (Windows, Linux or macOS). Copy icons copy commands
+without executing them; a manual-copy field appears if clipboard access fails.
+Use **Check again** after setup; environment changes may require restarting UDL
+from the configured terminal. Working sources remain usable, and a successful
+empty device list alone does not imply a missing driver or dependency.
 
 ### Android WebView consoles
 

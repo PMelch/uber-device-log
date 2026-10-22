@@ -3,7 +3,8 @@ export const themes = ['system', 'light', 'dark'] as const;
 export type Theme = typeof themes[number];
 export type MessageOrder = 'top' | 'bottom';
 export function resolveMessageOrder(value: string | null): MessageOrder { return value === 'bottom' ? 'bottom' : 'top'; }
-export const preferenceKeys = { order: 'uber-device-log.messageOrder', theme: 'uber-device-log.theme', bufferSize: 'uber-device-log.bufferSize', performance: 'uber-device-log.performance' };
+export const preferenceKeys = { order: 'uber-device-log.messageOrder', theme: 'uber-device-log.theme', bufferSize: 'uber-device-log.bufferSize', performance: 'uber-device-log.performance', connectionGuides: 'uber-device-log.connectionGuides' };
+export function resolveConnectionGuides(value: string | null): boolean { return value !== 'false'; }
 export function resolveTheme(value: string | null): Theme {
   return themes.includes(value as Theme) ? value as Theme : 'system';
 }

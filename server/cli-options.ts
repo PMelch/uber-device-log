@@ -12,7 +12,7 @@ export function parseCliOptions(args: string[], environmentPort?: string) {
     else if (arg === '--project' || arg === '--flows' || arg.startsWith('--project=') || arg.startsWith('--flows=')) {
       if (project !== undefined) throw new Error('Use --project or --flows only once.');
       const value = arg.includes('=') ? arg.slice(arg.indexOf('=') + 1) : args[++index];
-      if (!value || value.startsWith('--')) throw new Error(`${arg} requires a project directory.`);
+      if (!value || value.startsWith('-')) throw new Error(`${arg} requires a project directory.`);
       project = resolve(value);
     }
     else if (arg === '--port' || arg === '-p') {
@@ -22,7 +22,7 @@ export function parseCliOptions(args: string[], environmentPort?: string) {
     } else if (arg.startsWith('--port=')) portText = arg.slice(7);
     else throw new Error(`Unknown argument: ${arg}. Use --help for usage.`);
   }
-  if (help || version) return { port: 4310, help, version };
+  if (help || version) return { port: 4310, help, version, ...(project === undefined ? {} : { project }) };
   const port = Number(portText);
   if (!/^\d+$/.test(portText) || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('Port must be an integer between 1 and 65535.');

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bufferSizes, resolveBufferSize, resolveTheme, resolveMessageOrder, readPreference, savePreference } from '../src/preferences';
+import { bufferSizes, resolveBufferSize, resolveTheme, resolveMessageOrder, resolveConnectionGuides, readPreference, savePreference } from '../src/preferences';
 
 test('saved preferences accept supported values and recover from invalid storage', () => {
   for (const size of bufferSizes) assert.equal(resolveBufferSize(String(size)), size);
@@ -14,4 +14,9 @@ test('saved preferences accept supported values and recover from invalid storage
 test('unavailable browser storage does not prevent session preferences', () => {
   assert.equal(readPreference('theme'), null);
   assert.doesNotThrow(() => savePreference('theme', 'dark'));
+});
+
+test('connection guides stay visible by default and only an explicit stored opt-out hides them', () => {
+  for (const value of [null, '', 'true', 'invalid']) assert.equal(resolveConnectionGuides(value), true);
+  assert.equal(resolveConnectionGuides('false'), false);
 });

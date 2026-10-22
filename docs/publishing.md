@@ -72,9 +72,12 @@ protect the development checkout, not downstream installs of this package.
 Appium currently pins shell-quote 1.10.0 upstream, so fresh npm/Bun installations
 can still receive that vulnerable version. The package smoke test reports this
 known finding explicitly; it does not claim a clean consumer security audit.
-It continues to reject vulnerable source-map-js copies and checks independent
-npm, Bun and global npm installation/startup. See the dated dependency audit
+It continues to reject vulnerable source-map-js and follow-redirects copies and
+checks independent npm, Bun and global npm installation/startup. See the dated dependency audit
 for the bounded reachability assessment and unresolved node-forge finding.
+The 2026-10-21 follow-up audit records the Vite and follow-redirects updates;
+the checkout still reports node-forge and its adbkit parent as two high entries
+for one unpatched advisory. A successful package smoke test does not resolve it.
 
 `prepack` rebuilds automatically; `prepublishOnly` runs the unit/regression tests.
 Do not use `--ignore-scripts` for release publishing or packing.

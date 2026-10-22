@@ -8,6 +8,16 @@ test('CLI defaults, environment port and explicit override', () => {
   assert.equal(parseCliOptions(['--port', '4321'], 'invalid').port, 4321);
   assert.equal(parseCliOptions(['--port=4322']).port, 4322);
 });
+test('project is opt-in and accepts separate and equals syntax', () => {
+  assert.equal(parseCliOptions([]).project, undefined);
+  assert.equal(parseCliOptions(['--project', './example project']).project, resolve('example project'));
+  assert.equal(parseCliOptions(['--project=./example']).project, resolve('example'));
+});
+test('project requires a non-empty path and does not consume another option', () => {
+  for (const args of [['--project'], ['--project='], ['--project', ''], ['--project', '--port', '4311']]) {
+    assert.throws(() => parseCliOptions(args), /requires a project directory/);
+  }
+});
 test('help and version do not need a valid runtime port', () => {
   assert.equal(parseCliOptions(['--help'], 'invalid').help, true);
   assert.equal(parseCliOptions(['-v']).version, true);

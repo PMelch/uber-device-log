@@ -1,0 +1,71 @@
+Dependency security follow-up — 2026-10-21
+========================================
+
+Scope
+-----
+Checkout baseline: 62034bb08e32c5df339e42a53f266ae4ebb5425b, version 0.9.0.
+Follow-up to docs/dependency-audit-2026-10-19.txt. No application device transport
+or authentication behavior was changed. Dependencies remain installed on the
+target host; no dependency trees or build-host native binaries are bundled.
+
+Initial npm audit: four high entries, zero critical in the development checkout:
+- vite 8.3.1 (development/build dependency)
+- follow-redirects 1.16.0, through appium-ios-device -> axios
+- node-forge 1.4.0, through @devicefarmer/adbkit 3.3.9
+- @devicefarmer/adbkit, a parent finding for the same node-forge advisory
+
+Remediation
+-----------
+Updated the Vite minimum to ^8.3.5 and resolved Vite 8.3.5 plus its compatible
+build dependencies. Refreshed follow-redirects to 1.16.1. Synchronized package-lock.json
+and bun.lock; existing shell-quote/source-map-js overrides remain unchanged.
+
+Two local HTTP regression tests failed before the redirect update: object-form
+custom sensitive headers containing ^ or | leaked across origins, and array-form
+Authorization leaked across origins. Both pass with 1.16.1, including preservation
+of a non-sensitive control header. Only synthetic test values are used.
+
+The installed-archive smoke test now rejects vulnerable follow-redirects copies
+after independent npm, Bun and global npm installations. Axios's existing
+compatible dependency range admits the patched version without bundling or a
+new platform-specific dependency. Root overrides are not a consumer patch.
+
+Remaining finding
+-----------------
+Fresh checkout npm audit: two high entries, zero critical. These are node-forge
+and its adbkit parent, representing GHSA-86w9-cpqp-85rv rather than two independent
+flaws. Registry latest is still node-forge 1.4.0 and adbkit 3.3.9; the advisory
+lists no patched version. No safe upstream dependency update is available.
+
+The earlier bounded reachability assessment remains applicable: forge RSA
+verification is used by adbkit's optional TCP/USB bridge. This application's
+server uses a normal ADB client and does not call createTcpUsbBridge,
+parsePublicKey or RSA verification. This is not proof of general safety and
+does not remove the vulnerable dependency. Reassess when adbkit or bridge use
+changes. No cryptography fork, package substitution or audit suppression was added.
+
+Fresh consumer installations also retain the previously documented Appium
+shell-quote 1.10.0 pin, which checkout overrides cannot fix. The package smoke
+test reports this existing limitation explicitly. Do not describe the consumer
+dependency tree as vulnerability-free or infer publication from these tests.
+
+Sources
+-------
+https://github.com/advisories/GHSA-q3jh-wrc6-jgq8
+https://github.com/advisories/GHSA-8r9p-f939-6h3c
+https://github.com/advisories/GHSA-587h-7wmj-h5pm
+https://github.com/advisories/GHSA-86w9-cpqp-85rv
+Current npm audit JSON and registry version/dependency queries were checked on
+2026-10-21. Vite's audit entry includes additional launch-editor and file-serving
+advisories; updating to 8.3.5 removes the entire affected Vite entry.
+
+Validation
+----------
+176 unit/regression tests and the production build pass. Both redirect tests
+were observed failing on 1.16.0 and passing on 1.16.1. Bun accepts the synchronized
+lockfile with --frozen-lockfile. The archive smoke test passes on Node 25.8.1
+and the minimum supported Node 22.12.0: 31 allowed files, zero bundled
+dependencies, patched follow-redirects 1.16.1 in independent npm, Bun and global
+npm installations, npx/bunx/global startup, frontend assets, discovery API and
+Origin guard. The known shell-quote consumer finding is reported on each install.
+No hardware capture or Windows/Linux runtime verification is implied.

@@ -154,3 +154,6 @@ build/
 .npmrc
 
 site-dist/
+
+# Local Git worktrees
+/.worktrees/

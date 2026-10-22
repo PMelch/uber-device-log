@@ -87,3 +87,144 @@ test('preview traversal has a total property and character budget', async () => 
   assert.ok(result.value.children?.every(p => p.value.text.length <= 16000));
   f.runtime.close();
 });
+
+test('reconnecting retries failed context initialization while capture retains its runtime', async () => {
+  const f = fixture('ios');
+  let attempts = 0;
+  f.reply(packet => {
+    if (packet.method === 'Runtime.enable') {
+      if (++attempts === 1) return undefined;
+      f.context(7);
+    }
+    return packet.method === 'Page.getResourceTree' ? { frameTree: { frame: { id: 'root', url: 'https://example.test' } } } : {};
+  });
+  try {
+    await f.runtime.enable();
+    assert.equal(f.runtime.state().connected, true);
+    assert.equal(f.runtime.state().contexts.length, 0);
+    await f.runtime.enable();
+    assert.equal(attempts, 2);
+    assert.equal(f.sent.filter(packet => packet.method === 'Page.enable').length, 1);
+    assert.equal(f.runtime.state().contexts.length, 1);
+    assert.equal(f.runtime.state().contexts[0].top, true);
+  } finally { f.runtime.close(); }
+});
+
+test('overlapping context initialization is shared and successful targets are not re-enabled', async () => {
+  const f = fixture('ios');
+  let enableId: number | undefined;
+  let enableSent!: () => void;
+  const sent = new Promise<void>(resolve => { enableSent = resolve; });
+  f.reply(packet => {
+    if (packet.method === 'Runtime.enable') { enableId = packet.id; enableSent(); return undefined; }
+    return {};
+  });
+  try {
+    const first = f.runtime.enable();
+    const second = f.runtime.enable();
+    await sent;
+    f.context(1);
+    f.runtime.receive({ id: enableId, result: {} }, 'page');
+    await Promise.all([first, second]);
+    await f.runtime.enable();
+    assert.equal(f.sent.filter(packet => packet.method === 'Runtime.enable').length, 1);
+    assert.equal(f.runtime.state().contexts.length, 1);
+  } finally { f.runtime.close(); }
+});
+
+test('a failed newly attached target can initialize on reconnect without resetting healthy targets', async () => {
+  const f = fixture('ios');
+  let attempts = 0;
+  try {
+    await f.runtime.enable();
+    f.runtime.attach('child', packet => {
+      if (packet.method === 'Runtime.enable' && ++attempts === 1) {
+        f.runtime.receive({ id: packet.id, error: { message: 'not ready' } }, 'child');
+        return;
+      }
+      if (packet.method === 'Runtime.enable') f.runtime.receive({ method: 'Runtime.executionContextCreated', params: { context: { id: 2, type: 'normal', frameId: 'child' } } }, 'child');
+      f.runtime.receive({ id: packet.id, result: {} }, 'child');
+    }, false);
+    await f.runtime.enable();
+    await f.runtime.enable();
+    assert.equal(attempts, 2);
+    assert.equal(f.sent.filter(packet => packet.method === 'Runtime.enable').length, 1);
+    assert.equal(f.runtime.state().contexts.length, 1);
+  } finally { f.runtime.close(); }
+});
+
+test('late initialization completion cannot initialize a replacement target with the same ID', async () => {
+  const f = fixture('ios');
+  const first = f.runtime.enable();
+  f.runtime.detach('page');
+  const replacement: any[] = [];
+  f.runtime.attach('page', packet => {
+    replacement.push(packet);
+    f.runtime.receive({ id: packet.id, result: packet.method === 'Page.getResourceTree' ? { frameTree: { frame: { id: 'replacement', url: 'https://new.example.test' } } } : {} }, 'page');
+  });
+  try {
+    await Promise.all([first, f.runtime.enable()]);
+    await f.runtime.enable();
+    assert.deepEqual(replacement.map(packet => packet.method), ['Page.enable', 'Runtime.enable', 'Page.getResourceTree']);
+  } finally { f.runtime.close(); }
+});
+
+test('WebKit context discovery enables Page before Runtime so existing frames are reported', async () => {
+  const f = fixture('ios');
+  let pageEnabled = false;
+  f.reply(packet => {
+    if (packet.method === 'Page.enable') pageEnabled = true;
+    if (packet.method === 'Runtime.enable' && pageEnabled) { f.context(1); f.context(2, 'child'); }
+    return packet.method === 'Page.getResourceTree' ? { frameTree: { frame: { id: 'root', url: 'https://example.test' }, childFrames: [{ frame: { id: 'child', url: 'https://frame.example.test' } }] } } : {};
+  });
+  try {
+    await f.runtime.enable();
+    const state = f.runtime.state();
+    assert.equal(state.contexts.length, 2);
+    assert.equal(state.contexts[0].top, true);
+    assert.equal(state.contexts[1].top, false);
+    assert.equal(state.contexts[1].url, 'https://frame.example.test');
+    assert.equal(f.sent.filter(packet => packet.method === 'Page.enable').length, 1);
+  } finally { f.runtime.close(); }
+});
+
+test('iOS retries failed Page setup before initializing Runtime', async () => {
+  const f = fixture('ios');
+  let pageAttempts = 0;
+  f.reply(packet => {
+    if (packet.method === 'Page.enable' && ++pageAttempts === 1) {
+      f.runtime.receive({ id: packet.id, error: { message: 'page not ready' } }, 'page');
+      return undefined;
+    }
+    if (packet.method === 'Runtime.enable') f.context(1);
+    return {};
+  });
+  try {
+    await f.runtime.enable();
+    assert.equal(f.sent.filter(packet => packet.method === 'Runtime.enable').length, 0);
+    await f.runtime.enable();
+    assert.equal(pageAttempts, 2);
+    assert.equal(f.runtime.state().contexts.length, 1);
+  } finally { f.runtime.close(); }
+});
+
+test('iOS reconnect accepts Page already enabled after its first acknowledgement timed out', async () => {
+  const f = fixture('ios');
+  let attempts = 0;
+  f.reply(packet => {
+    if (packet.method === 'Page.enable') {
+      if (++attempts === 1) return undefined;
+      f.runtime.receive({ id: packet.id, error: { message: 'Page domain already enabled' } }, 'page');
+      return undefined;
+    }
+    if (packet.method === 'Runtime.enable') f.context(1);
+    return {};
+  });
+  try {
+    await f.runtime.enable();
+    assert.equal(f.runtime.state().contexts.length, 0);
+    await f.runtime.enable();
+    assert.equal(f.runtime.state().contexts.length, 1);
+    assert.equal(f.sent.filter(packet => packet.method === 'Runtime.enable').length, 1);
+  } finally { f.runtime.close(); }
+});
