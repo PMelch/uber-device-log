@@ -10,6 +10,8 @@ Unreleased
 ----------
 
 Changed
+- Show JavaScript console contexts in frame hierarchy order, with nested frames
+  indented beneath their parents and the main page first.
 - Draw an open semantic-flow fork as rounded lanes on the flow card, and lay the
   timeline and blueprint graph out as a branching diagram. Dim a route that was
   not taken instead of labeling it as another branch. Keep the first card lane

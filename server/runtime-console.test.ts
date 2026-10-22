@@ -228,3 +228,19 @@ test('iOS reconnect accepts Page already enabled after its first acknowledgement
     assert.equal(f.sent.filter(packet => packet.method === 'Runtime.enable').length, 1);
   } finally { f.runtime.close(); }
 });
+
+for (const platform of ['android', 'ios'] as const) test(`${platform} contexts follow frame hierarchy regardless of arrival order`, async () => {
+  const f = fixture(platform);
+  f.context(3, 'nested'); f.context(2, 'child'); f.context(1);
+  f.reply(p => p.method === (platform === 'ios' ? 'Page.getResourceTree' : 'Page.getFrameTree') ? {
+    frameTree: { frame: { id: 'root' }, childFrames: [{ frame: { id: 'child', name: 'slotFrame' }, childFrames: [{ frame: { id: 'nested', name: 'game' } }] }] }
+  } : {});
+  await f.runtime.enable();
+  assert.deepEqual(f.runtime.state().contexts.map(c => [c.frame, c.depth]), [['root', 0], ['child', 1], ['nested', 2]]);
+  const key = f.runtime.state().contexts[2].key;
+  f.runtime.receive({ method: 'Page.frameNavigated', params: { frame: { id: 'nested', parentId: 'root', name: 'game' } } }, 'page');
+  if (platform === 'ios') f.context(4, 'nested');
+  assert.equal(f.runtime.state().contexts.find(c => c.frame === 'nested')?.depth, 1);
+  if (platform === 'android') assert.equal(f.runtime.state().contexts.find(c => c.frame === 'nested')?.key, key);
+  f.runtime.close();
+});

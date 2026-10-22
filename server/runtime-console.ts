@@ -12,7 +12,7 @@ export class RuntimeConsole {
   private senders = new Map<string, Sender>();
   private pending = new Map<number, { resolve: (data: any) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>; target: string }>();
   private contexts = new Map<string, ConsoleContext & { id: number; target: string; uniqueId?: string }>();
-  private frames = new Map<string, { name: string; url: string; top: boolean }>();
+  private frames = new Map<string, { name: string; url: string; top: boolean; parent?: string }>();
   private enabled = false;
   private initialized = new Set<string>();
   private pageEnabled = new Set<string>();
@@ -22,7 +22,29 @@ export class RuntimeConsole {
   revision = 0;
   constructor(private platform: 'android' | 'ios', private timeout = 8000) {}
   state(): ConsoleState {
-    return { revision: this.revision, connected: this.senders.size > 0, contexts: [...this.contexts.values()].map(({ id: _id, target: _target, uniqueId: _uniqueId, ...context }) => ({ ...context, ...this.frames.get(context.frame) })) };
+    const contexts = [...this.contexts.values()].map(({ id: _id, target: _target, uniqueId: _uniqueId, ...context }) => {
+      const frame = this.frames.get(context.frame);
+      return { ...context, name: frame?.name || context.name, url: frame?.url || context.url, top: frame?.top ?? context.top };
+    });
+    // Traverse ancestors too when an intermediate frame has no execution context.
+    const path = (id: string): string[] => {
+      const ancestors: string[] = [], seen = new Set<string>();
+      while (id && !seen.has(id)) {
+        seen.add(id); ancestors.unshift(id); id = this.frames.get(id)?.parent || '';
+      }
+      return ancestors;
+    };
+    const ordered = contexts.map(context => ({ context, path: path(context.frame) }));
+    const frameOrder = new Map([...new Set([...this.frames.keys(), ...contexts.map(c => c.frame)])].map((id, index) => [id, index]));
+    ordered.sort((a, b) => {
+      if (a.context.top !== b.context.top) return a.context.top ? -1 : 1;
+      for (let i = 0; i < Math.min(a.path.length, b.path.length); i++) {
+        if (a.path[i] !== b.path[i]) return (frameOrder.get(a.path[i]!) ?? 0) - (frameOrder.get(b.path[i]!) ?? 0);
+      }
+      return a.path.length - b.path.length;
+    });
+    return { revision: this.revision, connected: this.senders.size > 0,
+      contexts: ordered.map(({ context, path }) => ({ ...context, depth: Math.max(0, path.length - 1) })) };
   }
   attach(target: string, send: Sender, main = true) {
     if (main) this.mainTargets.add(target);
@@ -65,10 +87,10 @@ export class RuntimeConsole {
         }
         const data = await this.request(target, this.platform === 'ios' ? 'Page.getResourceTree' : 'Page.getFrameTree').catch(() => ({}));
         if (this.initializing.get(target) !== initialization) return;
-        const visit = (tree: any, parent = false) => {
+        const visit = (tree: any, parent?: string) => {
           if (!tree?.frame) return;
-          this.frames.set(String(tree.frame.id), { name: tree.frame.name || '', url: tree.frame.url || '', top: !parent && this.mainTargets.has(target) });
-          for (const child of tree.childFrames ?? []) visit(child, true);
+          this.frames.set(String(tree.frame.id), { name: tree.frame.name || '', url: tree.frame.url || '', top: !parent && this.mainTargets.has(target), parent: parent ?? tree.frame.parentId });
+          for (const child of tree.childFrames ?? []) visit(child, String(tree.frame.id));
         };
         visit(data.frameTree);
         this.initialized.add(target);
@@ -109,7 +131,7 @@ export class RuntimeConsole {
       this.revision++;
       const f = p.frame;
       if (f && this.platform === 'ios') for (const [key, context] of this.contexts) if (context.target === target && (!f.parentId || context.frame === String(f.id))) this.contexts.delete(key);
-      if (f) this.frames.set(String(f.id), { name: f.name || '', url: f.url || '', top: !f.parentId && this.mainTargets.has(target) });
+      if (f) this.frames.set(String(f.id), { name: f.name || '', url: f.url || '', top: !f.parentId && this.mainTargets.has(target), parent: f.parentId });
     }
     return false;
   }

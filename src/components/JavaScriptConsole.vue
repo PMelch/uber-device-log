@@ -61,7 +61,7 @@ async function connect() {
   finally { if (version === generation) connecting.value = false; }
 }
 function location(url: string) { try { const parsed = new URL(url); return (parsed.host + parsed.pathname).slice(0, 100); } catch { return url.slice(0, 100); } }
-function scopeLabel(c: ConsoleState['contexts'][number]) { return c.top ? t('consoleTop') : `${c.name || 'iframe'} · ${location(c.url) || c.frame}`; }
+function scopeLabel(c: ConsoleState['contexts'][number]) { const label = c.top ? t('consoleTop') : `${c.name || 'iframe'} · ${location(c.url) || c.frame}`; return `${'\u00a0\u00a0\u00a0'.repeat(Math.min(c.depth ?? 0, 20))}${c.depth ? '↳ ' : ''}${label}`; }
 async function execute() {
   if (!ready.value || !code.value.trim()) return;
   const version = generation, token = session.value, expression = code.value, revision = state.value.revision;

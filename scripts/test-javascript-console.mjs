@@ -11,8 +11,8 @@ const clients = new Set();
 let next = 0, revision = 0, executions = [], sessions = 0;
 let connectionDelay = 0;
 const consoleState = () => ({ revision, connected: true, contexts: [
- { key: 'top', name: '', url: 'https://app.example.com', frame: 'main', top: true },
- { key: 'frame', name: 'checkout', url: 'https://pay.example.com', frame: 'child', top: false }
+ { key: 'top', name: '', url: 'https://app.example.com', frame: 'main', top: true, depth: 0 },
+ { key: 'frame', name: 'checkout', url: 'https://pay.example.com', frame: 'child', top: false, depth: 1 }
 ] });
 function deliver(response, count) {
   response.write(`event: logs\ndata: ${JSON.stringify(Array.from({ length: count }, () => {
@@ -102,6 +102,7 @@ try {
     await page.keyboard.press('Escape');
     assert.equal(await panel.isVisible(), true);
     assert.equal(await panel.locator('[role=tooltip]:popover-open').count(), 0);
+    assert.match(await panel.locator('option[value=frame]').textContent(), /^\u00a0{3}↳ checkout/);
     await panel.locator('select').nth(1).selectOption('frame');
     await panel.locator('textarea').fill('window.state');
     await panel.locator('.console-run').click();
@@ -152,6 +153,8 @@ try {
   await runtime.enable();
   const contexts = runtime.state().contexts;
   assert.equal(contexts.length, 2);
+  assert.deepEqual(contexts.map(c => c.depth), [0, 1]);
+  assert.equal(contexts[0].top, true);
   const child = contexts.find(c => !c.top);
   assert.ok(child);
   const result = await runtime.evaluate(child.key, runtime.revision, '({title: document.title, same: window === top, get untouched() { throw new Error("getter called") }})');
