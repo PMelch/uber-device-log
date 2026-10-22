@@ -9,6 +9,10 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Changed
+- Show JavaScript console contexts in frame hierarchy order, with nested frames
+  indented beneath their parents and the main page first.
+
 Security
 - Update Vite and follow-redirects to patched releases in both development
   lockfiles, and verify patched redirect handling in fresh package installations.
