@@ -113,6 +113,12 @@ variables in suspended function scopes are not available through this console.
 Results show types, execution duration and expandable property previews. These
 previews are captured after evaluation, limited to three levels and 150
 properties overall (50 per object), and never invoke JavaScript getters.
+Choose **Inspect properties** inside an expanded object to load its own
+properties, then **Load more properties** for successive pages of 50. Nested
+objects and functions can be inspected individually without rerunning the
+expression. Values reflect the time each page is loaded. Object references for
+the latest 50 results per session are retained; older references expire, as do
+references after navigation, clearing results or closing the session.
 They are not atomic snapshots of a changing application. JSON copying exports
 the displayed preview structure, including truncation markers. Promises are
 shown as objects rather than automatically awaited.
