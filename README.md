@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/uber-device-log?logo=npm)](https://www.npmjs.com/package/uber-device-log)
 [![Open GitHub issues](https://img.shields.io/github/issues/PMelch/uber-device-log)](https://github.com/PMelch/uber-device-log/issues)
-[![License: Apache-2.0](https://img.shields.io/github/license/PMelch/uber-device-log)](LICENSE)
+[![License: GPL-3.0-only](https://img.shields.io/github/license/PMelch/uber-device-log)](LICENSE)
 [![Node.js: >=22.12.0](https://img.shields.io/badge/Node.js-%3E%3D22.12.0-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/en/download)
 
 **Android Logcat, iOS syslog & WebView consoles, in one place.**
@@ -17,7 +17,7 @@ with download links and copyable commands for the device tools you need.
 
 [Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
 
-**Android + iOS** · **Seven languages** · **Apache-2.0**
+**Android + iOS** · **Seven languages** · **GPL-3.0-only**
 
 </div>
 
@@ -289,4 +289,4 @@ private information before sharing log excerpts.
 
 ## License
 
-[Apache License 2.0](LICENSE).
+[GNU General Public License v3.0 only](LICENSE).

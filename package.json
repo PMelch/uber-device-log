@@ -38,7 +38,7 @@
     "vue-tsc": "^3.3.11"
   },
   "description": "Local Android and iOS device log viewer with search, severity filters and export.",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0-only",
   "bin": {
     "uber-device-log": "bin/uber-device-log.mjs",
     "udl": "bin/uber-device-log.mjs"

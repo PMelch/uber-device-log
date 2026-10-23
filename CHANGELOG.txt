@@ -10,6 +10,8 @@ Unreleased
 ----------
 
 Changed
+- License the project under GNU GPL version 3 only (GPL-3.0-only) instead of
+  Apache-2.0. Third-party platform icons retain their separate CC0 license.
 - Inspect JavaScript result objects on demand, load further properties in pages,
   and explore nested objects without evaluating the expression again or invoking getters.
 - Show JavaScript console contexts in frame hierarchy order, with nested frames
