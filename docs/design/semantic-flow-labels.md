@@ -51,8 +51,10 @@ late events, evidence budgets and the portable loading-progress example.
 
 Extend the existing persisted Detailed/Condensed control with Minimal. Each Minimal
 card renders only the authored/current label: no name/ID, status, actions, results,
-metadata or nodes. Search and global controls remain; switch density to inspect
-evidence. Reuse typed catalogs and existing preference storage, accepting all three
+metadata or nodes. Search and global controls remain; activate the label-only entry to inspect
+Timeline evidence. A native label button covers the full card and supports click,
+Enter and Space, with a visible keyboard focus outline; other densities retain
+their existing actions. No extra visible text or unmasked accessible data is added. Reuse typed catalogs and existing preference storage, accepting all three
 values and retaining the Detailed default. Verify live labels, sensitive masking,
 keyboard selection, persisted Minimal, and all three modes in seven locales at
 desktop/mobile widths with the existing real-browser fixture.

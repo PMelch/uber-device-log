@@ -118,3 +118,9 @@
 .flow-priority-legend i{display:inline-block;width:16px;height:16px;border:1px solid var(--pl-line);border-radius:4px;background:var(--flow-priority-fill)}
 .flow-workspace .flow-editbody select{display:block;width:100%;font:inherit;color:var(--pl-text);background:var(--pl-panel);border:1px solid var(--pl-line);border-radius:7px;padding:9px 11px;margin-bottom:16px;min-height:36px}
 .flow-workspace .flow-editbody select:focus-visible{outline:2px solid var(--pl-accent);outline-offset:3px}
+
+.flow-workspace[data-display="minimal"] .flow-card{position:relative}
+.flow-workspace .flow-minimal-open,.flow-workspace .flow-minimal-open:hover{display:block;width:100%;text-align:left;font:inherit;min-height:24px;padding:0!important;border:0!important;background:transparent!important}
+.flow-minimal-open::after{content:"";position:absolute;inset:0;border-radius:inherit}
+.flow-workspace .flow-minimal-open:focus-visible{outline:none}
+.flow-minimal-open:focus-visible::after{outline:2px solid var(--pl-accent);outline-offset:3px}

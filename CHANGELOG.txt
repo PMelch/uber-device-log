@@ -14,7 +14,8 @@ Added
   dark palettes, independent of outcome. Edit priority in the blueprint draft
   selector; include priority guidance in the portable authoring skill.
 - Add a Minimal flow overview that shows only each current main label, alongside
-  the existing Condensed and Detailed views. Remember the selected view.
+  the existing Condensed and Detailed views. Remember the selected view. Open
+  a Minimal entry's Timeline by clicking it or using Enter or Space.
 - Allow explicitly correlated, repeatable flow steps to update progress labels and
   result fields until the flow advances or ends. Use the latest accepted values
   in downstream references. Include a loading-progress example and authoring skill guidance.

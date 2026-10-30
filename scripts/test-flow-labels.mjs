@@ -53,6 +53,16 @@ try {
   assert.equal(await minimal.getAttribute('aria-pressed'), 'true');
   assert.equal(await card.innerText(), 'Transfer requested');
   assert.equal(await card.locator('.flow-card-kind, .flow-badge, .flow-actions, .flow-results, .flow-meta, .flow-node, svg').count(), 0);
+  await card.click({ position: { x: (await card.boundingBox()).width - 6, y: 12 } });
+  await page.locator('.flow-timeline').waitFor();
+  assert.ok((await page.locator('.flow-detail-heading').innerText()).includes('Transfer requested'));
+  await page.getByRole('button', { name: 'All flows', exact: true }).click();
+  for (const key of ['Enter', 'Space']) {
+    await card.getByRole('button', { name: 'Transfer requested', exact: true }).focus();
+    await page.keyboard.press(key);
+    await page.locator('.flow-timeline').waitFor();
+    await page.getByRole('button', { name: 'All flows', exact: true }).click();
+  }
   const condensed = page.getByRole('button', { name: 'Condensed', exact: true });
   await condensed.focus(); await page.keyboard.press('Space');
   assert.equal(await card.locator('.flow-node, svg').count(), 0, 'condensed overview must not render nodes or edges');
