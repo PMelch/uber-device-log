@@ -1,5 +1,10 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  flowsDisplayMode: "Flow display",
+  flowsDisplayDetailed: "Detailed",
+  flowsDisplayCondensed: "Condensed",
+  flowsResults: "Result",
+  flowsLabel: "Flow label",
   flowsNewName: "New flow",
   flowsNewStartName: "Start",
   flowsNewDoneName: "Done",
@@ -26,7 +31,7 @@ export const en = {
   flowsTimeline: "Timeline",
   flowsInfo: "Info",
   flowsBack: "All flows",
-  flowsStatusRunning: "Running",
+  flowsStatusRunning: "In progress",
   flowsStatusCompleted: "Completed",
   flowsStatusFailed: "Failed",
   flowsStatusCancelled: "Cancelled",

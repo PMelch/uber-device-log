@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fictional bank transaction log emitter</title>
+  <style>
+    :root{color-scheme:light dark;font:16px/1.5 system-ui,sans-serif}body{max-width:800px;margin:32px auto;padding:0 18px}h1{font-size:25px}p{max-width:70ch}button,input{font:inherit;padding:10px;border:1px solid #8887;border-radius:7px}button{cursor:pointer;text-align:left}input{max-width:120px}.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;margin:22px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;border:1px solid #8886;border-radius:8px;max-height:300px;overflow:auto;font-size:12px}code{overflow-wrap:anywhere}
+  </style>
+</head>
+<body>
+  <h1>Fictional bank transaction log emitter</h1>
+  <p>Developer fixture: all events, accounts and recipients are invented. Buttons only write JSON to this page's console. No requests, real transfers or payments are made.</p>
+  <p>Open this page inside an inspectable WebView. Start Über Device Log with <code>--project=./test_flow_project</code>, include that WebView, and open Flows. Each button creates a fresh transaction ID. Click different routes quickly to test concurrent operations.</p>
+  <label>Fictional amount (EUR) <input id="amount" type="number" min="1" max="1000000" step="0.01" value="125"></label>
+  <div class="actions">
+    <button type="button" data-route="success">Automatic approval and completion</button>
+    <button type="button" data-route="insufficient">Declined: insufficient funds</button>
+    <button type="button" data-route="fraud">Declined: fraud screening</button>
+    <button type="button" data-route="cancelled">User cancellation</button>
+    <button type="button" data-route="review-approved">Manual review → approval → completion</button>
+    <button type="button" data-route="review-rejected">Manual review → rejection</button>
+    <button type="button" data-route="review-pending">Manual review pending (no decision)</button>
+    <button type="button" data-route="timeout">Accepted, no completion (60 s timeout)</button>
+  </div>
+  <p>Pending review and absent completion time out after 60 seconds. That means completion was not observed; it does not establish a bank failure. Both overview modes conceal the fictional account. Use Timeline to explicitly reveal its evidence.</p>
+  <h2>Most recent emitted records</h2>
+  <pre id="output" aria-live="polite">No demo records emitted yet.</pre>
+  <script>
+    const output = document.querySelector('#output');
+    const lines = [];
+    function emit(event, transactionId, fields = {}) {
+      const record = { event, transactionId, ...fields };
+      console.log(JSON.stringify(record));
+      lines.push(JSON.stringify(record));
+      output.textContent = lines.slice(-30).join('\n');
+      output.scrollTop = output.scrollHeight;
+    }
+    const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+    async function run(route) {
+      const amount = Number(document.querySelector('#amount').value);
+      if (!Number.isFinite(amount) || amount < 1 || amount > 1000000) { output.textContent = 'Choose an amount between 1 and 1000000.'; return; }
+      const transactionId = 'demo-bank-' + (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      emit('bank.transfer.requested', transactionId, { amount, currency: 'EUR', recipient: 'Fictional Demo Recipient', recipientAccount: 'DE00-FICTIONAL-DEMO-ACCOUNT' });
+      await pause(450);
+      if (route === 'cancelled') { emit('bank.transfer.cancelled', transactionId, { code: 'USER_CANCELLED' }); return; }
+      if (route === 'insufficient' || route === 'fraud') { emit('bank.transfer.declined', transactionId, { code: route === 'fraud' ? 'FRAUD_SUSPECTED' : 'INSUFFICIENT_FUNDS' }); return; }
+      if (route.startsWith('review-')) {
+        emit('bank.transfer.review.pending', transactionId);
+        if (route === 'review-pending') return;
+        await pause(1400);
+        if (route === 'review-rejected') { emit('bank.transfer.declined', transactionId, { code: 'REVIEW_REJECTED' }); return; }
+        emit('bank.transfer.review.approved', transactionId);
+      } else {
+        emit('bank.transfer.accepted', transactionId);
+        if (route === 'timeout') return;
+      }
+      await pause(450);
+      emit('bank.transfer.posted', transactionId, { reference: 'REF-FICTIONAL-' + transactionId.slice(-12) });
+    }
+    document.querySelectorAll('[data-route]').forEach(button => button.addEventListener('click', () => void run(button.dataset.route)));
+  </script>
+</body>
+</html>

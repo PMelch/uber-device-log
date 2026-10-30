@@ -1,0 +1,35 @@
+version: 1
+id: login
+name: Login
+description: Follow login from credentials to an authenticated session.
+start: credentials
+timeout: 20s
+correlation: { scope: device-session, primary: requestId }
+steps:
+  - id: credentials
+    shortLabel: ID1
+    name: Submit credentials
+    match: { json: { path: event, equals: login.start } }
+    extract:
+      requestId: { json: requestId, required: true }
+    next: [authenticated]
+  - id: authenticated
+    shortLabel: ID2
+    name: Session established
+    match: { json: { path: event, equals: login.success } }
+    extract:
+      requestId: { json: requestId, required: true }
+      userId: { json: userId }
+    outcome: completed
+errors:
+  - id: rejected
+    appliesTo: active
+    match: { json: { path: event, equals: login.error } }
+    extract:
+      requestId: { json: requestId, required: true }
+      code: { json: code, required: true }
+    codeField: code
+    codes:
+      INVALID_CREDENTIALS: { description: Credentials were rejected., outcome: failed }
+      USER_CANCELLED: { description: User cancelled login., outcome: cancelled }
+    unknownOutcome: failed

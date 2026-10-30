@@ -70,7 +70,10 @@ export async function createSemanticFlowsFixture(autoReplay = true) {
   app.get('/fixture/state', (_request, response) => response.json({ native: [...clients.values()].filter(value => !value).length, webview: [...clients.values()].filter(Boolean).length, runs: serial }));
   app.post('/fixture/replay', (_request, response) => response.json({ run: replay() }));
   app.use(express.static(resolve(process.env.SEMANTIC_FLOWS_DIST ?? join(repository, 'dist'))));
-  return { app, projectDirectory, close: async () => { for (const timer of timers) clearTimeout(timer); for (const response of clients.keys()) response.end(); await rm(root, { recursive: true, force: true }); } };
+  return { app, projectDirectory, emit(body: Record<string, unknown>, webview = false) {
+    const record = { timestamp: new Date().toISOString(), message: JSON.stringify(body), level: 'INFO', tag: 'LabelFixture' };
+    for (const [client, target] of clients) if (target === webview) client.write(`event: logs\ndata: ${JSON.stringify([record])}\n\n`);
+  }, close: async () => { for (const timer of timers) clearTimeout(timer); for (const response of clients.keys()) response.end(); await rm(root, { recursive: true, force: true }); } };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

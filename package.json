@@ -13,7 +13,9 @@
     "test": "node --import tsx --test server/*.test.ts",
     "prepack": "npm run build",
     "prepublishOnly": "npm test",
-    "test:package": "node scripts/test-package.mjs"
+    "test:package": "node scripts/test-package.mjs",
+    "skill:sync": "node scripts/sync-flow-skill.mjs",
+    "skill:check": "node scripts/sync-flow-skill.mjs --check"
   },
   "dependencies": {
     "@devicefarmer/adbkit": "^3.3.9",

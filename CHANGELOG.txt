@@ -9,6 +9,17 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Added
+- Provide a copyable, self-contained Semantic Flows authoring skill with the
+  format specification, extraction and validation guidance, fictional fixtures
+  and cross-agent installation instructions. Check bundled references for drift.
+- Define dynamic Semantic Flow labels with payload references and semantic text
+  colors. Show explicitly marked result fields, switch between detailed node
+  views and condensed summaries, and keep sensitive values concealed. Leave
+  unchanged labels without an extra status notice. Include
+  a bank-transfer example covering success, rejection, cancellation and review.
+  Identify active flows with progress text and a reduced-motion-aware spinner.
+
 Changed
 - License the project under GNU GPL version 3 only (GPL-3.0-only) instead of
   Apache-2.0. Third-party platform icons retain their separate CC0 license.

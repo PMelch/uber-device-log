@@ -1,4 +1,5 @@
 import { parseDocument, LineCounter, isAlias, isCollection, isPair } from 'yaml';
+import { flowLabelReference } from './flow-presentation.js';
 import type { FlowBlueprint, FlowDiagnostic } from './flow-types.js';
 export const FLOW_FILE_LIMIT = 256 * 1024;
 export function flowDiagnostic(detail: string, file?: string, path?: string): FlowDiagnostic {
@@ -68,17 +69,17 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
     if (Object.keys(v).length > 50) fail('At most 50 extraction fields are allowed.', path);
     for (const [key, item] of Object.entries(v)) {
       field(key, path);
-      if (!obj(item, ['json','regex','group','required','sensitive'], `${path}.${key}`)) continue;
+      if (!obj(item, ['json','regex','group','required','sensitive','result'], `${path}.${key}`)) continue;
       if ((item.json !== undefined) === (item.regex !== undefined)) fail('Extractor requires exactly one of json or regex.', path);
       if (item.json !== undefined) { field(item.json, path); if (item.group !== undefined) fail('group only applies to regex extractors.', path); }
       if (item.regex !== undefined) {
         regex(item.regex, path); str(item.group, path);
         if (typeof item.regex === 'string' && typeof item.group === 'string' && ![...item.regex.matchAll(/\(\?<([A-Za-z_$][\w$]*)>/g)].some(m => m[1] === item.group)) fail('Regex extractor group must name an existing capture group.', path);
       }
-      for (const flag of ['required','sensitive']) if (item[flag] !== undefined && typeof item[flag] !== 'boolean') fail(`${flag} must be boolean.`, path);
+      for (const flag of ['required','sensitive','result']) if (item[flag] !== undefined && typeof item[flag] !== 'boolean') fail(`${flag} must be boolean.`, path);
     }
   };
-  if (!obj(value, ['version','id','name','description','start','timeout','correlation','steps','errors'], '$')) return { diagnostics };
+  if (!obj(value, ['version','id','name','label','description','start','timeout','correlation','steps','errors'], '$')) return { diagnostics };
   const b = value;
   if (b.version !== 1) fail('Only version 1 is supported.', 'version');
   for (const k of ['id','name','start','timeout']) str(b[k], k);
@@ -96,7 +97,7 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
   if (!Array.isArray(b.steps) || !b.steps.length || b.steps.length > 100) fail('steps requires 1–100 steps.', 'steps');
   else b.steps.forEach((s: unknown, i: number) => {
     const p = `steps.${i}`;
-    if (!obj(s, ['id','shortLabel','name','optional','match','extract','next','outcome'], p)) return;
+    if (!obj(s, ['id','shortLabel','name','label','optional','match','extract','next','outcome'], p)) return;
     str(s.id, p); str(s.name, p);
     if (s.shortLabel !== undefined) str(s.shortLabel, p);
     if (steps.has(s.id)) fail(`Duplicate step ID: ${s.id}`, p); else steps.set(s.id, s);
@@ -132,13 +133,13 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
       const errorIds = new Set<string>();
       b.errors.forEach((e: unknown, i: number) => {
         const p = `errors.${i}`;
-        if (!obj(e, ['id','appliesTo','match','extract','codeField','codes','unknownOutcome'], p)) return;
-        str(e.id, p); if (errorIds.has(e.id)) fail('Duplicate error ID.', p); errorIds.add(e.id);
+        if (!obj(e, ['id','label','appliesTo','match','extract','codeField','codes','unknownOutcome'], p)) return;
+        str(e.id, p); if (errorIds.has(e.id) || steps.has(e.id)) fail('Duplicate node ID: step and error IDs must be unique.', p); errorIds.add(e.id);
         if (e.appliesTo !== 'active' && (!Array.isArray(e.appliesTo) || !e.appliesTo.length || e.appliesTo.some((id: string) => !steps.has(id)))) fail('appliesTo requires active or known step IDs.', p);
         match(e.match, `${p}.match`, `error:${i}`); extract(e.extract, `${p}.extract`); field(e.codeField, p);
         if (!e.extract?.[e.codeField]) fail('codeField must reference an extraction.', p);
         if (!['failed','cancelled'].includes(e.unknownOutcome)) fail('Invalid unknownOutcome.', p);
-        if (obj(e.codes, Object.keys(e.codes ?? {}), `${p}.codes`)) for (const c of Object.values(e.codes)) if (obj(c, ['description','outcome'], p)) { str(c.description, p); if (!['failed','cancelled'].includes(c.outcome)) fail('Invalid error outcome.', p); }
+        if (obj(e.codes, Object.keys(e.codes ?? {}), `${p}.codes`)) for (const c of Object.values(e.codes)) if (obj(c, ['description','label','outcome'], p)) { str(c.description, p); if (!['failed','cancelled'].includes(c.outcome)) fail('Invalid error outcome.', p); }
       });
     }
   }
@@ -172,6 +173,35 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
     if (!steps.get(r.producer)?.extract?.[r.field]) fail('equalsFrom references an unknown step/extracted field.', r.path);
     else if (r.consumer.startsWith('error:') || r.producer === r.consumer || !dominators.get(r.consumer)?.has(r.producer)) fail('equalsFrom value must be available on every incoming route.', r.path);
   }
+  const validateLabel = (value: unknown, path: string, owner: 'root' | 'step' | 'error', consumer: string): void => {
+    if (value === undefined) return;
+    const parts = typeof value === 'string' ? [{ text: value }] : value;
+    if (!Array.isArray(parts) || !parts.length || parts.length > 32) { fail('label must be text or 1–32 text/tone parts.', path); return; }
+    let total = 0, placeholders = 0;
+    for (const [index, part] of parts.entries()) {
+      const partPath = `${path}.${index}`;
+      if (!obj(part, ['text','tone'], partPath)) continue;
+      if (typeof part.text !== 'string' || !part.text.length) { fail('Label text must be a non-empty string.', partPath); continue; }
+      total += part.text.length;
+      if (part.tone !== undefined && !['success','error','warning','info'].includes(part.tone)) fail('Invalid label tone.', partPath);
+      if (/[{}]/.test(part.text.replace(/\{([^{}]+)\}/g, ''))) fail('Label placeholders require {stepId.extractedField}.', partPath);
+      for (const match of part.text.matchAll(/\{([^{}]+)\}/g)) {
+        placeholders++;
+        const reference = flowLabelReference(b as FlowBlueprint, match[1]!);
+        if (!reference) { fail('Label references an unknown or ambiguous node/extracted field.', partPath); continue; }
+        if (owner === 'root' && reference.stepId !== b.start) fail('Initial labels can reference only start-step extractions.', partPath);
+        else if (owner === 'step' && reference.stepId !== consumer && !dominators.get(consumer)?.has(reference.stepId)) fail('Label value must be available on every incoming route.', partPath);
+      }
+    }
+    if (total > 4096 || placeholders > 64) fail('Label templates allow at most 4096 characters and 64 placeholders.', path);
+    if (parts.every(part => part && typeof part.text === 'string') && !parts.map(part => part.text).join('').trim()) fail('Label must contain visible text or a placeholder.', path);
+  };
+  validateLabel(b.label, 'label', 'root', b.start);
+  b.steps.forEach((step: Obj, index: number) => validateLabel(step.label, `steps.${index}.label`, 'step', step.id));
+  b.errors?.forEach((error: Obj, index: number) => {
+    validateLabel(error.label, `errors.${index}.label`, 'error', error.id);
+    for (const [code, definition] of Object.entries(error.codes)) validateLabel((definition as Obj).label, `errors.${index}.codes.${code}.label`, 'error', error.id);
+  });
   if (!steps.get(b.start)?.extract?.[b.correlation?.primary]) fail('The start step must extract the primary correlation field.', 'correlation.primary');
   return diagnostics.length ? { diagnostics } : { blueprint: value as FlowBlueprint, diagnostics };
 }

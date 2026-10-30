@@ -1,5 +1,10 @@
 import type { Messages } from './en';
 export const de = {
+  flowsDisplayMode: "Flow-Darstellung",
+  flowsDisplayDetailed: "Detailliert",
+  flowsDisplayCondensed: "Kompakt",
+  flowsResults: "Ergebnis",
+  flowsLabel: "Flow-Bezeichnung",
   flowsNewName: "Neuer Flow",
   flowsNewStartName: "Start",
   flowsNewDoneName: "Abgeschlossen",
@@ -26,7 +31,7 @@ export const de = {
   flowsTimeline: "Zeitverlauf",
   flowsInfo: "Info",
   flowsBack: "Alle Flows",
-  flowsStatusRunning: "Läuft",
+  flowsStatusRunning: "In Bearbeitung",
   flowsStatusCompleted: "Abgeschlossen",
   flowsStatusFailed: "Fehlgeschlagen",
   flowsStatusCancelled: "Abgebrochen",

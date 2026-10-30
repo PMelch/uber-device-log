@@ -1,5 +1,10 @@
 import type { Messages } from './en';
 export const fr = {
+  flowsDisplayMode: "Affichage des flux",
+  flowsDisplayDetailed: "Détaillé",
+  flowsDisplayCondensed: "Condensé",
+  flowsResults: "Résultat",
+  flowsLabel: "Libellé du flux",
   flowsNewName: "Nouveau flux",
   flowsNewStartName: "Début",
   flowsNewDoneName: "Terminé",

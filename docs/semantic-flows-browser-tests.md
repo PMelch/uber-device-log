@@ -20,3 +20,14 @@ node --import tsx server/fixtures/semantic-flows-ui.mts
 Open http://127.0.0.1:4313, select the fixture phone, and include both Device logs and Shop WebView. Once both streams are connected, the fixture replays once. Open the Flows tab. To replay additional events, send `POST /fixture/replay`; each run uses fresh correlation IDs. `SEMANTIC_FLOWS_PORT` overrides the manual fixture port. Stop with Ctrl+C to remove the temporary project.
 
 These fictional events exercise implementation behavior. Actual application log formats and cross-provider identifiers still need validation against the target application.
+
+## Dynamic labels and condensed summaries
+
+After building, run `node --import tsx scripts/test-flow-labels.mjs` with the same
+`PLAYWRIGHT_MODULE` and `CHROME_EXECUTABLE` settings described above. The separate
+fixture checks live labels, unchanged steps, semantic text tones, latest Result
+values, HTML escaping, sensitive-value concealment and search, timeline reveal,
+keyboard display switching, preference persistence, seven locales and 320 px,
+390 px and desktop layouts. Condensed overview cards must contain no node or
+edge elements. Only the display preference is stored locally. Set
+`FLOW_LABEL_SCREENSHOTS` to a local directory to capture the tested layouts.

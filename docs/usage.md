@@ -138,6 +138,12 @@ with timelines, payload inspection and a blueprint editor. See the
 [Semantic Flows setup and sample project](../README.md#semantic-flows) and the
 [agent authoring guide](semantic-flows-agent-guide.md).
 
+### Detailed and Condensed flow display
+
+**Detailed** is the initial default flow display. Each instance shows its current authored label, extracted result fields and the step overview. Choose **Condensed** to keep the same labels, results and outcome while hiding the overview nodes. **Timeline** remains available in both modes for steps, matching evidence and original logs; **Info** describes the blueprint. Switching display modes changes presentation only, while capture and flow recognition continue. The chosen display mode is saved in this browser (`uber-device-log.flowDisplay`); it does not persist captured logs or flow results.
+
+Labels may include values extracted by earlier accepted steps, and result fields retain their original technical names. Both overview modes conceal marked sensitive values, including label substitutions and results; use Timeline to explicitly reveal sensitive evidence there. Missing template values preserve the previous usable label; an instance without one uses its blueprint name. Blueprint-authored text remains verbatim when you switch interface languages. See the [label and result format](flow-format.md#labels-and-result-fields) to author these summaries.
+
 ## Full WebView inspectors
 
 Use the inspector button beside `>_` in a WebView source row, or inside the

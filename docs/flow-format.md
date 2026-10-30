@@ -141,6 +141,7 @@ Unknown fields are rejected, including inside nested objects. Unless stated othe
 | `id` | Yes | String; unique across active blueprint files. Independent of filename. |
 | `name` | Yes | Display name. |
 | `description` | No | Description shown in Info. |
+| `label` | No | Instance summary template; string or an array of text parts. See [Labels and result fields](#labels-and-result-fields). |
 | `start` | Yes | Existing step ID. Its extractor must declare the primary correlation field. |
 | `timeout` | Yes | Positive integer followed by `ms`, `s`, `m` or `h`, e.g. `500ms`, `90s`, `2m`. No decimals, spaces or zero. Deadline starts when the instance is created and does not reset at each step. |
 | `correlation` | Yes | Object described below. |
@@ -161,8 +162,9 @@ Use safe property-style names for primary/alias fields, such as `requestId` and 
 
 | Field | Required | Type and behavior |
 | --- | --- | --- |
-| `id` | Yes | String unique within `steps`; referenced by edges and `equalsFrom.step`. |
+| `id` | Yes | String unique across steps and error rules; referenced by edges and `equalsFrom.step`. |
 | `shortLabel` | No | Display label inside the node. Keep it short; otherwise the UI uses `S` plus the array position. |
+| `label` | No | New instance summary after this step is accepted; same template syntax as blueprint `label`. |
 | `name` | Yes | Display name of the step. |
 | `optional` | No | Boolean, default `false`; marks an optional step but does not create bypass edges. |
 | `match` | Yes | Matcher object described below. |
@@ -207,7 +209,8 @@ There is no `any`, `or`, `not`, numeric range or regex-flags operator. Use disti
 | `regex` | Exactly one source | JavaScript regex pattern applied to original message text. Requires `group`. Extracted captures are strings. |
 | `group` | With `regex` | Name of an existing named capture, e.g. `requestId` for `(?<requestId>...)`. Numeric capture indexes are unsupported. Forbidden with a JSON extractor. |
 | `required` | No | Boolean, default `false`. If no value is extracted (`undefined`), the entire candidate is rejected. A JSON `null` counts as present, although it cannot be an identity or `equalsFrom` value. |
-| `sensitive` | No | Boolean, default `false`. Masks the extracted field in the inspector until revealed; it does not remove the value from memory or the captured log. |
+| `sensitive` | No | Boolean, default `false`. Conceals the extracted field in payloads, label parts and results until revealed; it does not remove the value from memory or the captured log. |
+| `result` | No | Boolean, default `false`. Exposes the accepted extracted value in the instance result summary under its exact extraction field name. |
 
 Regex matching uses the JavaScript engine. The validator checks syntax and named captures, not runtime complexity. Prefer simple, anchored patterns; there is no per-pattern execution timeout in the blueprint format. Single-quoted YAML strings preserve backslashes conveniently.
 
@@ -215,17 +218,55 @@ Regex matching uses the JavaScript engine. The validator checks syntax and named
 
 | Field | Required | Type and behavior |
 | --- | --- | --- |
-| `id` | Yes | String unique among error rules. Use an ID distinct from step IDs too, to keep inspection clear. |
+| `id` | Yes | String unique across steps and error rules; a shared ID is rejected. |
 | `appliesTo` | Yes | `active`, or a nonempty list of existing step IDs. A listed ID applies if it is currently expected **or** is the most recently observed step. |
 | `match` | Yes | Matcher object, without `equalsFrom`. |
 | `extract` | Yes in practice | Extraction mapping; must declare the field named by `codeField`. Also extract a known primary/alias ID to identify the instance. |
+| `label` | No | New instance summary when this error rule is accepted. Known-code `label` takes precedence. |
 | `codeField` | Yes | Exact extracted field name containing the error code. |
 | `codes` | Yes | Mapping from code strings to objects with `description` and `outcome`. May be empty. The extracted value is converted to a string for lookup. |
 | `codes.<code>.description` | Yes | Nonempty description displayed with the error. |
 | `codes.<code>.outcome` | Yes | `failed` or `cancelled`. |
+| `codes.<code>.label` | No | Summary specific to this code, overriding the rule label when available. |
 | `unknownOutcome` | Yes | `failed` or `cancelled`, used for unmapped codes. |
 
 Error rules are evaluated before ordinary expected steps. A unique matching, correlated rule ends the instance and clears expected steps. Multiple matching candidates cause ambiguity, not first-rule-wins behavior. Errors do not independently start instances and have no keyless fallback. They need a known matching correlation binding. If `codeField` is not `required`, a missing code also takes `unknownOutcome`; use `required: true` when missing codes should reject the candidate.
+
+## Labels and result fields
+
+`name` still identifies the blueprint or step. `shortLabel` still identifies a node. The separate optional `label` describes the **current flow instance**, using values extracted from its accepted evidence. A label changes presentation only; it does not change matching, correlation, outcomes or deadlines. Active instances show an independent In progress status and spinner in both overview modes and Timeline, even when the label stays unchanged. Defined terminal outcomes remove the spinner. Timed-out or interrupted capture retains its distinct status instead of implying ongoing processing.
+
+`label` accepts either a nonempty string or a nonempty array of parts. Each part has required nonempty `text` and optional `tone`, exactly `success`, `error`, `warning` or `info`. Omit `tone` for ordinary text. Parts are concatenated exactly: include spaces or separators in their text when needed. A label allows at most 32 parts, 4,096 total template characters and 64 placeholder occurrences. No HTML, Markdown rendering, arbitrary CSS colors or executable expressions are supported. For example, on a completion step:
+
+```yaml
+label:
+  - text: 'Transfer completed: '
+    tone: success
+  - text: '{start.amount} {start.currency} → {start.recipient}'
+  - text: ' · Reference {posted.reference}'
+```
+
+A placeholder is exactly `{stepId.extractedField}`. Literal braces and malformed or nested placeholders are not supported. It refers to the named extraction, rather than a raw JSON path or an instance-wide global variable. References are resolved within the same flow instance from **accepted observations only**; out-of-order evidence retained without accepted progression cannot supply them. String, finite-number and boolean values can be substituted; objects, arrays, `null` and missing values cannot. Each substituted value is bounded to 4,096 JavaScript string code units; the extracted result itself retains its original value.
+
+Declare referenced extraction fields explicitly. Blueprint-level labels may refer only to fields on the start step. Step labels may refer to their own fields and earlier steps that dominate them, meaning that every route to the consuming step passes through the producer. A label on a shared completion step cannot require a field unique to one alternative branch. Error-rule and known-code labels can use fields extracted by the rule itself and declared step fields, but those earlier values may be unavailable on the actual failing route. Validation does not establish that an optional extraction will be present at runtime.
+
+When a label is omitted, the previous valid label remains. When any reference in a proposed label is missing or non-scalar, that update is not applied: the previous valid label remains as a whole. Before a usable label exists, the blueprint name is the fallback. A known error-code label takes precedence over the error rule label; without a code-specific label, the rule label applies. Labels are authored text and remain verbatim when the interface language changes.
+
+Mark result fields on the extraction that produces them:
+
+```yaml
+extract:
+  amount: { json: amount, result: true }
+  currency: { json: currency, result: true }
+  recipient: { json: recipient, result: true }
+  account: { json: recipientAccount, result: true, sensitive: true }
+```
+
+The result summary uses exact extraction names (`amount`, `currency`, etc.), without translating or renaming them. For a repeated result field name, the latest accepted extraction providing that field wins. An absent field in a later observation does not erase an existing result. Unaccepted evidence never contributes result values. Result values preserve JSON types; unlike label substitutions, they may be objects, arrays or `null`.
+
+`sensitive: true` applies to results and label substitutions as well as payload inspection. Both overview modes always conceal sensitive values; open Timeline to explicitly reveal sensitive evidence there. Surrounding static text and nonsensitive values remain readable. Masking is a display rule, not deletion or encryption: original captured logs and in-memory payloads still contain the data.
+
+The **Detailed** view shows these labels and results together with the step overview. **Condensed** shows the same summary and results without overview nodes; Timeline remains available for full evidence. A display mode does not change which events are recognized or which fields are retained. See the complete [fictional bank transaction blueprint](../test_flow_project/.udl/flows/bank-transaction.yaml) and its [event fixture](../test_flow_project/bank-transaction-events.jsonl) for automatic acceptance, declines, cancellation and manual-review branches.
 
 ## Correlation and error handling example
 
@@ -371,7 +412,7 @@ An invalid active set is not partially activated. On a failed reload the last va
 | Children per `all` | 1–20 |
 | Nested matcher depth | At most 12 below root |
 
-Duplicate YAML keys, aliases, unsupported tags, unknown fields, unreachable steps, cycles, invalid edge targets and invalid `equalsFrom` dependencies are rejected. Use ordinary YAML mappings, lists and scalar values. There is no embedded JavaScript, interpolation syntax, retry-loop edge, parallel join, automatic optional-step skipping or separate flow-validation CLI subcommand.
+Duplicate YAML keys, aliases, unsupported tags, unknown fields, unreachable steps, cycles, invalid edge targets and invalid `equalsFrom` dependencies are rejected. Use ordinary YAML mappings, lists and scalar values. There is no embedded JavaScript, executable template expression, retry-loop edge, parallel join, automatic optional-step skipping or separate flow-validation CLI subcommand.
 
 Validate in the editor, or use [`POST /api/flows/validate`](api.md#semantic-flows) with the local capability token. An HTTP 200 validation response can contain diagnostics; validity means the diagnostics array is empty. For a viewer source checkout, this command validates one file without starting a server:
 
@@ -390,8 +431,10 @@ This checks one blueprint's format and graph, not cross-file uniqueness or wheth
 
 ## Implementation and further reading
 
+- [Portable authoring skill](flow-authoring-skill.md) packages this reference, extraction guidance and examples for agents in application repositories.
+
 - [Types](../shared/flow-types.ts), [validator](../shared/flow-blueprints.ts), [recognition engine](../shared/flow-engine.ts) and [project loader](../server/flow-project.ts) define the current contract.
 - [Reference example tests](../server/flow-format-docs.test.ts) validate all four complete YAML examples above and replay their routes, including concurrent jobs and unknown errors. Run `node --import tsx --test server/flow-format-docs.test.ts` from the viewer checkout.
-- [Example project](../test_flow_project/README.md) provides purchase, login and asset-download definitions plus an emitter.
+- [Example project](../test_flow_project/README.md) provides purchase, login, asset-download and fictional bank-transfer definitions, separate event fixtures and an emitter.
 - [Extraction guide](semantic-flows-agent-guide.md) explains how to derive definitions from application code and verify emitted log formats.
 - [API documentation](api.md#semantic-flows) covers validation, saving and revision conflicts.

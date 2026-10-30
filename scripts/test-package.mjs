@@ -77,7 +77,7 @@ async function smoke(command, args, project, withFlows = false) {
     assert.equal((await fetch(`http://127.0.0.1:${port}/api/devices`, { headers: { Origin: 'https://untrusted.example' } })).status, 403);
     const snapshot = await (await fetch(`http://127.0.0.1:${port}/api/flows/snapshot`)).json();
     assert.equal(snapshot.enabled, Boolean(project));
-    if (withFlows) { assert.equal(snapshot.blueprints.length, 3); assert.equal(snapshot.diagnostics.length, 0); assert.ok(snapshot.blueprints.some(item => item.id === 'purchase')); }
+    if (withFlows) { assert.ok(snapshot.blueprints.some(item => item.id === 'bank-transaction')); assert.equal(snapshot.diagnostics.length, 0); assert.ok(snapshot.blueprints.some(item => item.id === 'purchase')); }
     console.log(`PASS ${command}: installed archive starts; UI, assets, discovery, origin guard and ${withFlows ? 'project blueprints' : 'log-only mode'} work`);
     if (project && !withFlows) assert.equal(readFileSync(join(temporary, project, '.udl', 'config.yaml'), 'utf8'), '');
     else if (!project) assert.equal(existsSync(join(temporary, '.udl')), false);

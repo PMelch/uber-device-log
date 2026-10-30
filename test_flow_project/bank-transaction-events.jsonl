@@ -1,0 +1,18 @@
+{"event": "bank.transfer.requested", "transactionId": "bank-success", "amount": 125, "currency": "EUR", "recipient": "Demo Recipient 1", "recipientAccount": "DE00-FICTIONAL-ACCOUNT-1"}
+{"event": "bank.transfer.requested", "transactionId": "bank-insufficient", "amount": 126, "currency": "EUR", "recipient": "Demo Recipient 2", "recipientAccount": "DE00-FICTIONAL-ACCOUNT-2"}
+{"event": "bank.transfer.requested", "transactionId": "bank-fraud", "amount": 127, "currency": "EUR", "recipient": "Demo Recipient 3", "recipientAccount": "DE00-FICTIONAL-ACCOUNT-3"}
+{"event": "bank.transfer.requested", "transactionId": "bank-cancelled", "amount": 128, "currency": "EUR", "recipient": "Demo Recipient 4", "recipientAccount": "DE00-FICTIONAL-ACCOUNT-4"}
+{"event": "bank.transfer.requested", "transactionId": "bank-review-approved", "amount": 129, "currency": "EUR", "recipient": "Demo Recipient 5", "recipientAccount": "DE00-FICTIONAL-ACCOUNT-5"}
+{"event": "bank.transfer.requested", "transactionId": "bank-review-rejected", "amount": 130, "currency": "EUR", "recipient": "Demo Recipient 6", "recipientAccount": "DE00-FICTIONAL-ACCOUNT-6"}
+{"event": "bank.transfer.requested", "transactionId": "bank-timeout", "amount": 131, "currency": "EUR", "recipient": "Demo Recipient 7", "recipientAccount": "DE00-FICTIONAL-ACCOUNT-7"}
+{"event": "bank.transfer.accepted", "transactionId": "bank-success"}
+{"event": "bank.transfer.accepted", "transactionId": "bank-timeout"}
+{"event": "bank.transfer.declined", "transactionId": "bank-insufficient", "code": "INSUFFICIENT_FUNDS"}
+{"event": "bank.transfer.declined", "transactionId": "bank-fraud", "code": "FRAUD_SUSPECTED"}
+{"event": "bank.transfer.cancelled", "transactionId": "bank-cancelled", "code": "USER_CANCELLED"}
+{"event": "bank.transfer.review.pending", "transactionId": "bank-review-approved"}
+{"event": "bank.transfer.review.pending", "transactionId": "bank-review-rejected"}
+{"event": "bank.transfer.review.approved", "transactionId": "bank-review-approved"}
+{"event": "bank.transfer.declined", "transactionId": "bank-review-rejected", "code": "REVIEW_REJECTED"}
+{"event": "bank.transfer.posted", "transactionId": "bank-success", "reference": "REF-FICTIONAL-001"}
+{"event": "bank.transfer.posted", "transactionId": "bank-review-approved", "reference": "REF-FICTIONAL-002"}

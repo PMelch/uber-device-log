@@ -8,7 +8,7 @@ npm run dev -- --project=./test_flow_project
 node bin/uber-device-log.mjs --flows=./test_flow_project
 ```
 
-The flag resolves relative to the shell's working directory. `.udl/config.yaml` configures `.udl/flows`, containing purchase, login and asset-download blueprints. These fictional patterns are active only when this project is explicitly selected. Blueprint names/descriptions are author data and remain verbatim across UI languages.
+The flag resolves relative to the shell's working directory. `.udl/config.yaml` configures `.udl/flows`, containing purchase, login, asset-download and fictional bank-transaction blueprints. These fictional patterns are active only when this project is explicitly selected. Blueprint names/descriptions are author data and remain verbatim across UI languages.
 
 ## Emit real captured console records
 
@@ -19,3 +19,15 @@ The sample demonstrates a happy purchase, an Android route, per-instance receipt
 `sample-events.jsonl` contains original message objects, not LogMessage transport envelopes. It is a source fixture to emit from your application; selecting the project never injects synthetic records into normal capture. The standalone emitter page is a developer fixture, not part of the localized product UI.
 
 Files ending in `.draft.yaml` or `.draft.yml` are inactive and ignored during discovery. An invalid active YAML file still rejects activation of the new set; the last valid set remains active when available. The editor requires an active filename when saving.
+
+## Fictional bank transaction example
+
+`bank-transaction-events.jsonl` is a **separate synthetic application-message fixture** for `.udl/flows/bank-transaction.yaml`. Its event names, recipients, account strings and references are invented; it is not a real banking integration or evidence of a bank API. The default emitter and `sample-events.jsonl` remain unchanged. Selecting this project never emits or replays the bank records automatically.
+
+For an easy interactive check, serve this directory with `python3 -m http.server 8088 --directory test_flow_project`, then navigate an inspectable application WebView to `http://<computer-LAN-address>:8088/bank-transaction-demo.html`. Keep the test app's WebView inspection enabled, select that WebView provider in Über Device Log, and open Flows. Choose a bank-demo button; each click emits fresh IDs, so several routes can run concurrently. The page also offers a pending-review case with no decision and a completion-free timeout case. It performs no network requests or real transactions. Use Detailed to see branches or Condensed to inspect labels/results; open Timeline for payloads and explicit sensitive reveal.
+
+The bank fixture interleaves seven distinct transaction IDs: automatic completion, insufficient funds, fraud screening, explicit user cancellation, manual review followed by approval, manual review followed by rejection, and an accepted request whose completion is not observed. Emit its JSON objects through a selected captured logger, for example with `console.log(JSON.stringify(record))`. Keep each object's `transactionId` unchanged within that transaction. Emit in file order to reproduce the scenarios; completion-free transactions time out after 60 seconds, indicating missing completion evidence rather than an invented bank failure.
+
+Each state can change the instance label. Known error codes have specific labels; manual review is pending until an explicit decision arrives. `amount`, `currency`, `recipient`, `reference` and `errorCode` illustrate `result: true`. The fictional recipient `account` result is marked sensitive, as is its use in a separate completion-label part. Detailed and Condensed show the same labels/results, while only Detailed shows overview nodes. Both overview modes conceal sensitive values; Timeline remains available for evidence and explicit sensitive reveal.
+
+Run `node --import tsx --test server/bank-transaction-sample.test.ts` from the viewer checkout for synthetic recognition and presentation checks. Derive production blueprints from actual source/log evidence using [the agent guide](../docs/semantic-flows-agent-guide.md), and validate the [label/result syntax](../docs/flow-format.md#labels-and-result-fields) before activation.

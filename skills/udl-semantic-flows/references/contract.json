@@ -1,0 +1,26 @@
+{
+  "formatVersion": 1,
+  "viewerPackageVersion": "0.9.0",
+  "compatibility": "Snapshot of the source contract, including unreleased changes. This package version is provenance, not a minimum supported release. Validate with a viewer that implements these features.",
+  "contractDigest": "257896f8e7e7e49a893c344ffafb9e2dd629172005a7ab70668b8d83c436f1d4",
+  "sourceFingerprints": {
+    "shared/flow-types.ts": "4f9e5d98a4931ae860554e0ed7e61a833ad1b449b309ce5f7dd8eb1e3472c133",
+    "shared/flow-blueprints.ts": "6894637e1cc1a1be5b1907eb0164cfca709296020d9d0659c3db6cf0accf1623",
+    "shared/flow-engine.ts": "88bbe19af39f5fefdab5a45f34d29e2373e5be8c80ddf05580dfd61e8a6ef82d",
+    "shared/flow-presentation.ts": "24fadabe4c396876103ee952534b3da873381d6f6107656f664afe5406a44840"
+  },
+  "resources": {
+    "references/flow-format.md": "8a5d2bf8dcb25df116ed62c740e1db929c4fa988c8d135240382378dacc7205d",
+    "references/authoring-guide.md": "d80f6f5eeedb1574d7879d43f8ade186b5fac1360421a1b6a6a4acb58a06b216",
+    "references/api.md": "3d702bd81f6a2a61af40a96595885e9b611b238f3fb055fca7b8ba23660c3032",
+    "assets/flows/purchase.yaml": "7c7d17e60639de8ff82e08703548bfaea00b7a2187cd51c0fa4418b564da1b12",
+    "assets/flows/login.yaml": "31ceed9e2a02b11f1a3f3b93b58d8757384b5002f110676e7c3643700de4bf68",
+    "assets/flows/asset-download.yaml": "3e78c80bac893a6c65772b5334aa4f72cfbf97d7734dea879f8294fdb5177642",
+    "assets/flows/bank-transaction.yaml": "f8743cb27a4c32a9b1a6931a4fc58b050d62003c753a6cdeac87ebd30e7026fd",
+    "assets/events/sample-events.jsonl": "1fdfd7912b5b65fe6ec3af9529a7a5efdf9c2f7e785d0138b352404034471361",
+    "assets/events/bank-transaction-events.jsonl": "648ae1e68b04bcc1128052a97294156be086982a46fc871913b5098a7b27992d",
+    "assets/config.yaml": "1ca11782eb4b12ef1976886812137910eedd1c37633210a8e7385496dad1ce35",
+    "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "INSTALL.md": "2997c6fe9a5fa793416d138d230a7f5a274905c4880b50f05290c5d4c752f800"
+  }
+}

@@ -1,5 +1,10 @@
 import type { Messages } from './en';
 export const ja = {
+  flowsDisplayMode: "フローの表示",
+  flowsDisplayDetailed: "詳細",
+  flowsDisplayCondensed: "コンパクト",
+  flowsResults: "結果",
+  flowsLabel: "フローのラベル",
   flowsNewName: "新しいフロー",
   flowsNewStartName: "開始",
   flowsNewDoneName: "完了",
@@ -26,7 +31,7 @@ export const ja = {
   flowsTimeline: "タイムライン",
   flowsInfo: "情報",
   flowsBack: "すべてのフロー",
-  flowsStatusRunning: "実行中",
+  flowsStatusRunning: "進行中",
   flowsStatusCompleted: "完了",
   flowsStatusFailed: "失敗",
   flowsStatusCancelled: "キャンセル済み",

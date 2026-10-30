@@ -1,0 +1,51 @@
+version: 1
+id: asset-download
+name: Asset Download
+description: Follow one asset download including optional integrity verification.
+start: requested
+timeout: 15s
+correlation: { scope: device-session, primary: downloadId }
+steps:
+  - id: requested
+    shortLabel: ID1
+    name: Request asset
+    match: { json: { path: event, equals: asset.start } }
+    extract:
+      downloadId: { json: downloadId, required: true }
+      url: { json: url }
+    next: [received]
+  - id: received
+    shortLabel: ID2
+    name: Receive asset bytes
+    match: { json: { path: event, equals: asset.received } }
+    extract:
+      downloadId: { json: downloadId, required: true }
+      bytes: { json: bytes }
+    next: [verified, ready]
+  - id: verified
+    shortLabel: ID3
+    name: Verify checksum
+    optional: true
+    match: { json: { path: event, equals: asset.verified } }
+    extract:
+      downloadId: { json: downloadId, required: true }
+    next: [ready]
+  - id: ready
+    name: Asset ready
+    match: { json: { path: event, equals: asset.ready } }
+    extract:
+      downloadId: { json: downloadId, required: true }
+    outcome: completed
+errors:
+  - id: download_error
+    appliesTo: active
+    match: { json: { path: event, equals: asset.error } }
+    extract:
+      downloadId: { json: downloadId, required: true }
+      code: { json: code, required: true }
+      stack: { json: stack }
+    codeField: code
+    codes:
+      NETWORK_UNAVAILABLE: { description: No network connection is available., outcome: failed }
+      CHECKSUM_MISMATCH: { description: The received asset failed integrity verification., outcome: failed }
+    unknownOutcome: failed

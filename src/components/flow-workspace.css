@@ -61,3 +61,36 @@
 .flow-blueprint-diagram{margin:0 0 22px;max-width:100%;overflow:auto}
 @media(max-width:760px){.flow-sequence{align-items:flex-start}.flow-sequence .flow-path.is-branching{display:flex;flex-wrap:nowrap;width:max-content;grid-template-columns:none}.flow-detail-grid{grid-template-columns:minmax(0,1fr)}}
 @media(pointer:coarse){.flow-lane button,.flow-diagram button.flow-diagram-node{min-height:44px}}
+
+/* Blueprint-authored labels are plain text; only the semantic tone is styled. */
+.flow-main-label{white-space:pre-wrap;overflow-wrap:anywhere}
+.flow-label-success{color:light-dark(#14734e,#89dab1)}
+.flow-label-error{color:var(--pl-error)}
+.flow-label-warning{color:var(--pl-warn)}
+.flow-label-info{color:light-dark(#315f9b,#a0c7ff)}
+:root[data-theme=light] .flow-label-success{color:#14734e}
+:root[data-theme=dark] .flow-label-success{color:#89dab1}
+:root[data-theme=light] .flow-label-info{color:#315f9b}
+:root[data-theme=dark] .flow-label-info{color:#a0c7ff}
+.flow-card-kind{flex-basis:100%;color:var(--pl-soft);font-size:11px}
+.flow-display-toggle{display:flex;gap:3px;padding:3px;background:var(--pl-wash);border:1px solid var(--pl-line);border-radius:8px}
+.flow-workspace .flow-display-toggle button{border:0!important;background:transparent!important;min-height:28px;padding:4px 9px}
+.flow-workspace .flow-display-toggle button[aria-pressed=true]{background:var(--pl-panel)!important;color:var(--pl-text)}
+.flow-results{display:flex;align-items:baseline;gap:7px 16px;flex-wrap:wrap;margin:12px 0 0;font-size:12px;min-width:0}
+.flow-results-heading{color:var(--pl-soft);font-size:10px;letter-spacing:.7px;text-transform:uppercase}
+.flow-result{display:flex;align-items:baseline;gap:6px;min-width:0;max-width:100%;flex-wrap:wrap}
+.flow-result dt{color:var(--pl-soft);overflow-wrap:anywhere}
+.flow-result dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;font-variant-numeric:tabular-nums}
+.flow-label-evidence{margin:14px 0;border:1px solid var(--pl-line);border-radius:7px;padding:12px;background:var(--pl-wash)}
+.flow-workspace[data-display=condensed] .flow-card{padding:13px 17px;margin-bottom:8px}
+.flow-workspace[data-display=condensed] .flow-results{margin-top:8px}
+@media(max-width:760px){.flow-toolbar .flow-display-toggle{order:1}.flow-toolbar input{flex-basis:100%}.flow-card-heading{flex-basis:100%}.flow-results{gap:7px 12px}}
+@media(pointer:coarse){.flow-workspace .flow-display-toggle button{min-height:44px}}
+
+.flow-results>dl{display:flex;gap:7px 16px;flex-wrap:wrap;margin:0;min-width:0;max-width:100%}
+
+/* Active progression is independent of the blueprint-authored main label. */
+.flow-badge[data-outcome=running]{display:inline-flex;align-items:center;gap:6px}
+.flow-status-spinner{display:inline-block;width:11px;height:11px;flex:none;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:flow-status-spin 900ms linear infinite}
+@keyframes flow-status-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.flow-status-spinner{animation:none}}
