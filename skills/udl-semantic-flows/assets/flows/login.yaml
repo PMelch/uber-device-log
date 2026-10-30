@@ -1,4 +1,5 @@
 version: 1
+priority: 3
 id: login
 name: Login
 description: Follow login from credentials to an authenticated session.

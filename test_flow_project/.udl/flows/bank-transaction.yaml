@@ -1,5 +1,6 @@
 # Fictional application protocol for demonstration; not a real banking integration.
 version: 1
+priority: 2
 id: bank-transaction
 name: Bank transaction
 description: Fictional transfer with automatic decisions, manual review and explicit cancellation.

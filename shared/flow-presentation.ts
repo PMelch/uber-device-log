@@ -72,3 +72,14 @@ export function flowPresentationHistory(instance: FlowInstance): FlowPresentatio
   scanPresentation(instance, history);
   return history;
 }
+
+/** Derived error-code decorations inherit the originating extractor's sensitivity. */
+export function flowErrorCode(instance: FlowInstance, observation?: import('./flow-types.js').FlowObservation): { value?: string; sensitive: boolean } {
+  let origin = observation;
+  if (!origin) for (let index = instance.observations.length - 1; index >= 0; index--) {
+    const candidate = instance.observations[index]!;
+    if (candidate.accepted !== false && instance.blueprint.errors?.some(rule => rule.id === candidate.stepId)) { origin = candidate; break; }
+  }
+  const rule = instance.blueprint.errors?.find(rule => rule.id === origin?.stepId);
+  return { value: observation ? observation.errorCode : instance.errorCode, sensitive: !!rule?.extract?.[rule.codeField]?.sensitive };
+}

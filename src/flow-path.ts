@@ -187,3 +187,45 @@ function curvePoints(d: string) {
   }
   return points;
 }
+
+/** Immutable DAG metadata shared by every state lookup for a blueprint. */
+export function flowRouteTopology<T extends { id: string; next?: readonly string[]; optional?: boolean }>(steps: readonly T[]) {
+  const byId = new Map(steps.map(step => [step.id, step]));
+  const next = new Map(steps.map(step => [step.id, [...(step.next ?? [])]]));
+  const degree = new Map(steps.map(step => [step.id, 0]));
+  for (const targets of next.values()) for (const id of targets) if (degree.has(id)) degree.set(id, degree.get(id)! + 1);
+  const ready = steps.filter(step => degree.get(step.id) === 0);
+  const ordered: T[] = [];
+  for (let index = 0; index < ready.length; index++) {
+    const step = ready[index]!;
+    ordered.push(step);
+    for (const id of next.get(step.id) ?? []) if (degree.has(id)) {
+      degree.set(id, degree.get(id)! - 1);
+      if (degree.get(id) === 0) ready.push(byId.get(id)!);
+    }
+  }
+  const reachable = new Map<string, Set<string>>();
+  for (const step of [...ordered].reverse()) {
+    const route = new Set([step.id]);
+    for (const id of next.get(step.id) ?? []) for (const child of reachable.get(id) ?? []) route.add(child);
+    reachable.set(step.id, route);
+  }
+  const exclusiveRoutes = [...next.values()].filter(targets => targets.length > 1).map(targets => {
+    const routes = targets.map(id => reachable.get(id) ?? new Set<string>());
+    const frequency = new Map<string, number>();
+    for (const route of routes) for (const id of route) frequency.set(id, (frequency.get(id) ?? 0) + 1);
+    return routes.map(route => new Set([...route].filter(id => frequency.get(id) === 1)));
+  });
+  return { byId, next, ordered, exclusiveRoutes };
+}
+
+/** Route classification is computed once for an instance, rather than once per node. */
+export function flowRouteStates<T extends { id: string; next?: readonly string[]; optional?: boolean }>(topology: ReturnType<typeof flowRouteTopology<T>>, witnessed: ReadonlySet<string>, expected: readonly string[]) {
+  const other = new Set<string>();
+  for (const routes of topology.exclusiveRoutes) {
+    const taken = routes.findIndex(route => [...route].some(id => witnessed.has(id)));
+    if (taken >= 0) for (const [index, route] of routes.entries()) if (index !== taken) for (const id of route) other.add(id);
+  }
+  const waiting = new Set(expected);
+  return new Map(topology.ordered.map(step => [step.id, witnessed.has(step.id) ? 'observed' : waiting.has(step.id) ? 'expected' : other.has(step.id) ? 'other' : step.optional ? 'optional' : 'missing'] as const));
+}

@@ -3,6 +3,25 @@ import assert from 'node:assert/strict';
 import { parseFlowBlueprint } from '../shared/flow-blueprints.js';
 const base = `version: 1\nid: login\nname: Login\nstart: start\ntimeout: 30s\ncorrelation: {scope: device-session, primary: id}\nsteps:\n  - id: start\n    name: Start\n    match: {contains: login}\n    extract: {id: {json: id, required: true}}\n    next: [done]\n  - id: done\n    name: Done\n    match: {json: {path: id, equalsFrom: {step: start, field: id}}}\n    outcome: completed\n`;
 test('accepts graph and payload references', () => assert.equal(parseFlowBlueprint(base).blueprint?.id, 'login'));
+test('timeout milliseconds remain finite positive safe integers at every unit boundary', () => {
+ for (const [unit, scale] of [['ms', 1], ['s', 1000], ['m', 60000], ['h', 3600000]] as const) {
+   const limit = Math.floor(Number.MAX_SAFE_INTEGER / scale);
+   assert.deepEqual(parseFlowBlueprint(base.replace('30s', `${limit}${unit}`)).diagnostics, [], `${unit}: maximum safe duration`);
+   for (const duration of [`${limit + 1}${unit}`, `${'9'.repeat(400)}${unit}`]) {
+     const parsed = parseFlowBlueprint(base.replace('30s', duration));
+     assert.equal(parsed.blueprint, undefined, duration);
+     assert.ok(parsed.diagnostics.some(item => item.path === 'timeout'), duration);
+   }
+ }
+});
+test('authored step IDs beginning error: keep ordinary dominating equalsFrom references', () => {
+ const parsed = parseFlowBlueprint(base.replace('next: [done]', "next: ['error:0']").replace('id: done', "id: 'error:0'"));
+ assert.deepEqual(parsed.diagnostics, []);
+ assert.equal(parsed.blueprint?.steps[1]?.id, 'error:0');
+ // Actual error matchers still cannot reference step payloads.
+ const errorRule = `${base}errors:\n  - id: failure\n    appliesTo: active\n    match: {json: {path: id, equalsFrom: {step: start, field: id}}}\n    extract: {code: {json: code}}\n    codeField: code\n    codes: {}\n    unknownOutcome: failed\n`;
+ assert.ok(parseFlowBlueprint(errorRule).diagnostics.some(item => item.message.includes('every incoming route')));
+});
 test('rejects unknown fields, aliases, duplicate keys, cycles and future references', () => {
  for (const source of [base+'surprise: true\n', base+'name: Duplicate\n', base.replace('contains: login','contains: &x login').replace('path: id','path: *x'), base.replace('outcome: completed','next: [start]'), base.replace('step: start, field: id','step: done, field: id')]) assert.ok(parseFlowBlueprint(source).diagnostics.length);
 });
@@ -37,5 +56,21 @@ test('malformed schema shapes always produce diagnostics instead of exceptions',
    for (const key of path.slice(0,-1)) target = target[key];
    target[path.at(-1)!] = value;
    assert.doesNotThrow(() => assert.ok(parseFlowBlueprint(JSON.stringify(blueprint)).diagnostics.length),`${path.join('.')} ${JSON.stringify(value)}`);
+ }
+});
+test('blueprint priority accepts all five levels and preserves omission for display default 3', () => {
+ const original = parseFlowBlueprint(base).blueprint!;
+ assert.equal(Object.hasOwn(original, 'priority'), false);
+ for (const priority of [1,2,3,4,5]) {
+   const parsed = parseFlowBlueprint(`${base}priority: ${priority}\n`);
+   assert.deepEqual(parsed.diagnostics, []);
+   assert.equal(parsed.blueprint?.priority, priority);
+ }
+});
+test('priority must be an actual integer number from 1 to 5 with a located diagnostic', () => {
+ for (const value of ['"1"','null','true','false','0','6','1.5','[]','{}','.nan','.inf']) {
+   const parsed = parseFlowBlueprint(`${base}priority: ${value}\n`);
+   assert.equal(parsed.blueprint, undefined);
+   assert.ok(parsed.diagnostics.some(diagnostic => diagnostic.path === 'priority'), value);
  }
 });

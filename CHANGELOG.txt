@@ -10,6 +10,9 @@ Unreleased
 ----------
 
 Added
+- Highlight flows by blueprint priority (1–5, default 3) with separate light and
+  dark palettes, independent of outcome. Edit priority in the blueprint draft
+  selector; include priority guidance in the portable authoring skill.
 - Add a Minimal flow overview that shows only each current main label, alongside
   the existing Condensed and Detailed views. Remember the selected view.
 - Allow explicitly correlated, repeatable flow steps to update progress labels and
@@ -24,6 +27,13 @@ Added
   unchanged labels without an extra status notice. Include
   a bank-transfer example covering success, rejection, cancellation and review.
   Identify active flows with progress text and a reduced-motion-aware spinner.
+
+Fixed
+- Keep reordered events with their original operation, enforce deadlines without
+  depending on timer ticks, and prevent stale progress or rejected branch evidence
+  from changing later flow state. Bound deep JSON analysis and finite timeouts.
+- Conceal sensitive error codes in flow decorations and search. Keep long graph
+  labels within their hit areas and render dense valid flow graphs without stalls.
 
 Changed
 - Show the blueprint name with its ID in parentheses above detailed flow labels;

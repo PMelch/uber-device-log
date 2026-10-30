@@ -170,13 +170,29 @@ Unknown fields are rejected, including inside nested objects. Unless stated othe
 | `version` | Yes | Integer `1`. |
 | `id` | Yes | String; unique across active blueprint files. Independent of filename. |
 | `name` | Yes | Display name. |
+| `priority` | No | Integer from `1` (most important) to `5` (least important), default `3`. Display emphasis only; see [Flow priority](#flow-priority). |
 | `description` | No | Description shown in Info. |
 | `label` | No | Instance summary template; string or an array of text parts. See [Labels and result fields](#labels-and-result-fields). |
 | `start` | Yes | Existing step ID. Its extractor must declare the primary correlation field. |
-| `timeout` | Yes | Positive integer followed by `ms`, `s`, `m` or `h`, e.g. `500ms`, `90s`, `2m`. No decimals, spaces or zero. Deadline starts when the instance is created and does not reset at each step. |
+| `timeout` | Yes | Positive integer followed by `ms`, `s`, `m` or `h`, e.g. `500ms`, `90s`, `2m`. The converted duration must be a positive safe integer in milliseconds (at most `9007199254740991` ms). No decimals, spaces or zero. Deadline starts when the instance is created and does not reset at each step. |
 | `correlation` | Yes | Object described below. |
 | `steps` | Yes | Array of 1–100 step objects. |
 | `errors` | No | Array of 0–50 error rules. |
+
+### Flow priority
+
+Optional top-level `priority` is an integer from `1` through `5`. Omit it for the normal default `3`; strings, fractions and values outside that range are invalid. It belongs to the blueprint, not to an individual step or error code.
+
+```yaml
+# Top-level blueprint fragment; not a complete definition.
+priority: 1
+```
+
+Priority controls the flow background emphasis in Minimal, Condensed and Detailed displays. More important flows receive stronger emphasis: light lavender in light appearance and dark purple in dark appearance. This is independent of outcome styling; a high-priority background does not mean failure, success or severity.
+
+Priority does not sort flows, change which messages match, affect correlation, alter graph progression, or change deadlines and outcomes. Each instance retains its original blueprint revision and priority. Editing a blueprint's priority affects new instances after activation; it does not rewrite existing instances. Use the blueprint editor's priority selector or edit the top-level YAML value, then validate and save as usual.
+
+The sample project assigns purchase `1`, bank transaction `2`, login `3`, asset download `4` and loading progress `5` so every level is visible. These are fictional demonstration choices, not severity inferred from the application logs.
 
 ### Correlation fields
 
@@ -250,7 +266,7 @@ Regex matching uses the JavaScript engine. The validator checks syntax and named
 | Field | Required | Type and behavior |
 | --- | --- | --- |
 | `id` | Yes | String unique across steps and error rules; a shared ID is rejected. |
-| `appliesTo` | Yes | `active`, or a nonempty list of existing step IDs. A listed ID applies if it is currently expected **or** is the most recently observed step. |
+| `appliesTo` | Yes | `active`, or a nonempty list of existing step IDs. A listed ID applies if it is currently expected **or** is the most recently accepted step. |
 | `match` | Yes | Matcher object, without `equalsFrom`. |
 | `extract` | Yes in practice | Extraction mapping; must declare the field named by `codeField`. Also extract a known primary/alias ID to identify the instance. |
 | `label` | No | New instance summary when this error rule is accepted. Known-code `label` takes precedence. |
@@ -261,7 +277,7 @@ Regex matching uses the JavaScript engine. The validator checks syntax and named
 | `codes.<code>.label` | No | Summary specific to this code, overriding the rule label when available. |
 | `unknownOutcome` | Yes | `failed` or `cancelled`, used for unmapped codes. |
 
-Error rules are evaluated before ordinary expected steps. A unique matching, correlated rule ends the instance and clears expected steps. Multiple matching candidates cause ambiguity, not first-rule-wins behavior. Errors do not independently start instances and have no keyless fallback. They need a known matching correlation binding. If `codeField` is not `required`, a missing code also takes `unknownOutcome`; use `required: true` when missing codes should reject the candidate.
+Error rules are evaluated before ordinary expected steps. A unique matching, correlated rule ends the instance and clears expected steps. Multiple matching candidates cause ambiguity, not first-rule-wins behavior. Scoped rules use expected steps or the latest **accepted** step; rejected evidence from an unchosen route cannot enable its error rules. Errors do not independently start instances and have no keyless fallback. They need a known matching correlation binding. If `codeField` is not `required`, a missing code also takes `unknownOutcome`; use `required: true` when missing codes should reject the candidate.
 
 ## Labels and result fields
 
@@ -295,7 +311,7 @@ extract:
 
 The result summary uses exact extraction names (`amount`, `currency`, etc.), without translating or renaming them. For a repeated result field name, the latest accepted extraction providing that field wins. An absent field in a later observation does not erase an existing result. Unaccepted evidence never contributes result values. Result values preserve JSON types; unlike label substitutions, they may be objects, arrays or `null`.
 
-`sensitive: true` applies to results and label substitutions as well as payload inspection. All overview modes always conceal sensitive values; open Timeline to explicitly reveal sensitive evidence there. Surrounding static text and nonsensitive values remain readable. Masking is a display rule, not deletion or encryption: original captured logs and in-memory payloads still contain the data.
+`sensitive: true` applies to results and label substitutions as well as payload inspection. When the sensitive extractor is an error rule's `codeField`, its derived error-code decorations are also concealed and excluded from search. Explicit reveal applies only to the selected Timeline evidence; overview and Timeline headers remain concealed. All overview modes always conceal sensitive values; open Timeline to explicitly reveal sensitive evidence there. Surrounding static text and nonsensitive values remain readable. Masking is a display rule, not deletion or encryption: original captured logs and in-memory payloads still contain the data.
 
 The **Detailed** view shows these labels and results together with the step overview. **Condensed** shows the same summary and results without overview nodes; Timeline remains available for full evidence. **Minimal** shows only the current label; switch to Condensed or Detailed for status, results and per-flow actions. A display mode does not change which events are recognized or which fields are retained. See the complete [fictional bank transaction blueprint](../assets/flows/bank-transaction.yaml) and its [event fixture](../assets/events/bank-transaction-events.jsonl) for automatic acceptance, declines, cancellation and manual-review branches.
 
@@ -372,7 +388,9 @@ Happy path, with no `requestId` after the bridge:
 
 Instead of submitting/completing, send `{"event":"job.error","jobId":"j1","code":"USER_CANCELLED"}` after acceptance to produce `cancelled`. `FAILED` produces a known failure description; `NEW_CODE` produces `failed` without a mapped description. This rule cannot identify an error before `jobId` is learned; an initialization-error rule should extract the already-known `requestId` instead.
 
-Correlation is based on **extracted field names and values**, not on similar text or arbitrary JSON identifiers. For correlation through extracted IDs, at least one known identity binding must match. A successful `equalsFrom` comparison can identify an instance without an extracted ID, as in `submitted` above. Any supplied binding that conflicts with an existing binding rejects that candidate. Accepted bridge steps can add aliases. Alias collisions between active instances are marked ambiguous. Do not reuse a user/account ID as an operation ID when concurrent operations are possible.
+For each blueprint, correlated error rules take precedence, followed by eligible steps on existing instances, followed by a new start when no existing candidate consumes the record. A record advances at most one candidate per blueprint, but different blueprints analyze the same record independently. Avoid broad start predicates overlapping later phases, especially when reusing a correlation key.
+
+Correlation is based on **extracted field names and values**, not on similar text or arbitrary JSON identifiers. For correlation through extracted IDs, at least one known identity binding must match. A successful `equalsFrom` comparison can identify an instance without an extracted ID, as in `submitted` above. Any supplied binding that conflicts with an existing binding rejects that candidate. Accepted bridge steps can add aliases. Alias collisions between active instances are marked ambiguous. Do not reuse a user/account ID as an operation ID when concurrent operations are possible. Retired-identity barriers work within retained session history, including across blueprint revisions; they are not permanent tombstones after Clear, interruption or eviction. An old callback arriving after a new operation has already started with identical IDs can be indistinguishable from a real new callback. Use a unique attempt/transaction identifier when that distinction matters.
 
 A normal expected step with **no primary or alias extractor declared** can also advance a unique waiting candidate without an identifier. This is a fallback for distinctive keyless log events, not a concurrency guarantee: multiple eligible candidates become ambiguous and do not advance. Declaring an identity extractor but omitting its value does not activate this fallback. Prefer explicit IDs or `equalsFrom` whenever available. Ambiguous instances are not subsequently resolved automatically by another ordinary progression event.
 
@@ -418,9 +436,11 @@ The regex extractor and matcher are separate checks. Here a partial `contains` m
 
 Only `completed`, `failed` and `cancelled` are writable YAML outcomes. `running`, `timed_out` and `interrupted` are runtime states.
 
-- The deadline uses the engine's receipt clock, not timestamps embedded in log text. A timeout means the expected terminal evidence was not observed in time, not proof of an application failure.
+- The deadline uses the engine's receipt clock, not timestamps embedded in log text. Receipt enforces deadlines before matching, even when no timer tick has run; a late terminal cannot become an ordinary success merely because of timer scheduling. A timeout means the expected terminal evidence was not observed in time, not proof of an application failure.
 - Timed-out instances can still accept eligible late evidence in the same capture epoch. A later terminal result is stored as `lateOutcome`; it does not change `timed_out` to `completed`.
-- Unresolved relevant records are buffered for reordering. The engine retries them and expires them on a tick after more than two seconds; this window is bounded by queue limits and is not configurable in YAML.
+- Unresolved relevant records are buffered for at most two seconds. Expired rows are classified as missing/unaccepted evidence before new matching and cannot advance a graph. Retries run between incoming records so older buffered progress is accepted before later updates in the same batch. A genuinely later lower percentage still replaces an earlier higher one. This window is bounded by queue limits and is not configurable in YAML.
+- Buffered ordinary steps, errors and repeats retain their eligible instance owners. A positively identified primary/alias owner takes precedence over speculative owners whose alias is not yet bound. Explicitly correlated pre-start evidence can be claimed by its first matching instance, but closed instances never release their old evidence to a later incarnation reusing an ID. Repeatable evidence still requires an existing eligible running instance and never creates an orphan.
+- Reordered observations retain their original receipt times and can have negative offsets relative to the start event. Instance update/end times never run backwards; elapsed duration is nonnegative.
 - A recognizable non-start step with an identity may create a `missing_start` instance after that window. Reaching a `completed` terminal then yields `interrupted`, not a proven complete run. Ineligible steps on an existing instance may be retained as unaccepted evidence (`missing_steps`); their extracted values cannot satisfy later references.
 - Source/session changes interrupt running instances. Capture gaps, truncated records and ambiguity affect completeness separately from the outcome. Missing or excluded sources cannot be inferred from a blueprint or automatically captured.
 
@@ -442,6 +462,10 @@ An invalid active set is not partially activated. On a failed reload the last va
 | Correlation aliases | At most 20 |
 | Children per `all` | 1–20 |
 | Nested matcher depth | At most 12 below root |
+| Parsed JSON log body | At most 64 levels below the root and 50,000 visited values |
+| Converted timeout | Positive safe integer, at most `9007199254740991` ms |
+
+A parsed JSON body exceeding the depth/value bound is excluded from semantic analysis and records a capture gap; subsequent safe messages continue. Original raw logs are unaffected. Non-JSON log text remains eligible for text/regex matchers.
 
 Duplicate YAML keys, aliases, unsupported tags, unknown fields, unreachable steps, cycles, invalid edge targets and invalid `equalsFrom` dependencies are rejected. Use ordinary YAML mappings, lists and scalar values. There is no embedded JavaScript, executable template expression, retry-loop edge, parallel join, automatic optional-step skipping or separate flow-validation CLI subcommand.
 

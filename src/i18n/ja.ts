@@ -1,5 +1,12 @@
 import type { Messages } from './en';
 export const ja = {
+  flowsPriority: "優先度",
+  flowsPriorityValue: "優先度 {priority}",
+  flowsPriority1: "1 · 最高",
+  flowsPriority2: "2 · 高",
+  flowsPriority3: "3 · 標準",
+  flowsPriority4: "4 · 低",
+  flowsPriority5: "5 · 最低",
   flowsDisplayMode: "フローの表示",
   flowsDisplayMinimal: "最小",
   flowsDisplayDetailed: "詳細",

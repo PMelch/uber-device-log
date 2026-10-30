@@ -17,6 +17,7 @@ const blueprint = {
     { id: 'sent', name: 'Sent for processing', match: { json: { path: 'event', equals: 'label.sent' } }, extract: { id: { json: 'id', required: true } }, next: ['done'] },
     { id: 'done', name: 'Settled', match: { json: { path: 'event', equals: 'label.done' } }, extract: { id: { json: 'id', required: true }, amount: { json: 'amount', result: true } }, label: [{ text: 'Transfer {registered.reference}: ' }, { text: 'successful', tone: 'success' }, { text: ' for {start.recipient}' }], outcome: 'completed' },
   ],
+  errors: [{id:'private-error',appliesTo:'active',match:{json:{path:'event',equals:'label.failure'}},extract:{id:{json:'id',required:true},code:{json:'code',required:true,sensitive:true}},codeField:'code',codes:{},unknownOutcome:'failed'}],
 };
 let browser;
 try {
@@ -132,6 +133,24 @@ try {
   assert.equal(await page.locator('.flow-workspace').getAttribute('data-display'), 'minimal');
   const stored = await page.evaluate(() => Object.values(localStorage).join(' '));
   assert.ok(!stored.includes('PRIVATE-BANK-ACCOUNT') && !stored.includes('successful'));
+  await page.locator('.precision-settings summary').click();
+  await page.locator('#settings-language').selectOption('en');
+  await page.locator('.precision-settings header button').click();
+  await page.getByRole('button', { name: 'Detailed', exact: true }).click();
+  fixture.emit({event:'label.start',id:'private-error-case'});
+  fixture.emit({event:'label.failure',id:'private-error-case',code:'PRIVATE-ERROR-CODE'});
+  const failed = page.locator('.flow-card[data-outcome="failed"]');
+  await failed.waitFor();
+  assert.ok(!(await failed.innerHTML()).includes('PRIVATE-ERROR-CODE'));
+  await search.fill('PRIVATE-ERROR-CODE'); assert.equal(await page.locator('.flow-card').count(),0,'sensitive error codes are not indexed');
+  await search.fill('');
+  await failed.getByRole('button',{name:'Timeline',exact:true}).click();
+  assert.ok(!(await page.locator('.flow-detail').innerHTML()).includes('PRIVATE-ERROR-CODE'));
+  await page.getByRole('button',{name:'Reveal sensitive values',exact:true}).click();
+  assert.ok((await page.locator('.flow-inspector').innerText()).includes('PRIVATE-ERROR-CODE'));
+  assert.ok(!(await page.locator('.flow-detail-heading').innerText()).includes('PRIVATE-ERROR-CODE'));
+  await page.getByRole('button',{name:'All flows',exact:true}).click();
+  assert.ok(!(await failed.innerText()).includes('PRIVATE-ERROR-CODE'));
   assert.deepEqual(errors, []);
   console.log('Flow label browser checks passed: live interpolation, unchanged labels, semantic tones, results, escaping, privacy, density, timeline, keyboard,7 locales,3 widths, persistent preference.');
 } finally {

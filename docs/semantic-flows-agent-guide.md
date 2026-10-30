@@ -213,3 +213,20 @@ For zero updates, use `optional: true` and an explicit predecessor bypass to the
 Treat progress payloads as observations. Re-extraction, labels and results update for every accepted occurrence, including backward percentages. A completion event needs its own terminal matcher and label; do not infer success from `percent: 100`. `equalsFrom` reads the producer's latest accepted occurrence, so document whether later checks depend on the most recent progress value rather than an earlier one. Omitted labels or missing/non-scalar references retain the previous label, and absent results do not erase earlier results.
 
 Test zero, one and many updates; interleaved IDs; progress after a successor; standalone progress without a start; missing identity; backward values; deadline expiry despite continuing updates; cancellation/error; and capture-epoch changes. Repeated events do not extend the flow deadline. Retention remains bounded by the 32 MiB analysis budget, so report dropped evidence or capture gaps rather than promising complete histories. See [repeatable phase syntax](flow-format.md#repeatable-progress-phases) and the synthetic loading example; production definitions still need source-linked evidence.
+
+## Choose display priority deliberately
+
+Use optional top-level `priority` only when the task or project conventions establish relative importance. Valid values are integers `1` through `5`, where `1` is most important and `5` least; omission defaults to `3`. Record why an explicit value was chosen rather than inferring importance from a single error code or turning UI preference into application evidence. Priority belongs to the blueprint, not its steps or error rules.
+
+Priority changes only background emphasis across Minimal, Condensed and Detailed: light lavender in light appearance and dark purple in dark appearance. Outcome colors remain separate. It does not change list order, matching, correlation, graph progression or deadlines. Existing instances retain the priority from their pinned blueprint revision; a reloaded priority applies to newly created instances. Validate the integer range and keep any existing project priority convention when adapting examples.
+
+## Adversarial replay before activation
+
+Use the format reference's adversarial checklist. Vary batch boundaries while keeping
+receipt order fixed, interleave primary/alias IDs, include old events after terminal
+outcomes and reuse IDs across instances. Verify no stale progress overwrites a later
+update and no rejected branch evidence enables a scoped error. Test deadlines without
+a timer tick, long names and dense graphs, sensitive error-code masking/search, and
+JSON depth/value limits. Preserve original evidence times; negative pre-start offsets
+can be legitimate reordering, but instance durations must not run backwards. Version 1
+has no post-terminal edges, parallel join barriers or general retry loops.

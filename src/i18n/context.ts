@@ -12,6 +12,13 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  flowsPriority: c("Blueprint editor, label for the priority selector; flow overview priority legend heading.", "Presentation importance of a whole blueprint, independent of operation outcome. Level 1 is most important, level 5 least, omitted means 3. Changing the selector edits the YAML draft only and needs validation/save. Invalid YAML disables the selector."),
+  flowsPriorityValue: c("Flow card, visible priority annotation and accessible label.", "Priority of the instance's pinned blueprint; independent of success/failure. Hidden in Minimal. Keep short.", { priority: "Integer priority level from 1 (most important) to 5 (least important), rendered as digits." }),
+  flowsPriority1: c("Priority selector and overview legend, level 1 option.", "Most important blueprint, strongest purple background. Retain the leading number 1; does not mean failed or critical error."),
+  flowsPriority2: c("Priority selector and overview legend, level 2 option.", "High importance blueprint. Retain leading number 2."),
+  flowsPriority3: c("Priority selector and overview legend, level 3 option.", "Normal importance, default when no priority is declared. Retain leading number 3."),
+  flowsPriority4: c("Priority selector and overview legend, level 4 option.", "Low importance blueprint. Retain leading number 4."),
+  flowsPriority5: c("Priority selector and overview legend, level 5 option.", "Least important blueprint, neutral background. Retain leading number 5."),
   flowsDisplayMode: c("Flow list toolbar, accessible name of the Minimal/Condensed/Detailed display-mode control group.", "Choose how much information each flow card displays. This affects presentation only, not capture, matching, search or retained evidence."),
   flowsDisplayMinimal: c("Flow list toolbar, display-mode option.", "Show only the current authored main label per flow. Hide status badges, blueprint name/ID, result fields, metadata, nodes and per-flow actions. Switch to another display mode to access Timeline or Info; capture, matching, retained evidence and search are unchanged. Keep this button label short."),
   flowsDisplayDetailed: c("Flow list toolbar, display-mode option.", "Show detailed flow cards, including their step progression. Selecting this mode does not open the separate Timeline inspector."),

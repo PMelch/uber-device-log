@@ -5,7 +5,7 @@ import type { LogMessage } from './types.js';
 export function createFlowEngine(now: () => number = () => performance.now()) {
   let blueprints: FlowBlueprint[] = [], revision = '', epoch = 0, serial = 0, gaps = 0, stateVersion = 0;
   let instances: FlowInstance[] = [];
-  type BlueprintScope = { id: string; revisions: string[]; repeatCandidates?: Record<string, string[]> };
+  type BlueprintScope = { id: string; revisions: string[]; nodeCandidates?: Record<string, string[]>; futureNodes?: string[] };
   let pending: { message: LogMessage; at: number; scopes: BlueprintScope[] }[] = [];
   const sizes = new Map<string, number>();
   const regexes = new Map<string, RegExp>();
@@ -26,11 +26,11 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
   }
   const scalar = (value: unknown): value is string | number | boolean => ['string', 'number', 'boolean'].includes(typeof value) && (typeof value !== 'number' || Number.isFinite(value));
   function references(matcher: FlowMatcher): boolean { return !!matcher.json?.equalsFrom || !!matcher.all?.some(references); }
-  function latestAccepted(instance: FlowInstance | undefined, stepId: string): FlowObservation | undefined {
+  function latestAccepted(instance: FlowInstance | undefined, stepId?: string): FlowObservation | undefined {
     if (!instance) return;
     for (let index = instance.observations.length - 1; index >= 0; index--) {
       const observation = instance.observations[index]!;
-      if (observation.stepId === stepId && observation.accepted !== false) return observation;
+      if ((stepId === undefined || observation.stepId === stepId) && observation.accepted !== false) return observation;
     }
   }
   function matches(matcher: FlowMatcher, message: LogMessage, body: unknown, instance?: FlowInstance, ignoreReferences = false): boolean {
@@ -75,7 +75,26 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     const names = keys(blueprint);
     return !names.some(key => Object.hasOwn(declared, key) || payload[key] !== undefined);
   }
-  function parseBody(message: LogMessage) { try { return JSON.parse(message.message); } catch { return undefined; } }
+  function parseBody(message: LogMessage) {
+    let body: unknown;
+    try { body = JSON.parse(message.message); } catch { return undefined; }
+    const pending = [{ value: body, depth: 0 }];
+    let nodes = 0;
+    while (pending.length) {
+      const { value, depth } = pending.pop()!;
+      if (++nodes > 50000 || depth > 64) throw new Error('Flow JSON exceeds node/depth limits.');
+      if (value && typeof value === 'object') for (const child of Object.values(value)) pending.push({ value: child, depth: depth + 1 });
+    }
+    return body;
+  }
+  function expireDeadlines(at: number) {
+    for (const instance of instances) if (instance.outcome === 'running' && at >= instance.timeoutAt) {
+      instance.outcome = 'timed_out'; instance.endedAt = instance.timeoutAt; stateVersion++;
+    }
+  }
+  function owns(scopes: BlueprintScope[] | undefined, instance: FlowInstance, nodeId: string) {
+    return !scopes || !!scopes.find(scope => scope.id === instance.blueprint.id)?.nodeCandidates?.[nodeId]?.includes(instance.id);
+  }
   function active(instance: FlowInstance) { return instance.epoch === epoch && (instance.outcome === 'running' || instance.outcome === 'timed_out'); }
   function definitions() {
     const values = new Map<string, { blueprint: FlowBlueprint; revision: string }>();
@@ -119,7 +138,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     if (message.truncated) instance.completeness = 'capture_gap';
     for (const key of keys(instance.blueprint)) if (scalar(payload[key])) instance.bindings[key] = payload[key];
     instance.observations.push(obs);
-    instance.updatedAt = at;
+    instance.updatedAt = Math.max(instance.updatedAt, at);
     const isError = 'codeField' in node;
     let outcome: FlowInstance['outcome'] | undefined;
     if (isError) {
@@ -139,7 +158,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       if (instance.outcome === 'timed_out') instance.lateOutcome = outcome;
       else {
         instance.outcome = outcome === 'completed' && instance.completeness === 'missing_start' ? 'interrupted' : outcome;
-        instance.endedAt = at;
+        instance.endedAt = instance.updatedAt;
       }
     }
     sizes.set(instance.id, (sizes.get(instance.id) ?? 0) + JSON.stringify(obs).length * 2);
@@ -152,7 +171,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     instances.push(instance);
     commit(instance, node, message, payload, at);
   }
-  function process(message: LogMessage, at: number, allowOrphan: boolean, scopes?: BlueprintScope[]): Set<string> {
+  function process(message: LogMessage, at: number, allowOrphan: boolean, scopes?: BlueprintScope[], evidenceOnly = false): Set<string> {
     const body = parseBody(message), deviceId = message.source?.deviceId ?? '';
     // Pending evidence keeps only the definitions/revisions that saw it originally.
     const eligible = definitions().filter(item => !scopes || scopes.some(scope => scope.id === item.blueprint.id && scope.revisions.includes(item.revision)));
@@ -163,18 +182,20 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       type Candidate = { instance: FlowInstance; node: FlowStep | FlowError; payload: Record<string, unknown> };
       let candidates: Candidate[] = [];
       const existingAll = instances.filter(i => active(i) && i.deviceId === deviceId && i.blueprint.id === variants[0].blueprint.id && variants.some(item => item.revision === i.revision));
-      for (const instance of existingAll) {
-        const errors = (instance.blueprint.errors ?? []).filter(rule => rule.appliesTo === 'active' || rule.appliesTo.some(id => instance.expected.includes(id) || instance.observations.at(-1)?.stepId === id));
+      for (const instance of evidenceOnly ? [] : existingAll) {
+        const errors = (instance.blueprint.errors ?? []).filter(rule => rule.appliesTo === 'active' || rule.appliesTo.some(id => instance.expected.includes(id) || latestAccepted(instance)?.stepId === id));
         for (const node of errors) {
+          if (!owns(scopes, instance, node.id)) continue;
           if (!matches(node.match, message, body, instance)) continue;
           const payload = extract(node.extract, message, body);
           if (payload && identity(instance, payload, node.match)) candidates.push({ instance, node, payload });
         }
       }
       const unbound: Candidate[] = [];
-      if (!candidates.length) for (const instance of existingAll) {
+      if (!candidates.length && !evidenceOnly) for (const instance of existingAll) {
         for (const node of instance.blueprint.steps.filter(step => instance.expected.includes(step.id))) {
-          if (node.repeatable && (instance.outcome !== 'running' || now() >= instance.timeoutAt || scopes && !scopes.find(scope => scope.id === instance.blueprint.id)?.repeatCandidates?.[node.id]?.includes(instance.id))) continue;
+          if (!owns(scopes, instance, node.id)) continue;
+          if (node.repeatable && (instance.outcome !== 'running' || at >= instance.timeoutAt)) continue;
           if (!matches(node.match, message, body, instance)) continue;
           const payload = extract(node.extract, message, body);
           if (!payload) continue;
@@ -201,7 +222,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       const node = blueprint.steps.find(step => step.id === blueprint.start)!;
       if (matches(node.match, message, body)) {
         const payload = extract(node.extract, message, body);
-        if (payload && scalar(payload[blueprint.correlation.primary])) {
+        if (!evidenceOnly && payload && scalar(payload[blueprint.correlation.primary])) {
           const conflict = existingAll.filter(i => i.revision === rev && i.bindings[blueprint.correlation.primary] === payload[blueprint.correlation.primary]);
           if (conflict.length) conflict.forEach(i => i.completeness = 'ambiguous');
           else create(blueprint, rev, message, node, payload, at, false);
@@ -216,7 +237,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
         });
         if (possibilities.length === 1) {
           const { step, payload } = possibilities[0];
-          const related = existingAll.filter(i => identity(i, payload, step.match));
+          const related = existingAll.filter(i => owns(scopes, i, step.id) && identity(i, payload, step.match));
           if (related.length) for (const instance of related) {
             // Retain the evidence, but never publish extractions from an ineligible step.
             if (!instance.observations.some(o => o.stepId === step.id && o.accepted !== false)) {
@@ -225,7 +246,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
               instance.observations.push(obs);
               sizes.set(instance.id, (sizes.get(instance.id) ?? 0) + JSON.stringify(obs).length * 2);
             }
-          } else create(blueprint, rev, message, step, payload, at, true);
+          } else if (!scopes || scopes.some(scope => scope.id === blueprint.id && scope.futureNodes?.includes(step.id))) create(blueprint, rev, message, step, payload, at, true);
           consumed.add(variants[0].blueprint.id);
         }
       }
@@ -248,31 +269,61 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     const body = parseBody(message), scopes = new Map<string, BlueprintScope>();
     const deviceId = message.source?.deviceId ?? '';
     for (const item of definitions()) {
+      const scope = scopes.get(item.blueprint.id) ?? { id: item.blueprint.id, revisions: [], nodeCandidates: Object.create(null), futureNodes: [] } as BlueprintScope;
       let relevant = false;
-      const repeatCandidates: Record<string, string[]> = Object.create(null);
       for (const node of [...item.blueprint.steps, ...(item.blueprint.errors ?? [])]) {
         if (!matches(node.match, message, body, undefined, true)) continue;
-        if (!('repeatable' in node) || !node.repeatable) { relevant = true; continue; }
         const payload = extract(node.extract, message, body);
         if (!payload) continue;
-        const candidates = instances.filter(instance => instance.epoch === epoch && instance.outcome === 'running' && now() < instance.timeoutAt && instance.deviceId === deviceId && instance.revision === item.revision && instance.blueprint.id === item.blueprint.id && reachable(instance, node.id) && identity(instance, payload, node.match) && (identity(instance, payload, {}) || matches(node.match, message, body, instance)));
-        if (!candidates.length) continue;
+        const repeating = 'repeatable' in node && node.repeatable;
+        const all = instances.filter(instance => instance.epoch === epoch && instance.deviceId === deviceId && instance.revision === item.revision && instance.blueprint.id === item.blueprint.id);
+        const candidates = all.filter(instance => {
+          if (!active(instance) || repeating && (instance.outcome !== 'running' || now() >= instance.timeoutAt)) return false;
+          if (!('codeField' in node) && !reachable(instance, node.id)) return false;
+          const conflict = keys(instance.blueprint).some(key => payload[key] !== undefined && instance.bindings[key] !== undefined && payload[key] !== instance.bindings[key]);
+          if (conflict) return false;
+          if (repeating) return identity(instance, payload, node.match) && (identity(instance, payload, {}) || matches(node.match, message, body, instance));
+          return identity(instance, payload, node.match) || keyless(node, item.blueprint, payload) || keys(item.blueprint).some(key => scalar(payload[key]));
+        });
+        const retired = instances.some(instance => instance.epoch === epoch && instance.deviceId === deviceId && instance.blueprint.id === item.blueprint.id && !active(instance) && (identity(instance, payload, {}) || references(node.match) && matches(node.match, message, body, instance)));
+        const identified = candidates.filter(instance => identity(instance, payload, {}) || references(node.match) && matches(node.match, message, body, instance));
+        const future = !repeating && !identified.length && !retired && keys(item.blueprint).some(key => scalar(payload[key]));
+        if (!candidates.length && !future) continue;
         relevant = true;
-        repeatCandidates[node.id] = candidates.map(instance => instance.id);
+        scope.nodeCandidates![node.id] = [...(scope.nodeCandidates![node.id] ?? []), ...(identified.length ? identified : candidates).map(instance => instance.id)];
+        if (future && !scope.futureNodes!.includes(node.id)) scope.futureNodes!.push(node.id);
       }
-      if (!relevant) continue;
-      const scope: BlueprintScope = scopes.get(item.blueprint.id) ?? { id: item.blueprint.id, revisions: [], repeatCandidates: Object.create(null) };
-      scope.revisions.push(item.revision);
-      for (const [stepId, candidates] of Object.entries(repeatCandidates)) scope.repeatCandidates![stepId] = [...(scope.repeatCandidates![stepId] ?? []), ...candidates];
-      scopes.set(scope.id, scope);
+      if (relevant) { scope.revisions.push(item.revision); scopes.set(scope.id, scope); }
     }
     return [...scopes.values()];
+  }
+  function claimFuture(row: { message: LogMessage; scopes: BlueprintScope[] }) {
+    const body = parseBody(row.message);
+    for (const scope of row.scopes) for (const id of [...(scope.futureNodes ?? [])]) {
+      const related = instances.filter(instance => {
+        if (instance.epoch !== epoch || instance.deviceId !== (row.message.source?.deviceId ?? '') || instance.blueprint.id !== scope.id || !scope.revisions.includes(instance.revision)) return false;
+        const node = [...instance.blueprint.steps, ...(instance.blueprint.errors ?? [])].find(node => node.id === id);
+        if (!node || !matches(node.match, row.message, body, instance, true)) return false;
+        const payload = extract(node.extract, row.message, body);
+        return !!payload && (identity(instance, payload, {}) || references(node.match) && matches(node.match, row.message, body, instance));
+      });
+      if (related.length) {
+        scope.nodeCandidates![id] = related.map(instance => instance.id);
+        scope.futureNodes = scope.futureNodes!.filter(nodeId => nodeId !== id);
+      }
+    }
+  }
+  function expirePending() {
+    const expired = pending.filter(row => now() - row.at > reorderMs);
+    pending = pending.filter(row => now() - row.at <= reorderMs);
+    for (const row of expired) { claimFuture(row); process(row.message, row.at, true, row.scopes, true); }
   }
   function retry() {
     let progress = true, passes = 0;
     while (progress && pending.length && passes++ < 100) {
       progress = false;
       pending = pending.filter(row => {
+        claimFuture(row);
         const consumed = process(row.message, row.at, false, row.scopes);
         if (consumed.size) progress = true;
         row.scopes = row.scopes.filter(scope => !consumed.has(scope.id));
@@ -284,12 +335,18 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     setBlueprints(next: FlowBlueprint[], rev: string) { if (JSON.stringify(next).length * 2 > budget / 2) throw new Error('Blueprint snapshot exceeds analysis budget.'); blueprints = structuredClone(next); revision = rev; stateVersion++; trim(); },
     ingest(messages: LogMessage[]) {
       const at = now();
+      expireDeadlines(at); expirePending();
       for (const message of messages) {
+        try { parseBody(message); } catch {
+          stateVersion++; gaps++; for (const instance of instances.filter(active)) instance.completeness = 'capture_gap';
+          continue;
+        }
         const scopes = relevantScopes(message);
         const consumed = process(message, at, false);
         const unresolved = scopes.filter(scope => !consumed.has(scope.id));
         // One log can complete one blueprint while still waiting on another graph.
         if (unresolved.length) pending.push({ message: structuredClone(message), at, scopes: unresolved });
+        if (consumed.size) retry();
       }
       let pendingBytes = pending.reduce((sum, row) => sum + row.message.message.length * 2, 0);
       let dropped = false;
@@ -298,11 +355,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       retry();
     },
     tick() {
-      retry();
-      const expired = pending.filter(row => now() - row.at > reorderMs);
-      pending = pending.filter(row => now() - row.at <= reorderMs);
-      for (const row of expired) process(row.message, row.at, true, row.scopes);
-      for (const instance of instances) if (instance.outcome === 'running' && now() >= instance.timeoutAt) { instance.outcome = 'timed_out'; instance.endedAt = instance.timeoutAt; stateVersion++; }
+      expireDeadlines(now()); expirePending(); retry();
       trim();
     },
     gap() { stateVersion++; gaps++; for (const instance of instances.filter(active)) instance.completeness = 'capture_gap'; },

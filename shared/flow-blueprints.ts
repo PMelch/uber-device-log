@@ -40,8 +40,8 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
     if (typeof v === 'string' && (!/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(v) || v.split('.').some(k => ['__proto__', 'prototype', 'constructor'].includes(k)))) fail('Expected a safe dot-separated property path.', path);
   };
   const regex = (v: unknown, path: string) => { str(v, path); try { if (typeof v === 'string') new RegExp(v); } catch { fail('Invalid regular expression.', path); } };
-  const references: { consumer: string; producer: string; field: string; path: string }[] = [];
-  const match = (v: unknown, path: string, consumer: string, depth = 0): void => {
+  const references: { consumer: string; consumerKind: 'step' | 'error'; producer: string; field: string; path: string }[] = [];
+  const match = (v: unknown, path: string, consumer: string, depth = 0, consumerKind: 'step' | 'error' = 'step'): void => {
     if (depth > 12) { fail('Matcher nesting exceeds 12.', path); return; }
     if (!obj(v, ['source','platform','tag','level','contains','regex','json','all'], path)) return;
     if (v.source !== undefined && !['any','device','webview'].includes(v.source)) fail('Invalid source.', path);
@@ -50,7 +50,7 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
     if (v.regex !== undefined) regex(v.regex, `${path}.regex`);
     if (v.all !== undefined) {
       if (!Array.isArray(v.all) || !v.all.length || v.all.length > 20) fail('all requires 1–20 predicates.', path);
-      else v.all.forEach((m: unknown, i: number) => match(m, `${path}.all.${i}`, consumer, depth + 1));
+      else v.all.forEach((m: unknown, i: number) => match(m, `${path}.all.${i}`, consumer, depth + 1, consumerKind));
     }
     if (v.json !== undefined && obj(v.json, ['path','equals','equalsFrom'], `${path}.json`)) {
       field(v.json.path, `${path}.json.path`);
@@ -58,7 +58,7 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
       if (Object.hasOwn(v.json, 'equals') && v.json.equals !== null && !['string','number','boolean'].includes(typeof v.json.equals)) fail('equals must be a scalar.', path);
       if (v.json.equalsFrom !== undefined && obj(v.json.equalsFrom, ['step','field'], `${path}.json.equalsFrom`)) {
         str(v.json.equalsFrom.step, path); field(v.json.equalsFrom.field, path);
-        references.push({ consumer, producer: v.json.equalsFrom.step, field: v.json.equalsFrom.field, path });
+        references.push({ consumer, consumerKind, producer: v.json.equalsFrom.step, field: v.json.equalsFrom.field, path });
       }
     }
     if (v.contains === undefined && v.regex === undefined && v.json === undefined && v.all === undefined) fail('Matcher needs contains, regex, json or all.', path);
@@ -79,12 +79,19 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
       for (const flag of ['required','sensitive','result']) if (item[flag] !== undefined && typeof item[flag] !== 'boolean') fail(`${flag} must be boolean.`, path);
     }
   };
-  if (!obj(value, ['version','id','name','label','description','start','timeout','correlation','steps','errors'], '$')) return { diagnostics };
+  if (!obj(value, ['version','id','name','priority','label','description','start','timeout','correlation','steps','errors'], '$')) return { diagnostics };
   const b = value;
+  // Keep omitted priority absent; consumers apply the backwards-compatible default 3.
+  if (b.priority !== undefined && (typeof b.priority !== 'number' || !Number.isInteger(b.priority) || b.priority < 1 || b.priority > 5)) fail('priority must be an integer number from 1 (most important) to 5 (least important).', 'priority');
   if (b.version !== 1) fail('Only version 1 is supported.', 'version');
   for (const k of ['id','name','start','timeout']) str(b[k], k);
   if (b.description !== undefined) str(b.description, 'description');
-  if (typeof b.timeout !== 'string' || !/^([1-9]\d*)(ms|s|m|h)$/.test(b.timeout)) fail('timeout requires a positive integer and ms, s, m or h.', 'timeout');
+  const duration = typeof b.timeout === 'string' ? /^([1-9]\d*)(ms|s|m|h)$/.exec(b.timeout) : null;
+  if (!duration) fail('timeout requires a positive integer and ms, s, m or h.', 'timeout');
+  else {
+    const milliseconds = Number(duration[1]) * ({ ms: 1, s: 1000, m: 60000, h: 3600000 }[duration[2] as 'ms' | 's' | 'm' | 'h']);
+    if (!Number.isSafeInteger(milliseconds) || milliseconds <= 0) fail('timeout must not exceed 9007199254740991 milliseconds.', 'timeout');
+  }
   if (obj(b.correlation, ['scope','primary','aliases'], 'correlation')) {
     if (b.correlation.scope !== 'device-session') fail('scope must be device-session.', 'correlation.scope');
     field(b.correlation.primary, 'correlation.primary');
@@ -138,7 +145,7 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
         if (!obj(e, ['id','label','appliesTo','match','extract','codeField','codes','unknownOutcome'], p)) return;
         str(e.id, p); if (errorIds.has(e.id) || steps.has(e.id)) fail('Duplicate node ID: step and error IDs must be unique.', p); errorIds.add(e.id);
         if (e.appliesTo !== 'active' && (!Array.isArray(e.appliesTo) || !e.appliesTo.length || e.appliesTo.some((id: string) => !steps.has(id)))) fail('appliesTo requires active or known step IDs.', p);
-        match(e.match, `${p}.match`, `error:${i}`); extract(e.extract, `${p}.extract`); field(e.codeField, p);
+        match(e.match, `${p}.match`, e.id, 0, 'error'); extract(e.extract, `${p}.extract`); field(e.codeField, p);
         if (!e.extract?.[e.codeField]) fail('codeField must reference an extraction.', p);
         if (!['failed','cancelled'].includes(e.unknownOutcome)) fail('Invalid unknownOutcome.', p);
         if (obj(e.codes, Object.keys(e.codes ?? {}), `${p}.codes`)) for (const c of Object.values(e.codes)) if (obj(c, ['description','label','outcome'], p)) { str(c.description, p); if (!['failed','cancelled'].includes(c.outcome)) fail('Invalid error outcome.', p); }
@@ -177,7 +184,7 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
   }
   for (const r of references) {
     if (!steps.get(r.producer)?.extract?.[r.field]) fail('equalsFrom references an unknown step/extracted field.', r.path);
-    else if (r.consumer.startsWith('error:') || r.producer === r.consumer || !dominators.get(r.consumer)?.has(r.producer)) fail('equalsFrom value must be available on every incoming route.', r.path);
+    else if (r.consumerKind === 'error' || r.producer === r.consumer || !dominators.get(r.consumer)?.has(r.producer)) fail('equalsFrom value must be available on every incoming route.', r.path);
   }
   const validateLabel = (value: unknown, path: string, owner: 'root' | 'step' | 'error', consumer: string): void => {
     if (value === undefined) return;

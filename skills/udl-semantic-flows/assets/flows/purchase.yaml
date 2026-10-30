@@ -1,4 +1,5 @@
 version: 1
+priority: 1
 id: purchase
 name: Purchase
 description: Follow a purchase from backend initialization to balance update.

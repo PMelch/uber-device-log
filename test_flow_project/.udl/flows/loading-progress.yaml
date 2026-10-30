@@ -1,5 +1,6 @@
 # Synthetic loading protocol. This blueprint observes logs; it loads no resources.
 version: 1
+priority: 5
 id: loading-progress
 name: Loading progress
 label: 'Loading started'

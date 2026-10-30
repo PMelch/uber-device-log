@@ -54,4 +54,14 @@ A schema-valid draft can still match the wrong operation. Replay representative 
 
 Cover applicable routes with concurrent operations, nonmatching noise, missing/wrongly typed IDs, alias conflicts, errors before later IDs exist, cancellation, timeout/late evidence, missing starts and capture gaps. Verify label evolution, retained labels when values are absent, independent running/progress status, result types and sensitive masking. For repeatable phases, verify multiple updates (including decreasing values), latest accepted `equalsFrom` references, optional zero-update bypass, mandatory first occurrence, explicit concurrent identities, phase exit, timeout and terminal protection. A repeat must not extend the original deadline or start an orphan. Derive fixture formats and relationships from inspected code or captures; consistently replace secrets rather than recording real receipts or account data.
 
+For explicit top-level `priority`, verify an integer `1` through `5` (`1` most important, default `3` when omitted). Reject strings, fractions and out-of-range values. Priority is display-only background emphasis in all three display modes, not a sort key, matcher or outcome. When testing edits, distinguish new instances using the activated revision from existing instances that retain their pinned priority.
+
 Report each check with its command/environment, actual outcome and fixture provenance. Distinguish “format/graph valid,” “recognition replay verified,” and “captured on the target device.” If only inspection or YAML parsing was possible, say “viewer validation unavailable” and keep the unresolved draft inactive.
+
+Also vary ingest batch boundaries without changing receipt order. Exercise stale
+ordinary/repeated events after terminal outcomes and ID reuse, alias consumers before
+their producers, rejected branch evidence followed by scoped errors, expired reorder
+rows and deadlines without ticks. Verify sensitive error codes cannot be searched or
+seen in automatic decorations, long node names remain accessible, and unsupported
+post-terminal edges are not invented. Deep/large JSON may be excluded with a capture
+gap under the documented analysis limits.

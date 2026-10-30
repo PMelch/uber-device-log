@@ -1,4 +1,5 @@
 version: 1
+priority: 4
 id: asset-download
 name: Asset Download
 description: Follow one asset download including optional integrity verification.

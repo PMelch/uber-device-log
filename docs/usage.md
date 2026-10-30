@@ -144,6 +144,12 @@ with timelines, payload inspection and a blueprint editor. See the
 
 Labels may include values extracted by earlier accepted steps, and result fields retain their original technical names. All overview modes conceal marked sensitive values, including label substitutions and results; use Timeline to explicitly reveal sensitive evidence there. Missing template values preserve the previous usable label; an instance without one uses its blueprint name. Blueprint-authored text remains verbatim when you switch interface languages. See the [label and result format](flow-format.md#labels-and-result-fields) to author these summaries.
 
+### Flow importance
+
+Blueprint authors can assign a **Priority** from `1` (most important) to `5` (least important); the default is `3`. All three display modes show it through background emphasis, using light lavender in light appearance and dark purple in dark appearance. Stronger emphasis indicates higher importance and remains separate from success, failure or other outcome styling.
+
+Priority keeps the existing flow order and recognition behavior. Set it through the blueprint editor's Priority selector or the top-level YAML `priority` field, then validate and save. Changes apply to new instances after activation; existing flow instances retain their original blueprint priority. See [the format reference](flow-format.md#flow-priority) for exact syntax.
+
 ### Repeated progress updates
 
 A flow blueprint can group many progress messages into one active step. Its current label and results update on each accepted event, in both Detailed and Condensed views; Timeline retains the observed updates within capture limits. For example, a label can move from **Loading 0%** to **Loading 50%** and then **Loading 40%** when that is what the application emits. These are example authored labels, not translations of captured logs.

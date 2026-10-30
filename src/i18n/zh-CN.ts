@@ -1,5 +1,12 @@
 import type { Messages } from './en';
 export const zhCN = {
+  flowsPriority: "优先级",
+  flowsPriorityValue: "优先级 {priority}",
+  flowsPriority1: "1 · 最高",
+  flowsPriority2: "2 · 高",
+  flowsPriority3: "3 · 普通",
+  flowsPriority4: "4 · 低",
+  flowsPriority5: "5 · 最低",
   flowsDisplayMode: "流程显示",
   flowsDisplayMinimal: "极简",
   flowsDisplayDetailed: "详细",

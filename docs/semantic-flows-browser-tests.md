@@ -39,3 +39,22 @@ The separate sample project includes `loading-progress-demo.html` and `loading-p
 Verify a single instance accepts progress 0, 25, 50, 75 and 100 before an explicit completion event. Check backward progress 50 to 40, zero-update completion through the optional bypass, explicit error and cancellation, and timeout without completion. The original deadline must not move with each update. In Detailed and Condensed, the label and result percentage should agree; Timeline must retain the repeated observations within the analysis memory budget. After a successor or terminal is accepted, additional old progress cannot alter its label/results or start a standalone orphan. Repeat updates must retain exact per-instance identity when two demo runs overlap.
 
 Run `node --import tsx --test server/loading-progress-sample.test.ts` for deterministic schema, engine, presentation and no-network emitter checks. These synthetic checks do not establish real loading percentages, physical capture or actual source emissions in an application.
+
+## Blueprint priority
+
+After building, run `node --import tsx scripts/test-flow-priority.mjs` with the same
+Playwright/browser overrides as above. It uses synthetic evidence to cover all five
+levels and the omitted default, light/dark palettes, primary/secondary/semantic
+label contrast, three densities and widths, preserved draft comments, validation
+and save, pinned revisions, invalid YAML and all seven editor languages. Priority
+affects presentation only; no device operation is performed.
+
+## Adversarial display regression
+
+Run `node --import tsx scripts/test-flow-long-labels.mjs` with the same browser
+overrides. It checks 4096-character node labels, real Timeline/Info hit boxes and
+keyboard selection at 1440, 390 and 320 pixels. `scripts/test-flow-labels.mjs` also
+checks that sensitive error codes stay concealed in overview/header/search and only
+appear in explicitly revealed Timeline evidence. Engine adversarial regressions are
+in `server/flow-adversarial.test.ts`; the dense-DAG display regression uses a bounded
+adjacency-read counter rather than relying on machine-specific rendering times.

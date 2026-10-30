@@ -1,5 +1,12 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  flowsPriority: "Priority",
+  flowsPriorityValue: "Priority {priority}",
+  flowsPriority1: "1 · Very high",
+  flowsPriority2: "2 · High",
+  flowsPriority3: "3 · Normal",
+  flowsPriority4: "4 · Low",
+  flowsPriority5: "5 · Very low",
   flowsDisplayMode: "Flow display",
   flowsDisplayMinimal: "Minimal",
   flowsDisplayDetailed: "Detailed",

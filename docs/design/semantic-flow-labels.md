@@ -56,3 +56,13 @@ evidence. Reuse typed catalogs and existing preference storage, accepting all th
 values and retaining the Detailed default. Verify live labels, sensitive masking,
 keyboard selection, persisted Minimal, and all three modes in seven locales at
 desktop/mobile widths with the existing real-browser fixture.
+
+## Blueprint priority
+
+Priority is optional presentation metadata (1 highest, 5 lowest, omitted 3). Reuse
+the existing blueprint validator, pinned instance blueprint and theme data attribute.
+Use violet surface intensity in all three overview densities; preserve status tones,
+ordering, matching and privacy. The editor selector edits only a parseable YAML map,
+preserves comments and requires existing Validate/Save. Invalid drafts remain manual
+YAML edits. Verify schema boundaries, draft preservation, default/explicit rendering,
+light/dark contrast, seven locales, narrow layouts and all three density modes.

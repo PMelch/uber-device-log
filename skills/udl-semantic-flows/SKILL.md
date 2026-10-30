@@ -18,6 +18,8 @@ Use the current DSL for mandatory, optional and repeatable steps, explicit branc
 
 Use `repeatable: true` for explicitly correlated progress phases, not graph cycles. Repeats update labels and results while that phase remains eligible; a successor or deadline closes it. Downstream references read the latest accepted occurrence. Verify concurrent IDs, zero-update bypasses where optional, and late-event rejection.
 
+Use optional top-level `priority` for display importance only: integer `1` (most important) through `5` (least), default `3`. Follow the target project's convention or user preference; do not infer priority from severity tokens. It controls background emphasis in all three display modes without sorting flows or changing recognition. Existing instances keep their pinned blueprint priority.
+
 Write incomplete drafts and reports outside the active blueprint directory. Only the exact inactive `.draft.yaml`/`.draft.yml` suffix is ignored by the loader; other filenames containing “draft” can activate. Read existing definitions before editing them. Activation uses the application's `.udl/config.yaml`, defaulting to `.udl/flows`, and is separate from copying this skill into the repository.
 
 Return the blueprint, source-linked evidence report, fixture provenance, actual checks and remaining gaps. A blueprint requiring invented events, uncertain identity or unsupported syntax remains a draft. Report schema validation, recognition replay and real-device capture as distinct levels of evidence. If the actual viewer validator is unavailable, state that graph/engine validation was not run; ordinary YAML parsing alone cannot establish it.

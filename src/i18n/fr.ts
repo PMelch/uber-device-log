@@ -1,5 +1,12 @@
 import type { Messages } from './en';
 export const fr = {
+  flowsPriority: "Priorité",
+  flowsPriorityValue: "Priorité {priority}",
+  flowsPriority1: "1 · Très élevée",
+  flowsPriority2: "2 · Élevée",
+  flowsPriority3: "3 · Normale",
+  flowsPriority4: "4 · Faible",
+  flowsPriority5: "5 · Très faible",
   flowsDisplayMode: "Affichage des flux",
   flowsDisplayMinimal: "Minimal",
   flowsDisplayDetailed: "Détaillé",
