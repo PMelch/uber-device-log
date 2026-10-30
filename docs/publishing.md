@@ -2,7 +2,7 @@
 
 The package is prepared for npm; preparing or packing it does not publish it.
 The package name is `uber-device-log`, CLI commands `udl` and `uber-device-log`, and the
-existing repository license is Apache-2.0. The name was not found in the registry
+existing repository license is GPL-3.0-only. The name was not found in the registry
 on 29 September 2026; that is not a reservation or a guarantee of publish rights.
 
 ## Verify the release

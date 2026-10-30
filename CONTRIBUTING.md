@@ -3,7 +3,7 @@
 Contributions are welcome through the [issue tracker](https://github.com/PMelch/uber-device-log/issues)
 and pull requests. For a larger feature or a change to capture/export semantics,
 describe the proposed behavior in an issue before investing in a large rewrite.
-The project is licensed under [Apache-2.0](LICENSE); platform icon attribution is
+The project is licensed under [GPL-3.0-only](LICENSE); platform icon attribution is
 in [public/icons/LICENSE.md](public/icons/LICENSE.md).
 
 ## Get a working checkout
