@@ -1,6 +1,7 @@
 import type { Messages } from './en';
 export const es = {
   flowsDisplayMode: "Vista de flujos",
+  flowsDisplayMinimal: "Mínima",
   flowsDisplayDetailed: "Detallada",
   flowsDisplayCondensed: "Compacta",
   flowsResults: "Resultado",

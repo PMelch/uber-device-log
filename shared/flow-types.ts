@@ -12,7 +12,7 @@ export interface FlowMatcher {
   all?: FlowMatcher[];
 }
 export interface FlowExtractor { json?: string; regex?: string; group?: string; required?: boolean; sensitive?: boolean; result?: boolean }
-export interface FlowStep { id: string; shortLabel?: string; label?: FlowLabel; name: string; optional?: boolean; match: FlowMatcher; extract?: Record<string, FlowExtractor>; next?: string[]; outcome?: 'completed' | 'failed' | 'cancelled' }
+export interface FlowStep { id: string; shortLabel?: string; label?: FlowLabel; name: string; optional?: boolean; repeatable?: boolean; match: FlowMatcher; extract?: Record<string, FlowExtractor>; next?: string[]; outcome?: 'completed' | 'failed' | 'cancelled' }
 export interface FlowError { id: string; label?: FlowLabel; appliesTo: 'active' | string[]; match: FlowMatcher; extract?: Record<string, FlowExtractor>; codeField: string; codes: Record<string, { description: string; label?: FlowLabel; outcome: 'failed' | 'cancelled' }>; unknownOutcome: 'failed' | 'cancelled' }
 export interface FlowBlueprint { version: 1; id: string; name: string; label?: FlowLabel; description?: string; start: string; timeout: string; correlation: { scope: 'device-session'; primary: string; aliases?: string[] }; steps: FlowStep[]; errors?: FlowError[] }
 export interface FlowDiagnostic { code: 'flowsDiagnostic'; params: { detail: string }; message: string; file?: string; line?: number; column?: number; path?: string }

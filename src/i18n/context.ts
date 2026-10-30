@@ -12,7 +12,8 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
-  flowsDisplayMode: c("Flow list toolbar, accessible name of the Detailed/Condensed display-mode control group.", "Choose how much information each flow card displays. This affects presentation only, not capture, matching, search or retained evidence."),
+  flowsDisplayMode: c("Flow list toolbar, accessible name of the Minimal/Condensed/Detailed display-mode control group.", "Choose how much information each flow card displays. This affects presentation only, not capture, matching, search or retained evidence."),
+  flowsDisplayMinimal: c("Flow list toolbar, display-mode option.", "Show only the current authored main label per flow. Hide status badges, blueprint name/ID, result fields, metadata, nodes and per-flow actions. Switch to another display mode to access Timeline or Info; capture, matching, retained evidence and search are unchanged. Keep this button label short."),
   flowsDisplayDetailed: c("Flow list toolbar, display-mode option.", "Show detailed flow cards, including their step progression. Selecting this mode does not open the separate Timeline inspector."),
   flowsDisplayCondensed: c("Flow list toolbar, display-mode option.", "Show compact flow cards with a condensed summary. The full evidence remains available in Timeline; this does not discard steps or logs."),
   flowsResults: c("Flow card and Timeline, heading for declared flow result values.", "Heading for structured results extracted from accepted flow-step evidence. This is business output data, distinct from the flow outcome status such as completed or failed. Actual result names, field labels and values are blueprint data and remain verbatim."),

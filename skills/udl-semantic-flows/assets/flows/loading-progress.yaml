@@ -1,0 +1,59 @@
+# Synthetic loading protocol. This blueprint observes logs; it loads no resources.
+version: 1
+id: loading-progress
+name: Loading progress
+label: 'Loading started'
+start: start
+timeout: 30s
+correlation: { scope: device-session, primary: loadId }
+steps:
+  - id: start
+    shortLabel: START
+    name: Loading started
+    match: { json: { path: event, equals: loading.started } }
+    extract:
+      loadId: { json: loadId, required: true }
+      resource: { json: resource, result: true }
+    next: [progress, done]
+  - id: progress
+    shortLabel: UPDATE
+    name: Loading progress update
+    optional: true
+    repeatable: true
+    match: { json: { path: event, equals: loading.progress } }
+    extract:
+      loadId: { json: loadId, required: true }
+      percent: { json: percent, required: true, result: true }
+    label: 'Loading {progress.percent}%'
+    next: [done]
+  - id: done
+    shortLabel: DONE
+    name: Loading completed
+    match: { json: { path: event, equals: loading.completed } }
+    extract:
+      loadId: { json: loadId, required: true }
+    label: [{ text: 'Loading completed', tone: success }]
+    outcome: completed
+errors:
+  - id: load_error
+    appliesTo: active
+    match: { json: { path: event, equals: loading.error } }
+    extract:
+      loadId: { json: loadId, required: true }
+      errorCode: { json: code, required: true, result: true }
+    codeField: errorCode
+    label: [{ text: 'Loading failed: {load_error.errorCode}', tone: error }]
+    codes:
+      LOAD_FAILED: { description: The fictional loader reported an error., outcome: failed }
+    unknownOutcome: failed
+  - id: load_cancelled
+    appliesTo: active
+    match: { json: { path: event, equals: loading.cancelled } }
+    extract:
+      loadId: { json: loadId, required: true }
+      errorCode: { json: code, required: true, result: true }
+    codeField: errorCode
+    label: [{ text: 'Loading cancelled', tone: info }]
+    codes:
+      USER_CANCELLED: { description: The user cancelled the fictional load., outcome: cancelled }
+    unknownOutcome: cancelled

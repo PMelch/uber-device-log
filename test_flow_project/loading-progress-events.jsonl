@@ -1,0 +1,17 @@
+{"event": "loading.started", "loadId": "loading-success", "resource": "fictional-resource-0"}
+{"event": "loading.started", "loadId": "loading-zero", "resource": "fictional-resource-1"}
+{"event": "loading.started", "loadId": "loading-error", "resource": "fictional-resource-2"}
+{"event": "loading.started", "loadId": "loading-cancelled", "resource": "fictional-resource-3"}
+{"event": "loading.started", "loadId": "loading-timeout", "resource": "fictional-resource-4"}
+{"event": "loading.progress", "loadId": "loading-success", "percent": 0}
+{"event": "loading.progress", "loadId": "loading-success", "percent": 50}
+{"event": "loading.progress", "loadId": "loading-success", "percent": 40}
+{"event": "loading.progress", "loadId": "loading-success", "percent": 100}
+{"event": "loading.progress", "loadId": "loading-error", "percent": 50}
+{"event": "loading.progress", "loadId": "loading-cancelled", "percent": 25}
+{"event": "loading.progress", "loadId": "loading-timeout", "percent": 50}
+{"event": "loading.completed", "loadId": "loading-success"}
+{"event": "loading.progress", "loadId": "loading-success", "percent": 999}
+{"event": "loading.completed", "loadId": "loading-zero"}
+{"event": "loading.error", "loadId": "loading-error", "code": "LOAD_FAILED"}
+{"event": "loading.cancelled", "loadId": "loading-cancelled", "code": "USER_CANCELLED"}

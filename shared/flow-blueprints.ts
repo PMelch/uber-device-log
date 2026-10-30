@@ -97,11 +97,13 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
   if (!Array.isArray(b.steps) || !b.steps.length || b.steps.length > 100) fail('steps requires 1–100 steps.', 'steps');
   else b.steps.forEach((s: unknown, i: number) => {
     const p = `steps.${i}`;
-    if (!obj(s, ['id','shortLabel','name','label','optional','match','extract','next','outcome'], p)) return;
+    if (!obj(s, ['id','shortLabel','name','label','optional','repeatable','match','extract','next','outcome'], p)) return;
     str(s.id, p); str(s.name, p);
     if (s.shortLabel !== undefined) str(s.shortLabel, p);
     if (steps.has(s.id)) fail(`Duplicate step ID: ${s.id}`, p); else steps.set(s.id, s);
     if (s.optional !== undefined && typeof s.optional !== 'boolean') fail('optional must be boolean.', p);
+    if (s.repeatable !== undefined && typeof s.repeatable !== 'boolean') fail('repeatable must be boolean.', p);
+    if (s.repeatable === true && (s.id === b.start || s.outcome !== undefined)) fail('Repeatable steps cannot be start or terminal steps.', p);
     match(s.match, `${p}.match`, s.id); extract(s.extract, `${p}.extract`);
     if (s.outcome !== undefined && !['completed','failed','cancelled'].includes(s.outcome)) fail('Invalid outcome.', p);
     if (s.next !== undefined && (!Array.isArray(s.next) || !s.next.length || s.next.length > 100 || s.next.some((n: unknown) => typeof n !== 'string') || new Set(s.next).size !== s.next.length)) fail('next must contain unique step IDs.', p);
@@ -146,6 +148,10 @@ export function parseFlowBlueprint(source: string, filename?: string): { bluepri
   // Stop before dependency analysis when shapes/edges are invalid. This also keeps
   // malformed drafts on the diagnostic path instead of dereferencing bad values.
   if (diagnostics.length) return { diagnostics };
+  const hasReference = (matcher: Obj): boolean => !!matcher.json?.equalsFrom || !!matcher.all?.some(hasReference);
+  for (const [id, step] of steps) {
+    if (step.repeatable && ![b.correlation.primary, ...(b.correlation.aliases ?? [])].some(key => step.extract && Object.hasOwn(step.extract, key)) && !hasReference(step.match)) fail('Repeatable steps require a primary/alias extraction or equalsFrom matcher.', id);
+  }
   // A dominator is present on every path from start. Compute each node once in
   // topological order instead of recursively enumerating exponentially many paths.
   const order: string[] = [];

@@ -129,6 +129,36 @@ Example route: `checkout.started → checkout.wallet → checkout.completed`, al
 
 `optional: true` does **not** add a bypass. For an optional step with successors, each predecessor must explicitly include all those successors in its own `next`. Here every payment step has both `audit` and `done`. To represent cancellation directly in the graph, use a terminal step with `outcome: cancelled` instead of `completed`.
 
+## Repeatable progress phases
+
+Use `repeatable: true` for a phase that emits several updates before moving on, such as loading percentages. It is allowed only on a **non-start, nonterminal** step. The first update must match an expected step; accepting it keeps that same step eligible alongside its declared successors. Further uniquely correlated updates can be accepted while the instance is running in that phase. A successor closes the phase, so later updates cannot resume it or overwrite its completion state. Terminal instances, timed-out instances and prior capture epochs cannot accept repeated progression.
+
+This is a repeatable phase, not a cycle in the graph. Keep `next` acyclic and never add a self-edge. It does not introduce general retry loops, parallel tasks or a join barrier. Each accepted update needs explicit primary/alias identity or a valid `equalsFrom` comparison; there is no keyless fallback. Repeatable updates never seed an orphan instance on their own.
+
+For zero or more progress updates, make the step optional and declare an explicit bypass on its predecessor. This fragment belongs inside a complete blueprint whose start extracts `loadId`:
+
+```yaml
+# start.next must be [progress, done] to allow zero updates.
+- id: progress
+  name: Loading progress
+  optional: true
+  repeatable: true
+  match: { json: { path: event, equals: loading.progress } }
+  extract:
+    loadId: { json: loadId, required: true }
+    percent: { json: percent, required: true, result: true }
+  label: 'Loading {progress.percent}%'
+  next: [done]
+```
+
+For one or more updates, leave `optional` false and require the first update on every route to its successor. Repeating does not make the first occurrence optional. `optional: true` alone never creates bypass edges.
+
+Every accepted update re-extracts its payload and updates its label/results. A later value such as `40` after `50` is shown as received; the engine does not impose a monotonic progress policy or invent a `100` result at completion. An omitted label or unavailable/non-scalar label reference preserves the previous usable label. `equalsFrom` reads the producer's **latest accepted occurrence**, including when that producer is repeatable. Result replacement follows the latest accepted extraction; absent result values do not erase previous results.
+
+The original instance deadline is unchanged by updates. There is no fixed event-count limit for a phase, but accepted history remains subject to the existing 32 MiB analysis-retention budget and capture-gap/eviction behavior. Repetition is not a lossless recording guarantee. Timeline retains accepted updates within those bounds; both Detailed and Condensed show the current label/results.
+
+The complete [loading-progress blueprint](../assets/flows/loading-progress.yaml), [separate message fixture](../assets/events/loading-progress-events.jsonl) and message replay patterns described in [validation](validation.md) demonstrate completion with many updates, completion without updates, backward percentages, explicit failure/cancellation and absent completion. Progress alone never proves success; only the matching terminal event does.
+
 ## Complete field reference
 
 Unknown fields are rejected, including inside nested objects. Unless stated otherwise, strings must be nonempty after trimming and at most 4,096 JavaScript string code units. Their values are not automatically trimmed for matching.
@@ -167,6 +197,7 @@ Use safe property-style names for primary/alias fields, such as `requestId` and 
 | `label` | No | New instance summary after this step is accepted; same template syntax as blueprint `label`. |
 | `name` | Yes | Display name of the step. |
 | `optional` | No | Boolean, default `false`; marks an optional step but does not create bypass edges. |
+| `repeatable` | No | Boolean, default `false`; allows another accepted observation of this same non-start, nonterminal step while its phase remains active. See [Repeatable progress phases](#repeatable-progress-phases). |
 | `match` | Yes | Matcher object described below. |
 | `extract` | No | Mapping from payload field names to extractor objects. At most 50 fields. |
 | `next` | For nonterminal steps | Array of 1–100 unique existing step IDs. |
@@ -193,7 +224,7 @@ All specified conditions are combined with **AND**. Each matcher, including each
 | `equals` | Exactly one comparison | String, number, boolean or `null`; strict equality without coercion. Missing properties do not match, even when comparing to `null`. |
 | `equalsFrom` | Exactly one comparison | Object with required `step` and `field` strings, referring to a previous step's extracted payload field in the same instance. |
 
-`equalsFrom.step` must precede the consumer on **every** incoming route. Its extractor must declare `equalsFrom.field`. The engine requires an accepted observation with a string, finite number or boolean value, and compares it strictly with the incoming JSON value. Referencing an optional producer that can be bypassed is invalid. The extractor need not be marked `required` for validation to pass, but if its value was absent the comparison cannot match. Error-rule matchers do not support `equalsFrom`.
+`equalsFrom.step` must precede the consumer on **every** incoming route. Its extractor must declare `equalsFrom.field`. The engine reads the latest accepted occurrence of the producer step, requires a string, finite number or boolean value, and compares it strictly with the incoming JSON value. Referencing an optional producer that can be bypassed is invalid. The extractor need not be marked `required` for validation to pass, but if its value was absent the comparison cannot match. Error-rule matchers do not support `equalsFrom`.
 
 Safe paths follow `[A-Za-z_$][\w$]*` per segment separated by dots. Segments `__proto__`, `prototype` and `constructor` are forbidden. There are no array indexes, wildcards, JSONPath expressions or executable expressions. Extraction field names use the same validation; prefer simple names. A dotted extraction name is a literal payload key, not a nested object created by the engine; correlation and `equalsFrom.field` refer to that exact key.
 
@@ -234,7 +265,7 @@ Error rules are evaluated before ordinary expected steps. A unique matching, cor
 
 ## Labels and result fields
 
-`name` still identifies the blueprint or step. `shortLabel` still identifies a node. The separate optional `label` describes the **current flow instance**, using values extracted from its accepted evidence. A label changes presentation only; it does not change matching, correlation, outcomes or deadlines. Active instances show an independent In progress status and spinner in both overview modes and Timeline, even when the label stays unchanged. Defined terminal outcomes remove the spinner. Timed-out or interrupted capture retains its distinct status instead of implying ongoing processing.
+`name` still identifies the blueprint or step. `shortLabel` still identifies a node. The separate optional `label` describes the **current flow instance**, using values extracted from its accepted evidence. A label changes presentation only; it does not change matching, correlation, outcomes or deadlines. Active instances show an independent In progress status and spinner in Detailed and Condensed overviews and Timeline (Minimal hides status indicators), even when the label stays unchanged. Defined terminal outcomes remove the spinner. Timed-out or interrupted capture retains its distinct status instead of implying ongoing processing.
 
 `label` accepts either a nonempty string or a nonempty array of parts. Each part has required nonempty `text` and optional `tone`, exactly `success`, `error`, `warning` or `info`. Omit `tone` for ordinary text. Parts are concatenated exactly: include spaces or separators in their text when needed. A label allows at most 32 parts, 4,096 total template characters and 64 placeholder occurrences. No HTML, Markdown rendering, arbitrary CSS colors or executable expressions are supported. For example, on a completion step:
 
@@ -264,9 +295,9 @@ extract:
 
 The result summary uses exact extraction names (`amount`, `currency`, etc.), without translating or renaming them. For a repeated result field name, the latest accepted extraction providing that field wins. An absent field in a later observation does not erase an existing result. Unaccepted evidence never contributes result values. Result values preserve JSON types; unlike label substitutions, they may be objects, arrays or `null`.
 
-`sensitive: true` applies to results and label substitutions as well as payload inspection. Both overview modes always conceal sensitive values; open Timeline to explicitly reveal sensitive evidence there. Surrounding static text and nonsensitive values remain readable. Masking is a display rule, not deletion or encryption: original captured logs and in-memory payloads still contain the data.
+`sensitive: true` applies to results and label substitutions as well as payload inspection. All overview modes always conceal sensitive values; open Timeline to explicitly reveal sensitive evidence there. Surrounding static text and nonsensitive values remain readable. Masking is a display rule, not deletion or encryption: original captured logs and in-memory payloads still contain the data.
 
-The **Detailed** view shows these labels and results together with the step overview. **Condensed** shows the same summary and results without overview nodes; Timeline remains available for full evidence. A display mode does not change which events are recognized or which fields are retained. See the complete [fictional bank transaction blueprint](../assets/flows/bank-transaction.yaml) and its [event fixture](../assets/events/bank-transaction-events.jsonl) for automatic acceptance, declines, cancellation and manual-review branches.
+The **Detailed** view shows these labels and results together with the step overview. **Condensed** shows the same summary and results without overview nodes; Timeline remains available for full evidence. **Minimal** shows only the current label; switch to Condensed or Detailed for status, results and per-flow actions. A display mode does not change which events are recognized or which fields are retained. See the complete [fictional bank transaction blueprint](../assets/flows/bank-transaction.yaml) and its [event fixture](../assets/events/bank-transaction-events.jsonl) for automatic acceptance, declines, cancellation and manual-review branches.
 
 ## Correlation and error handling example
 

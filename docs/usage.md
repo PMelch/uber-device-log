@@ -138,11 +138,17 @@ with timelines, payload inspection and a blueprint editor. See the
 [Semantic Flows setup and sample project](../README.md#semantic-flows) and the
 [agent authoring guide](semantic-flows-agent-guide.md).
 
-### Detailed and Condensed flow display
+### Minimal, Condensed and Detailed flow display
 
-**Detailed** is the initial default flow display. Each instance shows its current authored label, extracted result fields and the step overview. Choose **Condensed** to keep the same labels, results and outcome while hiding the overview nodes. **Timeline** remains available in both modes for steps, matching evidence and original logs; **Info** describes the blueprint. Switching display modes changes presentation only, while capture and flow recognition continue. The chosen display mode is saved in this browser (`uber-device-log.flowDisplay`); it does not persist captured logs or flow results.
+**Detailed** is the initial default flow display. Each instance shows its current authored label, extracted result fields and the step overview. Choose **Condensed** to keep the same labels, results and outcome while hiding the overview nodes. **Minimal** shows only the current main label for each flow. Switch to Condensed or Detailed to see status, results or per-flow actions. **Timeline** remains available in those two modes for steps, matching evidence and original logs; **Info** describes the blueprint. Switching display modes changes presentation only, while capture and flow recognition continue. The chosen display mode is saved in this browser (`uber-device-log.flowDisplay`); it does not persist captured logs or flow results.
 
-Labels may include values extracted by earlier accepted steps, and result fields retain their original technical names. Both overview modes conceal marked sensitive values, including label substitutions and results; use Timeline to explicitly reveal sensitive evidence there. Missing template values preserve the previous usable label; an instance without one uses its blueprint name. Blueprint-authored text remains verbatim when you switch interface languages. See the [label and result format](flow-format.md#labels-and-result-fields) to author these summaries.
+Labels may include values extracted by earlier accepted steps, and result fields retain their original technical names. All overview modes conceal marked sensitive values, including label substitutions and results; use Timeline to explicitly reveal sensitive evidence there. Missing template values preserve the previous usable label; an instance without one uses its blueprint name. Blueprint-authored text remains verbatim when you switch interface languages. See the [label and result format](flow-format.md#labels-and-result-fields) to author these summaries.
+
+### Repeated progress updates
+
+A flow blueprint can group many progress messages into one active step. Its current label and results update on each accepted event, in both Detailed and Condensed views; Timeline retains the observed updates within capture limits. For example, a label can move from **Loading 0%** to **Loading 50%** and then **Loading 40%** when that is what the application emits. These are example authored labels, not translations of captured logs.
+
+A later completion event ends the phase and can replace the progress label with its own summary. Further old progress does not reopen it. Progress messages do not extend the original timeout, and a percentage alone does not establish completion. The [loading example](../test_flow_project/README.md#repeatable-loading-progress-example) offers an optional phase that also permits completion without progress events.
 
 ## Full WebView inspectors
 

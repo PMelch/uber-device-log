@@ -1,6 +1,7 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
   flowsDisplayMode: "Flow display",
+  flowsDisplayMinimal: "Minimal",
   flowsDisplayDetailed: "Detailed",
   flowsDisplayCondensed: "Condensed",
   flowsResults: "Result",

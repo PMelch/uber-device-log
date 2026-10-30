@@ -12,8 +12,10 @@ export function flowLabelReference(blueprint: FlowBlueprint, token: string): { s
   return candidates.length === 1 ? candidates[0] : undefined;
 }
 
-/** Plain text only. Each substituted scalar is capped at 4096 UTF-16 code units. */
-export function flowPresentation(instance: FlowInstance): { label: FlowLabelPart[]; results: FlowResult[] } {
+export interface FlowPresentation { label: FlowLabelPart[]; results: FlowResult[] }
+
+/** Shared forward scan; list summaries do not allocate per-observation history. */
+function scanPresentation(instance: FlowInstance, history?: FlowPresentation[]): FlowPresentation {
   const blueprint = instance.blueprint;
   const context = new Map<string, Record<string, unknown>>();
   const results = new Map<string, FlowResult>();
@@ -40,19 +42,33 @@ export function flowPresentation(instance: FlowInstance): { label: FlowLabelPart
   }
   label = render(blueprint.label) ?? label;
   for (const observation of instance.observations) {
-    if (observation.accepted === false) continue;
+    const accepted = observation.accepted !== false;
     const node = blueprint.steps.find(step => step.id === observation.stepId) ?? blueprint.errors?.find(error => error.id === observation.stepId);
-    if (!node) continue;
-    context.set(node.id, observation.payload);
-    if (node.id === blueprint.start) label = render(blueprint.label) ?? label;
-    for (const [field, extractor] of Object.entries(node.extract ?? {})) {
-      if (!extractor.result || !Object.hasOwn(observation.payload, field) || observation.payload[field] === undefined) continue;
-      results.set(field, { field, stepId: node.id, value: observation.payload[field], ...(extractor.sensitive ? { sensitive: true } : {}) });
+    if (accepted && node) {
+      context.set(node.id, observation.payload);
+      if (node.id === blueprint.start) label = render(blueprint.label) ?? label;
+      for (const [field, extractor] of Object.entries(node.extract ?? {})) {
+        if (!extractor.result || !Object.hasOwn(observation.payload, field) || observation.payload[field] === undefined) continue;
+        results.set(field, { field, stepId: node.id, value: observation.payload[field], ...(extractor.sensitive ? { sensitive: true } : {}) });
+      }
+      const error = 'codeField' in node ? node as FlowError : undefined;
+      const code = error ? String(observation.errorCode ?? observation.payload[error.codeField]) : undefined;
+      const override = error && code !== undefined && Object.hasOwn(error.codes, code) ? error.codes[code]?.label : undefined;
+      label = render(override ?? node.label) ?? label;
     }
-    const error = 'codeField' in node ? node as FlowError : undefined;
-    const code = error ? String(observation.errorCode ?? observation.payload[error.codeField]) : undefined;
-    const override = error && code !== undefined && Object.hasOwn(error.codes, code) ? error.codes[code]?.label : undefined;
-    label = render(override ?? node.label) ?? label;
+    if (history) history.push({ label, results: [...results.values()] });
   }
   return { label, results: [...results.values()] };
+}
+
+/** Plain text only. Each substituted scalar is capped at 4096 UTF-16 code units. */
+export function flowPresentation(instance: FlowInstance): FlowPresentation {
+  return scanPresentation(instance);
+}
+
+/** One immutable presentation snapshot per occurrence, including unaccepted evidence. */
+export function flowPresentationHistory(instance: FlowInstance): FlowPresentation[] {
+  const history: FlowPresentation[] = [];
+  scanPresentation(instance, history);
+  return history;
 }

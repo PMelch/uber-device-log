@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { flowPresentation } from '../shared/flow-presentation.js';
+import { flowPresentation, flowPresentationHistory } from '../shared/flow-presentation.js';
 import { parseFlowBlueprint } from '../shared/flow-blueprints.js';
 import type { FlowBlueprint, FlowInstance, FlowObservation } from '../shared/flow-types.js';
 const blueprint = (): FlowBlueprint => ({version:1,id:'purchase',name:'Purchase',start:'start',timeout:'90s',correlation:{scope:'device-session',primary:'id'},steps:[{id:'start',name:'Start',match:{contains:'start'},extract:{id:{json:'id',required:true}},next:['done']},{id:'done',name:'Done',match:{contains:'done'},extract:{balance:{json:'balance'}},outcome:'completed'}]});
@@ -75,4 +75,26 @@ test('step and extracted field names containing dots resolve unambiguously',()=>
 test('step and error IDs share one namespace for unambiguous observation provenance',()=> {
  const b:any=blueprint();b.errors=[{id:'done',appliesTo:'active',match:{contains:'failure'},extract:{code:{json:'code'}},codeField:'code',codes:{},unknownOutcome:'failed',label:'Error {done.code}'}];
  assert.ok(parseFlowBlueprint(JSON.stringify(b)).diagnostics.some(d=>d.message.includes('Duplicate')));
+});
+
+test('presentation history scans each observation once and preserves immutable prefix results', () => {
+ const b = blueprint();
+ b.steps[1]!.label = 'Progress {done.balance}';
+ b.steps[1]!.extract!.balance!.result = true;
+ let reads = 0;
+ const rows = Array.from({ length: 2000 }, (_, index) => {
+  const row = observation('done', { balance: index });
+  Object.defineProperty(row, 'accepted', { get() { reads++; return index % 7 === 0 ? false : true; } });
+  return row;
+ });
+ const run = instance(b, rows);
+ const history = flowPresentationHistory(run);
+ assert.equal(history.length, rows.length);
+ assert.equal(reads, rows.length, 'each occurrence is visited once, rather than replaying every prefix');
+ assert.equal(text(history[0]!), 'Purchase');
+ assert.equal(text(history[1]!), 'Progress 1');
+ assert.equal(history[1]!.results[0]!.value, 1, 'later updates never mutate earlier result snapshots');
+ assert.equal(history[7]!.results[0]!.value, 6, 'unaccepted evidence preserves previous state');
+ assert.deepEqual(history.at(-1), flowPresentation(run));
+ for (const index of [0, 1, 7, 500, 1999]) assert.deepEqual(history[index], flowPresentation(instance(b, rows.slice(0, index + 1))));
 });

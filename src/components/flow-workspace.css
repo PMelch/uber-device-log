@@ -72,7 +72,8 @@
 :root[data-theme=dark] .flow-label-success{color:#89dab1}
 :root[data-theme=light] .flow-label-info{color:#315f9b}
 :root[data-theme=dark] .flow-label-info{color:#a0c7ff}
-.flow-card-kind{flex-basis:100%;color:var(--pl-soft);font-size:11px}
+.flow-card-kind{flex-basis:100%;color:var(--pl-soft);font-size:11px;overflow-wrap:anywhere}
+.flow-workspace .flow-card-kind small{display:inline;margin:0}
 .flow-display-toggle{display:flex;gap:3px;padding:3px;background:var(--pl-wash);border:1px solid var(--pl-line);border-radius:8px}
 .flow-workspace .flow-display-toggle button{border:0!important;background:transparent!important;min-height:28px;padding:4px 9px}
 .flow-workspace .flow-display-toggle button[aria-pressed=true]{background:var(--pl-panel)!important;color:var(--pl-text)}
@@ -94,3 +95,5 @@
 .flow-status-spinner{display:inline-block;width:11px;height:11px;flex:none;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:flow-status-spin 900ms linear infinite}
 @keyframes flow-status-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.flow-status-spinner{animation:none}}
+
+.flow-workspace[data-display="minimal"] .flow-card{padding:10px 20px}

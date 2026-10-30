@@ -31,3 +31,11 @@ keyboard display switching, preference persistence, seven locales and 320 px,
 390 px and desktop layouts. Condensed overview cards must contain no node or
 edge elements. Only the display preference is stored locally. Set
 `FLOW_LABEL_SCREENSHOTS` to a local directory to capture the tested layouts.
+
+## Repeatable loading-progress checks
+
+The separate sample project includes `loading-progress-demo.html` and `loading-progress-events.jsonl`; selecting the project does not replay either. Serve `test_flow_project` locally, open the demo in an inspectable captured WebView, and choose a fresh-ID route. See [the test-project instructions](../test_flow_project/README.md#repeatable-loading-progress-example).
+
+Verify a single instance accepts progress 0, 25, 50, 75 and 100 before an explicit completion event. Check backward progress 50 to 40, zero-update completion through the optional bypass, explicit error and cancellation, and timeout without completion. The original deadline must not move with each update. In Detailed and Condensed, the label and result percentage should agree; Timeline must retain the repeated observations within the analysis memory budget. After a successor or terminal is accepted, additional old progress cannot alter its label/results or start a standalone orphan. Repeat updates must retain exact per-instance identity when two demo runs overlap.
+
+Run `node --import tsx --test server/loading-progress-sample.test.ts` for deterministic schema, engine, presentation and no-network emitter checks. These synthetic checks do not establish real loading percentages, physical capture or actual source emissions in an application.

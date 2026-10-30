@@ -13,8 +13,10 @@ const hash = content => createHash('sha256').update(content).digest('hex');
 const output = new Map();
 function portableLinks(content) {
   return content.replaceAll('../test_flow_project/README.md', 'examples.md')
+    .replaceAll('[interactive console emitter](../test_flow_project/loading-progress-demo.html)', 'message replay patterns described in [validation](validation.md)')
     .replaceAll('../test_flow_project/.udl/flows/', '../assets/flows/')
     .replaceAll('../test_flow_project/bank-transaction-events.jsonl', '../assets/events/bank-transaction-events.jsonl')
+    .replaceAll('../test_flow_project/loading-progress-events.jsonl', '../assets/events/loading-progress-events.jsonl')
     .replaceAll('semantic-flows-agent-guide.md', 'authoring-guide.md')
     .replaceAll('semantic-flows-browser-tests.md', 'validation.md');
 }
@@ -31,10 +33,10 @@ const api = await read('docs/api.md');
 const access = api.slice(api.indexOf('## Local access'), api.indexOf('Examples below use'));
 const flowApi = api.slice(api.indexOf('## Semantic Flows'), api.indexOf('## Limits and timeouts'));
 output.set('references/api.md', '# Local Flow validation API\n\n' + portableLinks(access + flowApi).replace('[browser regression guide]', '[validation guide]'));
-for (const filename of ['purchase.yaml', 'login.yaml', 'asset-download.yaml', 'bank-transaction.yaml']) {
+for (const filename of ['purchase.yaml', 'login.yaml', 'asset-download.yaml', 'bank-transaction.yaml', 'loading-progress.yaml']) {
   output.set(`assets/flows/${filename}`, await read(`test_flow_project/.udl/flows/${filename}`));
 }
-for (const filename of ['sample-events.jsonl', 'bank-transaction-events.jsonl']) output.set(`assets/events/${filename}`, await read(`test_flow_project/${filename}`));
+for (const filename of ['sample-events.jsonl', 'bank-transaction-events.jsonl', 'loading-progress-events.jsonl']) output.set(`assets/events/${filename}`, await read(`test_flow_project/${filename}`));
 output.set('assets/config.yaml', await read('test_flow_project/.udl/config.yaml'));
 output.set('LICENSE', await read('LICENSE'));
 output.set('INSTALL.md', (await read('docs/flow-authoring-skill.md')).replaceAll('../skills/udl-semantic-flows/SKILL.md', 'SKILL.md'));

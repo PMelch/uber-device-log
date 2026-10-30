@@ -12,7 +12,8 @@ const blueprint = {
   version: 1, id: 'labels', name: 'Label privacy fixture', label: 'Transfer requested', start: 'start', timeout: '90s', correlation: { scope: 'device-session', primary: 'id' },
   steps: [
     { id: 'start', name: 'Requested', match: { json: { path: 'event', equals: 'label.start' } }, extract: { id: { json: 'id', required: true }, recipient: { json: 'recipient', result: true, sensitive: true }, amount: { json: 'amount', result: true }, internal: { json: 'internal' } }, next: ['registered'] },
-    { id: 'registered', name: 'Registered', match: { json: { path: 'event', equals: 'label.registered' } }, extract: { id: { json: 'id', required: true }, reference: { json: 'reference', required: true, result: true } }, label: 'Transfer {registered.reference} registered', next: ['sent'] },
+    { id: 'registered', name: 'Registered', match: { json: { path: 'event', equals: 'label.registered' } }, extract: { id: { json: 'id', required: true }, reference: { json: 'reference', required: true, result: true } }, label: 'Transfer {registered.reference} registered', next: ['progress', 'sent'] },
+    { id: 'progress', name: 'Transfer progress', repeatable: true, optional: true, match: { json: { path: 'event', equals: 'label.progress' } }, extract: { id: { json: 'id', required: true }, percent: { json: 'percent', required: true, result: true } }, label: 'Transfer {progress.percent}% complete', next: ['sent'] },
     { id: 'sent', name: 'Sent for processing', match: { json: { path: 'event', equals: 'label.sent' } }, extract: { id: { json: 'id', required: true } }, next: ['done'] },
     { id: 'done', name: 'Settled', match: { json: { path: 'event', equals: 'label.done' } }, extract: { id: { json: 'id', required: true }, amount: { json: 'amount', result: true } }, label: [{ text: 'Transfer {registered.reference}: ' }, { text: 'successful', tone: 'success' }, { text: ' for {start.recipient}' }], outcome: 'completed' },
   ],
@@ -38,16 +39,24 @@ try {
   fixture.emit({ event: 'label.start', id: 't1', amount: 125, recipient: 'PRIVATE-BANK-ACCOUNT', internal: 'INTERNAL-NOT-A-RESULT' });
   await page.getByRole('heading', { name: 'Transfer requested', exact: true }).waitFor();
   const card = page.locator('.flow-card');
+  assert.equal(await card.locator('.flow-card-kind').innerText(), 'Label privacy fixture (labels)');
+  assert.equal(await card.locator('.flow-id').count(), 0);
   assert.ok(await card.locator('.flow-node').count());
   assert.equal(await card.locator('.flow-status-spinner').count(), 1);
   assert.equal(await card.locator('.flow-badge').innerText(), 'In progress');
   assert.equal(await card.locator('.flow-results dd').allTextContents().then(values => values.includes('125')), true);
   assert.ok(!(await card.innerHTML()).includes('PRIVATE-BANK-ACCOUNT'));
   assert.ok(!(await card.innerText()).includes('INTERNAL-NOT-A-RESULT'));
+  const minimal = page.getByRole('button', { name: 'Minimal', exact: true });
+  await minimal.focus(); await page.keyboard.press('Space');
+  assert.equal(await minimal.getAttribute('aria-pressed'), 'true');
+  assert.equal(await card.innerText(), 'Transfer requested');
+  assert.equal(await card.locator('.flow-card-kind, .flow-badge, .flow-actions, .flow-results, .flow-meta, .flow-node, svg').count(), 0);
   const condensed = page.getByRole('button', { name: 'Condensed', exact: true });
   await condensed.focus(); await page.keyboard.press('Space');
   assert.equal(await card.locator('.flow-node, svg').count(), 0, 'condensed overview must not render nodes or edges');
   assert.equal(await condensed.getAttribute('aria-pressed'), 'true');
+  assert.equal(await card.locator('.flow-card-kind').count(), 0, 'condensed omits blueprint name and ID');
   assert.equal(await card.locator('.flow-status-spinner').count(), 1, 'condensed retains the in-progress indicator');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   assert.equal(await card.locator('.flow-status-spinner').evaluate(el => getComputedStyle(el).animationName), 'none');
@@ -55,19 +64,42 @@ try {
   fixture.emit({ event: 'label.registered', id: 't1', reference: '<img src=x onerror=alert(1)>' });
   await page.getByRole('heading', { name: 'Transfer <img src=x onerror=alert(1)> registered', exact: true }).waitFor();
   assert.equal(await card.locator('img').count(), 0);
+  await minimal.click();
+  for (const percent of [10, 60, 80]) {
+    fixture.emit({ event: 'label.progress', id: 't1', percent });
+    await page.getByRole('heading', { name: `Transfer ${percent}% complete`, exact: true }).waitFor();
+  }
+  assert.equal(await card.innerText(), 'Transfer 80% complete', 'minimal labels keep updating live');
+  assert.equal(await card.locator('.flow-node, svg').count(), 0);
+  await page.getByRole('button', { name: 'Detailed', exact: true }).click();
+  assert.equal(await card.locator('.flow-fork').count(), 0, 'repeated progress is not an alternative route');
+  assert.equal(await card.getByRole('button', { name: /Transfer progress/ }).count(), 1);
+  await condensed.click();
   fixture.emit({ event: 'label.sent', id: 't1' });
   await page.waitForTimeout(350);
-  assert.equal(await card.locator('h2').innerText(), 'Transfer <img src=x onerror=alert(1)> registered', 'unlabeled accepted event keeps last main label');
+  assert.equal(await card.locator('h2').innerText(), 'Transfer 80% complete', 'unlabeled accepted event keeps last main label');
+  fixture.emit({ event: 'label.progress', id: 't1', percent: 99 });
+  await page.waitForTimeout(350);
+  assert.equal(await card.locator('h2').innerText(), 'Transfer 80% complete', 'progress cannot rewind a phase');
   fixture.emit({ event: 'label.done', id: 't1', amount: 124 });
   await card.locator('.flow-label-success').waitFor();
   assert.equal(await card.locator('.flow-status-spinner').count(), 0, 'terminal events remove the progress indicator');
   assert.ok((await card.locator('h2').innerText()).includes('successful'));
   assert.equal(await card.locator('.flow-results dd').allTextContents().then(values => values.includes('124')), true);
+  fixture.emit({ event: 'label.progress', id: 't1', percent: 100 });
+  await page.waitForTimeout(2300);
+  assert.equal(await page.locator('.flow-card').count(), 1, 'late progress never starts an orphan');
+  assert.ok((await card.locator('h2').innerText()).includes('successful'));
   const search = page.locator('.flow-toolbar input');
   await search.fill('PRIVATE-BANK-ACCOUNT'); assert.equal(await page.locator('.flow-card').count(), 0, 'hidden values cannot be searched');
   await search.fill('successful'); assert.equal(await page.locator('.flow-card').count(), 1);
   await search.fill('');
   await card.getByRole('button', { name: 'Timeline', exact: true }).click();
+  assert.equal(await page.locator('.flow-detail-heading .flow-card-kind').innerText(), 'Label privacy fixture (labels)');
+  assert.equal(await page.locator('.flow-detail-heading .flow-id').count(), 0);
+  await page.locator('.flow-timeline').getByRole('button', { name: /Transfer progress/ }).click();
+  assert.equal(await page.locator('.flow-label-evidence').count(), 3);
+  for (const percent of [10, 60, 80]) assert.ok((await page.locator('.flow-inspector').innerText()).includes(`Transfer ${percent}% complete`));
   await page.locator('.flow-timeline').getByRole('button', { name: /Sent for processing/ }).click();
   assert.equal(await page.locator('.flow-label-evidence small').count(), 0, 'unchanged labels have no extra status line');
   await page.locator('.flow-timeline').getByRole('button', { name: /Settled/ }).click();
@@ -84,9 +116,12 @@ try {
       await page.locator('#settings-language').selectOption(locale);
       await page.locator('#settings-theme').selectOption(width === 320 ? 'dark' : 'light');
       await page.locator('.precision-settings header button').click();
-      for (const [mode, key] of [['detailed', 'flowsDisplayDetailed'], ['condensed', 'flowsDisplayCondensed']]) {
+      for (const [mode, key] of [['detailed', 'flowsDisplayDetailed'], ['condensed', 'flowsDisplayCondensed'], ['minimal', 'flowsDisplayMinimal']]) {
         await page.getByRole('button', { name: translate(locale, key), exact: true }).click();
         assert.equal(await card.locator('.flow-node').count() > 0, mode === 'detailed');
+        assert.equal(await card.locator('.flow-card-kind').count(), mode === 'detailed' ? 1 : 0);
+        assert.equal(await card.locator('.flow-badge').count(), mode === 'minimal' ? 0 : 1);
+        if (mode === 'minimal') assert.equal(await card.innerText(), await card.locator('h2').innerText());
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${locale} ${mode} ${width}px`);
       }
     }
@@ -94,7 +129,7 @@ try {
   }
   await page.reload();
   await page.locator('#workspace-tab-flows').click();
-  assert.equal(await page.locator('.flow-workspace').getAttribute('data-display'), 'condensed');
+  assert.equal(await page.locator('.flow-workspace').getAttribute('data-display'), 'minimal');
   const stored = await page.evaluate(() => Object.values(localStorage).join(' '));
   assert.ok(!stored.includes('PRIVATE-BANK-ACCOUNT') && !stored.includes('successful'));
   assert.deepEqual(errors, []);

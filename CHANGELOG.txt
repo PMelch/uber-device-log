@@ -10,6 +10,11 @@ Unreleased
 ----------
 
 Added
+- Add a Minimal flow overview that shows only each current main label, alongside
+  the existing Condensed and Detailed views. Remember the selected view.
+- Allow explicitly correlated, repeatable flow steps to update progress labels and
+  result fields until the flow advances or ends. Use the latest accepted values
+  in downstream references. Include a loading-progress example and authoring skill guidance.
 - Provide a copyable, self-contained Semantic Flows authoring skill with the
   format specification, extraction and validation guidance, fictional fixtures
   and cross-agent installation instructions. Check bundled references for drift.
@@ -21,6 +26,9 @@ Added
   Identify active flows with progress text and a reduced-motion-aware spinner.
 
 Changed
+- Show the blueprint name with its ID in parentheses above detailed flow labels;
+  hide that line in condensed summaries. Omit the generated instance ID from
+  the main label row.
 - License the project under GNU GPL version 3 only (GPL-3.0-only) instead of
   Apache-2.0. Third-party platform icons retain their separate CC0 license.
 - Inspect JavaScript result objects on demand, load further properties in pages,

@@ -1,6 +1,7 @@
 import type { Messages } from './en';
 export const zhCN = {
   flowsDisplayMode: "流程显示",
+  flowsDisplayMinimal: "极简",
   flowsDisplayDetailed: "详细",
   flowsDisplayCondensed: "精简",
   flowsResults: "结果",

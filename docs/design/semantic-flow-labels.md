@@ -36,3 +36,23 @@ checks cover keyboard density changes, absent condensed nodes, live label change
 Result fields, source correlation, timeline reveal, seven locales and small screens.
 Existing full tests/build remain required. No external bank service or real money
 is involved in the fictional sample. Hardware capture is outside these fixtures.
+
+## Repeatable progress phases
+
+Non-start, nonterminal steps may declare `repeatable: true`. Accept explicitly
+correlated updates while that phase is eligible, retain accepted evidence, and
+render the latest label/results without duplicating the overview node. A successor,
+terminal outcome, deadline or capture epoch closes repetition. Repeats do not
+extend deadlines, create orphans or enable cycles. Downstream references read the
+latest accepted producer occurrence. Verify concurrent IDs, optional bypasses,
+late events, evidence budgets and the portable loading-progress example.
+
+## Minimal overview
+
+Extend the existing persisted Detailed/Condensed control with Minimal. Each Minimal
+card renders only the authored/current label: no name/ID, status, actions, results,
+metadata or nodes. Search and global controls remain; switch density to inspect
+evidence. Reuse typed catalogs and existing preference storage, accepting all three
+values and retaining the Detailed default. Verify live labels, sensitive masking,
+keyboard selection, persisted Minimal, and all three modes in seven locales at
+desktop/mobile widths with the existing real-browser fixture.

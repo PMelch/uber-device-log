@@ -5,7 +5,7 @@ import type { LogMessage } from './types.js';
 export function createFlowEngine(now: () => number = () => performance.now()) {
   let blueprints: FlowBlueprint[] = [], revision = '', epoch = 0, serial = 0, gaps = 0, stateVersion = 0;
   let instances: FlowInstance[] = [];
-  type BlueprintScope = { id: string; revisions: string[] };
+  type BlueprintScope = { id: string; revisions: string[]; repeatCandidates?: Record<string, string[]> };
   let pending: { message: LogMessage; at: number; scopes: BlueprintScope[] }[] = [];
   const sizes = new Map<string, number>();
   const regexes = new Map<string, RegExp>();
@@ -26,6 +26,13 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
   }
   const scalar = (value: unknown): value is string | number | boolean => ['string', 'number', 'boolean'].includes(typeof value) && (typeof value !== 'number' || Number.isFinite(value));
   function references(matcher: FlowMatcher): boolean { return !!matcher.json?.equalsFrom || !!matcher.all?.some(references); }
+  function latestAccepted(instance: FlowInstance | undefined, stepId: string): FlowObservation | undefined {
+    if (!instance) return;
+    for (let index = instance.observations.length - 1; index >= 0; index--) {
+      const observation = instance.observations[index]!;
+      if (observation.stepId === stepId && observation.accepted !== false) return observation;
+    }
+  }
   function matches(matcher: FlowMatcher, message: LogMessage, body: unknown, instance?: FlowInstance, ignoreReferences = false): boolean {
     if (matcher.source === 'device' && message.source?.webview || matcher.source === 'webview' && !message.source?.webview) return false;
     if (matcher.platform && matcher.platform !== message.source?.platform || matcher.tag !== undefined && matcher.tag !== message.tag || matcher.level !== undefined && matcher.level !== message.level) return false;
@@ -36,7 +43,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       if (actual === undefined) return false;
       if (matcher.json.equalsFrom) {
         const ref = matcher.json.equalsFrom;
-        const previous = instance?.observations.find(row => row.stepId === ref.step && row.accepted !== false)?.payload[ref.field];
+        const previous = latestAccepted(instance, ref.step)?.payload[ref.field];
         if (ignoreReferences ? !scalar(actual) : !scalar(previous) || actual !== previous) return false;
       } else if (actual !== matcher.json.equals) return false;
     }
@@ -79,7 +86,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
   function annotate(matcher: FlowMatcher, payload: Record<string, unknown>, blueprint: FlowBlueprint, instance: FlowInstance): string[] {
     const comparisons: string[] = [];
     function visit(m: FlowMatcher) {
-      if (m.json?.equalsFrom) { const r = m.json.equalsFrom; comparisons.push(`${m.json.path} == ${r.step}.${r.field} (${JSON.stringify(instance.observations.find(o => o.stepId === r.step && o.accepted !== false)?.payload[r.field])})`); }
+      if (m.json?.equalsFrom) { const r = m.json.equalsFrom; comparisons.push(`${m.json.path} == ${r.step}.${r.field} (${JSON.stringify(latestAccepted(instance, r.step)?.payload[r.field])})`); }
       m.all?.forEach(visit);
     }
     visit(matcher);
@@ -125,7 +132,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       outcome = known?.outcome ?? node.unknownOutcome;
       instance.expected = [];
     } else {
-      instance.expected = node.next ?? [];
+      instance.expected = node.repeatable ? [node.id, ...(node.next ?? [])] : node.next ?? [];
       outcome = node.outcome;
     }
     if (outcome) {
@@ -167,11 +174,12 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       const unbound: Candidate[] = [];
       if (!candidates.length) for (const instance of existingAll) {
         for (const node of instance.blueprint.steps.filter(step => instance.expected.includes(step.id))) {
+          if (node.repeatable && (instance.outcome !== 'running' || now() >= instance.timeoutAt || scopes && !scopes.find(scope => scope.id === instance.blueprint.id)?.repeatCandidates?.[node.id]?.includes(instance.id))) continue;
           if (!matches(node.match, message, body, instance)) continue;
           const payload = extract(node.extract, message, body);
           if (!payload) continue;
           if (identity(instance, payload, node.match)) candidates.push({ instance, node, payload });
-          else if (keyless(node, instance.blueprint, payload)) unbound.push({ instance, node, payload });
+          else if (!node.repeatable && keyless(node, instance.blueprint, payload)) unbound.push({ instance, node, payload });
         }
       }
       if (candidates.length > 1 || (!candidates.length && unbound.length > 1)) {
@@ -200,7 +208,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
           consumed.add(variants[0].blueprint.id);
         }
       } else if (allowOrphan) {
-        const possibilities = blueprint.steps.filter(step => step.id !== blueprint.start && !references(step.match)).flatMap(step => {
+        const possibilities = blueprint.steps.filter(step => step.id !== blueprint.start && !step.repeatable && !references(step.match)).flatMap(step => {
           if (!matches(step.match, message, body)) return [];
           const payload = extract(step.extract, message, body);
           if (!payload || !keys(blueprint).some(key => scalar(payload[key]))) return [];
@@ -225,12 +233,37 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     if (consumed.size) stateVersion++;
     return consumed;
   }
+  function reachable(instance: FlowInstance, target: string): boolean {
+    const queue = [...instance.expected], visited = new Set<string>();
+    for (let index = 0; index < queue.length; index++) {
+      const id = queue[index]!;
+      if (id === target) return true;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      queue.push(...(instance.blueprint.steps.find(step => step.id === id)?.next ?? []));
+    }
+    return false;
+  }
   function relevantScopes(message: LogMessage): BlueprintScope[] {
     const body = parseBody(message), scopes = new Map<string, BlueprintScope>();
+    const deviceId = message.source?.deviceId ?? '';
     for (const item of definitions()) {
-      if (![...item.blueprint.steps, ...(item.blueprint.errors ?? [])].some(node => matches(node.match, message, body, undefined, true))) continue;
-      const scope = scopes.get(item.blueprint.id) ?? { id: item.blueprint.id, revisions: [] };
+      let relevant = false;
+      const repeatCandidates: Record<string, string[]> = Object.create(null);
+      for (const node of [...item.blueprint.steps, ...(item.blueprint.errors ?? [])]) {
+        if (!matches(node.match, message, body, undefined, true)) continue;
+        if (!('repeatable' in node) || !node.repeatable) { relevant = true; continue; }
+        const payload = extract(node.extract, message, body);
+        if (!payload) continue;
+        const candidates = instances.filter(instance => instance.epoch === epoch && instance.outcome === 'running' && now() < instance.timeoutAt && instance.deviceId === deviceId && instance.revision === item.revision && instance.blueprint.id === item.blueprint.id && reachable(instance, node.id) && identity(instance, payload, node.match) && (identity(instance, payload, {}) || matches(node.match, message, body, instance)));
+        if (!candidates.length) continue;
+        relevant = true;
+        repeatCandidates[node.id] = candidates.map(instance => instance.id);
+      }
+      if (!relevant) continue;
+      const scope: BlueprintScope = scopes.get(item.blueprint.id) ?? { id: item.blueprint.id, revisions: [], repeatCandidates: Object.create(null) };
       scope.revisions.push(item.revision);
+      for (const [stepId, candidates] of Object.entries(repeatCandidates)) scope.repeatCandidates![stepId] = [...(scope.repeatCandidates![stepId] ?? []), ...candidates];
       scopes.set(scope.id, scope);
     }
     return [...scopes.values()];

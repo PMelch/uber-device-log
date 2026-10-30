@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { FlowBlueprint, FlowDiagnostic, FlowInstance, FlowObservation, FlowOutcome, FlowSnapshot, FlowStep } from '../../shared/flow-types';
-import { flowPresentation } from '../../shared/flow-presentation';
+import { flowPresentation, flowPresentationHistory } from '../../shared/flow-presentation';
 import FlowLabel from './FlowLabel.vue';
 import FlowResults from './FlowResults.vue';
 import { cardFork, flowEdgeTone, flowSummary, forkConnectors, layoutFlowGraph } from '../flow-path';
@@ -17,9 +17,9 @@ const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, k
 const view = ref<'list' | 'timeline' | 'info' | 'editor'>('list');
 const query = ref('');
 const displayStorageKey = 'uber-device-log.flowDisplay';
-const displayMode = ref<'detailed' | 'condensed'>('detailed');
+const displayMode = ref<'minimal' | 'detailed' | 'condensed'>('detailed');
 onMounted(() => {
-  try { if (window.localStorage.getItem(displayStorageKey) === 'condensed') displayMode.value = 'condensed'; } catch { /* Storage may be unavailable. */ }
+  try { const stored = window.localStorage.getItem(displayStorageKey); if (stored === 'minimal' || stored === 'condensed') displayMode.value = stored; } catch { /* Storage may be unavailable. */ }
 });
 function setDisplayMode(value: typeof displayMode.value) {
   displayMode.value = value;
@@ -28,7 +28,7 @@ function setDisplayMode(value: typeof displayMode.value) {
 const presentations = computed(() => new Map(props.instances.map(instance => [instance.id, flowPresentation(instance)])));
 function presentation(instance: FlowInstance) { return presentations.value.get(instance.id)!; }
 function presentationAt(instance: FlowInstance, observation: FlowObservation) {
-  return flowPresentation({ ...instance, observations: instance.observations.slice(0, instance.observations.indexOf(observation) + 1) });
+  return selectedHistory.value.get(observation) ?? presentation(instance);
 }
 function searchableBindings(instance: FlowInstance) {
   const definitions = [...instance.blueprint.steps, ...(instance.blueprint.errors ?? [])];
@@ -49,6 +49,12 @@ let timer: ReturnType<typeof setInterval> | undefined;
 onMounted(() => { clock.value = performance.timeOrigin + performance.now(); timer = setInterval(() => { clock.value = performance.timeOrigin + performance.now(); }, 1000); });
 onBeforeUnmount(() => clearInterval(timer));
 const selected = computed(() => props.instances.find(value => value.id === selectedId.value));
+const selectedHistory = computed(() => {
+  const instance = view.value === 'timeline' ? selected.value : undefined;
+  if (!instance) return new Map<FlowObservation, ReturnType<typeof flowPresentation>>();
+  const history = flowPresentationHistory(instance);
+  return new Map(instance.observations.map((observation, index) => [observation, history[index]!]));
+});
 const blueprint = computed(() => selected.value?.blueprint ?? props.snapshot?.blueprints.find(value => value.id === selectedBlueprintId.value));
 const step = computed(() => blueprint.value?.steps.find(value => value.id === selectedStep.value));
 const evidence = computed(() => selected.value?.observations.filter(value => value.stepId === selectedStep.value) ?? []);
@@ -72,7 +78,7 @@ function card(value: FlowInstance) {
   const result = summary(value);
   const expectedSteps = value.expected.flatMap(id => {
     const step = value.blueprint.steps.find(item => item.id === id);
-    return step ? [step] : [];
+    return step && !(step.repeatable && observed(value, step.id)) ? [step] : [];
   });
   const fork = cardFork(result.shown, expectedSteps);
   return { ...result, ...fork, connectors: fork.branching ? forkConnectors(fork.lanes.length, 48, 96) : { width: 0, height: 0, startY: 0, paths: [] as string[] } };
@@ -201,12 +207,12 @@ async function request(action: 'validate' | 'save') {
     <div v-if="!loading && !snapshot?.enabled" class="flow-empty"><h2>{{ t('flowsTitle') }}</h2><p>{{ t('flowsNoProject') }}</p><code>npx uber-device-log --project=./test_flow_project</code><button type="button" @click="emit('reload')">{{ t('flowsReload') }}</button></div>
     <template v-else-if="snapshot?.enabled">
       <template v-if="view === 'list'">
-        <div class="flow-toolbar"><input v-model="query" type="search" :placeholder="t('flowsSearch')" :aria-label="t('flowsSearch')"><div class="flow-display-toggle" role="group" :aria-label="t('flowsDisplayMode')"><button v-for="mode in (['detailed', 'condensed'] as const)" :key="mode" type="button" :aria-pressed="displayMode === mode" @click="setDisplayMode(mode)">{{ t(mode === 'detailed' ? 'flowsDisplayDetailed' : 'flowsDisplayCondensed') }}</button></div><button type="button" @click="openEditor">{{ t('flowsBlueprints') }} <span class="flow-count">{{ snapshot.files.length }}</span></button><button type="button" :disabled="!instances.length" @click="emit('clear')">{{ t('flowsClear') }}</button></div>
+        <div class="flow-toolbar"><input v-model="query" type="search" :placeholder="t('flowsSearch')" :aria-label="t('flowsSearch')"><div class="flow-display-toggle" role="group" :aria-label="t('flowsDisplayMode')"><button v-for="mode in (['minimal', 'condensed', 'detailed'] as const)" :key="mode" type="button" :aria-pressed="displayMode === mode" @click="setDisplayMode(mode)">{{ t(mode === 'minimal' ? 'flowsDisplayMinimal' : mode === 'detailed' ? 'flowsDisplayDetailed' : 'flowsDisplayCondensed') }}</button></div><button type="button" @click="openEditor">{{ t('flowsBlueprints') }} <span class="flow-count">{{ snapshot.files.length }}</span></button><button type="button" :disabled="!instances.length" @click="emit('clear')">{{ t('flowsClear') }}</button></div>
         <div v-if="!visible.length" class="flow-empty"><h2>{{ t(query ? 'flowsNoResults' : !snapshot.blueprints.length ? 'flowsNoBlueprints' : 'flowsEmpty') }}</h2><p>{{ t(!snapshot.blueprints.length ? 'flowsEditorHelp' : 'flowsEmptyHint') }}</p><button v-if="!snapshot.blueprints.length" type="button" @click="openEditor">{{ t('flowsNewBlueprint') }}</button></div>
         <article v-for="instance in visible" :key="instance.id" class="flow-card" :data-outcome="instance.outcome">
-          <header><div class="flow-card-heading"><span v-if="presentation(instance).label.map(part => part.text).join('') !== instance.blueprint.name" class="flow-card-kind">{{ instance.blueprint.name }}</span><h2><FlowLabel :parts="presentation(instance).label" :concealed="t('flowsSensitive')" /></h2><span class="flow-id">#{{ instance.id }}</span><span class="flow-badge" :data-outcome="instance.outcome"><span v-if="instance.outcome === 'running'" class="flow-status-spinner" aria-hidden="true"></span>{{ t(outcomes[instance.outcome]) }}</span></div><div class="flow-actions"><button type="button" @click="navigate('timeline', instance)">{{ t('flowsTimeline') }}</button><button type="button" @click="navigate('info', instance)">{{ t('flowsInfo') }}</button></div></header>
-          <FlowResults :results="presentation(instance).results" :label="t('flowsResults')" :concealed="t('flowsSensitive')" />
-          <div v-if="displayMode === 'detailed' || completeness[instance.completeness]" class="flow-meta"><span v-if="displayMode === 'detailed'">{{ instance.deviceId }}</span><span v-if="displayMode === 'detailed'">{{ elapsed(instance) }}</span><span v-if="completeness[instance.completeness]" class="flow-warning">{{ t(completeness[instance.completeness]!) }}</span></div>
+          <header><div class="flow-card-heading"><span v-if="displayMode === 'detailed'" class="flow-card-kind">{{ instance.blueprint.name }} <small>({{ instance.blueprint.id }})</small></span><h2><FlowLabel :parts="presentation(instance).label" :concealed="t('flowsSensitive')" /></h2><span v-if="displayMode !== 'minimal'" class="flow-badge" :data-outcome="instance.outcome"><span v-if="instance.outcome === 'running'" class="flow-status-spinner" aria-hidden="true"></span>{{ t(outcomes[instance.outcome]) }}</span></div><div v-if="displayMode !== 'minimal'" class="flow-actions"><button type="button" @click="navigate('timeline', instance)">{{ t('flowsTimeline') }}</button><button type="button" @click="navigate('info', instance)">{{ t('flowsInfo') }}</button></div></header>
+          <FlowResults v-if="displayMode !== 'minimal'" :results="presentation(instance).results" :label="t('flowsResults')" :concealed="t('flowsSensitive')" />
+          <div v-if="displayMode !== 'minimal' && (displayMode === 'detailed' || completeness[instance.completeness])" class="flow-meta"><span v-if="displayMode === 'detailed'">{{ instance.deviceId }}</span><span v-if="displayMode === 'detailed'">{{ elapsed(instance) }}</span><span v-if="completeness[instance.completeness]" class="flow-warning">{{ t(completeness[instance.completeness]!) }}</span></div>
           <div v-if="displayMode === 'detailed'" class="flow-sequence">
             <ol class="flow-path" :class="{ 'is-branching': card(instance).branching }" :style="card(instance).branching && card(instance).lanes.length ? { marginTop: `${card(instance).connectors.startY - 19}px` } : undefined">
               <li v-for="item in card(instance).trunk" :key="item.id" :class="{ 'is-observed': observed(instance, item.id), 'is-expected': instance.expected.includes(item.id), 'is-failed': failedStep(instance, item) }"><button type="button" @click="navigate('timeline', instance); inspect(item.id)"><span class="flow-node">{{ stepLabel(item, instance.blueprint) }}</span><span>{{ item.name }}<small>{{ t(stepState(instance, item)) }}</small></span></button></li>
@@ -230,7 +236,7 @@ async function request(action: 'validate' | 'save') {
       <template v-else>
         <div class="flow-panelhead"><button type="button" @click="navigate('list')"><span aria-hidden="true">←</span> {{ t('flowsBack') }}</button><button v-if="view !== 'editor'" type="button" @click="openEditor">{{ t('flowsEditYaml') }}</button><button v-else type="button" :disabled="busy" @click="emit('reload')">{{ t('flowsReload') }}</button></div>
         <section v-if="view === 'timeline' && selected" class="flow-detail">
-          <header class="flow-detail-heading"><h2 ref="title" tabindex="-1"><FlowLabel :parts="presentation(selected).label" :concealed="t('flowsSensitive')" /> <span class="flow-id">#{{ selected.id }}</span></h2><span class="flow-badge" :data-outcome="selected.outcome"><span v-if="selected.outcome === 'running'" class="flow-status-spinner" aria-hidden="true"></span>{{ t(outcomes[selected.outcome]) }}</span><p>{{ elapsed(selected) }} · {{ t('flowsRevision', { revision: selected.revision }) }}</p><p v-if="selected.errorCode || selected.errorDescription"><code>{{ selected.errorCode }}</code> {{ selected.errorDescription }}</p></header>
+          <header class="flow-detail-heading"><span class="flow-card-kind">{{ selected.blueprint.name }} <small>({{ selected.blueprint.id }})</small></span><h2 ref="title" tabindex="-1"><FlowLabel :parts="presentation(selected).label" :concealed="t('flowsSensitive')" /></h2><span class="flow-badge" :data-outcome="selected.outcome"><span v-if="selected.outcome === 'running'" class="flow-status-spinner" aria-hidden="true"></span>{{ t(outcomes[selected.outcome]) }}</span><p>{{ elapsed(selected) }} · {{ t('flowsRevision', { revision: selected.revision }) }}</p><p v-if="selected.errorCode || selected.errorDescription"><code>{{ selected.errorCode }}</code> {{ selected.errorDescription }}</p></header>
           <div class="flow-detail-grid"><div class="flow-timeline"><div v-if="diagram.nodes.length" class="flow-diagram" :style="{ width: diagram.width + 'px', height: diagram.height + 'px' }"><svg :style="{ width: diagram.width + 'px', height: diagram.height + 'px' }" :width="diagram.width" :height="diagram.height" aria-hidden="true"><path v-for="edge in diagram.edges" :key="edge.from + '-' + edge.to" :d="edge.d" :class="edgeTone(selected, edge.from, edge.to)" /></svg><button v-for="node in diagram.nodes" :key="node.id" type="button" class="flow-diagram-node" :style="{ left: node.x + 'px', top: node.y + 'px' }" :aria-pressed="selectedStep === node.id" :aria-label="diagramStep(node.id) && stepState(selected, diagramStep(node.id)!) === 'flowsNotOnRoute' ? `${diagramStep(node.id)!.name}, ${t('flowsNotOnRoute')}` : undefined" :class="{ 'is-observed': observed(selected, node.id), 'is-expected': selected.expected.includes(node.id), 'is-failed': diagramStep(node.id) && failedStep(selected, diagramStep(node.id)!), 'is-other': diagramStep(node.id) && stepState(selected, diagramStep(node.id)!) === 'flowsNotOnRoute' }" @click="inspect(node.id)"><span class="flow-node">{{ diagramStep(node.id) ? stepLabel(diagramStep(node.id)!, selected.blueprint) : node.id }}</span><span class="flow-diagram-label"><strong>{{ diagramStep(node.id)?.name ?? node.id }}</strong><small v-if="diagramStep(node.id) && stepState(selected, diagramStep(node.id)!) !== 'flowsNotOnRoute'">{{ t(stepState(selected, diagramStep(node.id)!)) }}<template v-if="diagramStep(node.id)?.optional"> · {{ t('flowsOptional') }}</template></small></span></button></div><button v-for="item in selected.observations.filter(value => !blueprint?.steps.some(definition => definition.id === value.stepId))" :key="item.stepId" type="button" class="is-failed" :aria-pressed="selectedStep === item.stepId" @click="inspect(item.stepId)"><span class="flow-node">!</span>{{ item.stepId }}</button></div>
           <div class="flow-inspector"><h3>{{ step?.name ?? selectedStep }}</h3><div class="flow-subnav"><button v-for="option in (['payload', 'match', 'raw'] as const)" :key="option" type="button" :aria-pressed="inspector === option" @click="inspector = option; reveal = false">{{ t(option === 'payload' ? 'flowsPayload' : option === 'match' ? 'flowsMatch' : 'flowsRawLog') }}</button></div><button v-if="evidence.length" type="button" class="flow-reveal" :aria-pressed="reveal" @click="reveal = !reveal">{{ t(reveal ? 'flowsHide' : 'flowsReveal') }}</button><p v-if="!evidence.length">{{ t('flowsChooseStep') }}</p><div v-for="(observation, index) in evidence" :key="index" class="flow-evidence"><small>+{{ Math.round(observation.receivedAt - selected.startedAt) }} ms · {{ observation.message.timestamp }}</small><section v-if="inspector === 'payload'" class="flow-label-evidence"><h3>{{ t('flowsLabel') }}</h3><p><FlowLabel :parts="presentationAt(selected, observation).label" :concealed="t('flowsSensitive')" :reveal="reveal" /></p><FlowResults :results="presentationAt(selected, observation).results" :label="t('flowsResults')" :concealed="t('flowsSensitive')" :reveal="reveal" /></section><pre>{{ inspector === 'payload' ? payload(observation) : inspector === 'match' ? matching(observation) : raw(observation) }}</pre><div v-if="inspector === 'payload' && dependencies(observation).length" class="flow-provenance"><h3>{{ t('flowsMatch') }}</h3><code v-for="dependency in dependencies(observation)" :key="dependency">{{ dependency }}</code></div><p v-if="observation.errorCode || observation.errorDescription"><code>{{ observation.errorCode }}</code> {{ observation.errorDescription }}</p></div></div></div>
         </section>

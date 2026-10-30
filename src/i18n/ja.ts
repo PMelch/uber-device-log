@@ -1,6 +1,7 @@
 import type { Messages } from './en';
 export const ja = {
   flowsDisplayMode: "フローの表示",
+  flowsDisplayMinimal: "最小",
   flowsDisplayDetailed: "詳細",
   flowsDisplayCondensed: "コンパクト",
   flowsResults: "結果",
