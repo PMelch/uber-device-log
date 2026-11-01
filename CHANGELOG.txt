@@ -10,6 +10,9 @@ Unreleased
 ----------
 
 Added
+- Recognize alternative Semantic Flow entry points that converge on shared steps.
+  Share per-instance variables across entries and branches, and mark unchosen
+  entry paths as alternatives in the overview and Timeline.
 - Highlight flows by blueprint priority (1–5, default 3) with separate light and
   dark palettes, independent of outcome. Edit priority in the blueprint draft
   selector; include priority guidance in the portable authoring skill.
@@ -37,6 +40,9 @@ Fixed
   labels within their hit areas and render dense valid flow graphs without stalls.
 
 Changed
+- Validate required flow references against every incoming route and required
+  extractions, including existing branch joins. Use explicit optional references
+  for values that may be absent; missing comparisons never match.
 - Show the blueprint name with its ID in parentheses above detailed flow labels;
   hide that line in condensed summaries. Omit the generated instance ID from
   the main label row.

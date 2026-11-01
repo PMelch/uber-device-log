@@ -1,4 +1,5 @@
-import type { FlowBlueprint, FlowEngineState, FlowInstance, FlowMatcher, FlowExtractor, FlowObservation, FlowStep, FlowError } from './flow-types.js';
+import { assignFlowVariables, flowScalar, flowStarts, type FlowVariableValue } from './flow-variables.js';
+import type { FlowReference, FlowBlueprint, FlowEngineState, FlowInstance, FlowMatcher, FlowExtractor, FlowObservation, FlowStep, FlowError } from './flow-types.js';
 import type { LogMessage } from './types.js';
 
 /** Pure, session-local recognition. A worker owns the clock, queues and lifecycle. */
@@ -9,6 +10,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
   let pending: { message: LogMessage; at: number; scopes: BlueprintScope[] }[] = [];
   const sizes = new Map<string, number>();
   const regexes = new Map<string, RegExp>();
+  const variables = new WeakMap<FlowInstance, Map<string, FlowVariableValue>>();
   const reorderMs = 2000, budget = 32 * 1024 * 1024;
   function expression(pattern: string) {
     let regex = regexes.get(pattern);
@@ -24,7 +26,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     }
     return value;
   }
-  const scalar = (value: unknown): value is string | number | boolean => ['string', 'number', 'boolean'].includes(typeof value) && (typeof value !== 'number' || Number.isFinite(value));
+  const scalar = flowScalar;
   function references(matcher: FlowMatcher): boolean { return !!matcher.json?.equalsFrom || !!matcher.all?.some(references); }
   function latestAccepted(instance: FlowInstance | undefined, stepId?: string): FlowObservation | undefined {
     if (!instance) return;
@@ -32,6 +34,10 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       const observation = instance.observations[index]!;
       if ((stepId === undefined || observation.stepId === stepId) && observation.accepted !== false) return observation;
     }
+  }
+  function referenceValue(instance: FlowInstance | undefined, ref: FlowReference): unknown {
+    if ('variable' in ref) return instance && variables.get(instance)?.get(ref.variable)?.value;
+    return latestAccepted(instance, ref.step)?.payload[ref.field];
   }
   function matches(matcher: FlowMatcher, message: LogMessage, body: unknown, instance?: FlowInstance, ignoreReferences = false): boolean {
     if (matcher.source === 'device' && message.source?.webview || matcher.source === 'webview' && !message.source?.webview) return false;
@@ -43,7 +49,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       if (actual === undefined) return false;
       if (matcher.json.equalsFrom) {
         const ref = matcher.json.equalsFrom;
-        const previous = latestAccepted(instance, ref.step)?.payload[ref.field];
+        const previous = referenceValue(instance, ref);
         if (ignoreReferences ? !scalar(actual) : !scalar(previous) || actual !== previous) return false;
       } else if (actual !== matcher.json.equals) return false;
     }
@@ -53,7 +59,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     const payload: Record<string, unknown> = Object.create(null);
     for (const [field, spec] of Object.entries(fields ?? {})) {
       const value = spec.json !== undefined ? valueAt(body, spec.json) : expression(spec.regex!).exec(message.message)?.groups?.[spec.group!];
-      if (value === undefined) { if (spec.required) return; }
+      if (value === undefined || spec.variable && !scalar(value)) { if (spec.required) return; }
       else payload[field] = value;
     }
     return payload;
@@ -105,7 +111,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
   function annotate(matcher: FlowMatcher, payload: Record<string, unknown>, blueprint: FlowBlueprint, instance: FlowInstance): string[] {
     const comparisons: string[] = [];
     function visit(m: FlowMatcher) {
-      if (m.json?.equalsFrom) { const r = m.json.equalsFrom; comparisons.push(`${m.json.path} == ${r.step}.${r.field} (${JSON.stringify(latestAccepted(instance, r.step)?.payload[r.field])})`); }
+      if (m.json?.equalsFrom) { const r = m.json.equalsFrom; comparisons.push(`${m.json.path} == ${'variable' in r ? `vars.${r.variable}` : `${r.step}.${r.field}`} (${JSON.stringify(referenceValue(instance, r))})`); }
       m.all?.forEach(visit);
     }
     visit(matcher);
@@ -137,6 +143,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     const obs = observation(instance, node, message, payload, at);
     if (message.truncated) instance.completeness = 'capture_gap';
     for (const key of keys(instance.blueprint)) if (scalar(payload[key])) instance.bindings[key] = payload[key];
+    assignFlowVariables(variables.get(instance)!, node.extract, payload);
     instance.observations.push(obs);
     instance.updatedAt = Math.max(instance.updatedAt, at);
     const isError = 'codeField' in node;
@@ -164,12 +171,20 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     sizes.set(instance.id, (sizes.get(instance.id) ?? 0) + JSON.stringify(obs).length * 2);
     trim();
   }
-  function create(blueprint: FlowBlueprint, rev: string, message: LogMessage, node: FlowStep, payload: Record<string, unknown>, at: number, orphan: boolean) {
+  function create(blueprint: FlowBlueprint, rev: string, message: LogMessage, node: FlowStep, payload: Record<string, unknown>, at: number, orphan: boolean, ambiguousNodes?: FlowStep[]) {
     const duration = /^(\d+(?:\.\d+)?)(ms|s|m|h)$/.exec(blueprint.timeout)!;
     const timeout = Number(duration[1]) * ({ ms: 1, s: 1000, m: 60000, h: 3600000 }[duration[2] as 'ms' | 's' | 'm' | 'h']);
     const instance: FlowInstance = { id: `${blueprint.id}-${++serial}`, epoch, blueprint, revision: rev, deviceId: message.source?.deviceId ?? '', outcome: 'running', completeness: orphan ? 'missing_start' : 'complete', startedAt: at, updatedAt: at, timeoutAt: at + timeout, observations: [], expected: [node.id], bindings: Object.create(null) };
     instances.push(instance);
-    commit(instance, node, message, payload, at);
+    variables.set(instance, new Map());
+    if (ambiguousNodes) {
+      instance.completeness = 'ambiguous';
+      instance.expected = ambiguousNodes.map(step => step.id);
+      const primary = payload[blueprint.correlation.primary];
+      if (scalar(primary)) instance.bindings[blueprint.correlation.primary] = primary;
+      sizes.set(instance.id, 0);
+      trim();
+    } else commit(instance, node, message, payload, at);
   }
   function process(message: LogMessage, at: number, allowOrphan: boolean, scopes?: BlueprintScope[], evidenceOnly = false): Set<string> {
     const body = parseBody(message), deviceId = message.source?.deviceId ?? '';
@@ -219,17 +234,25 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
       const current = variants.find(item => item.revision === revision && blueprints.some(b => b.id === item.blueprint.id));
       if (!current) continue;
       const { blueprint, revision: rev } = current;
-      const node = blueprint.steps.find(step => step.id === blueprint.start)!;
-      if (matches(node.match, message, body)) {
+      const starts = flowStarts(blueprint);
+      const matchingStarts = blueprint.steps.filter(step => starts.includes(step.id) && matches(step.match, message, body));
+      const startCandidates = matchingStarts.flatMap(node => {
         const payload = extract(node.extract, message, body);
-        if (!evidenceOnly && payload && scalar(payload[blueprint.correlation.primary])) {
-          const conflict = existingAll.filter(i => i.revision === rev && i.bindings[blueprint.correlation.primary] === payload[blueprint.correlation.primary]);
+        return payload && scalar(payload[blueprint.correlation.primary]) ? [{ node, payload }] : [];
+      });
+      if (matchingStarts.length) {
+        if (!evidenceOnly && startCandidates.length) {
+          const conflict = existingAll.filter(i => i.revision === rev && startCandidates.some(candidate => i.bindings[blueprint.correlation.primary] === candidate.payload[blueprint.correlation.primary]));
           if (conflict.length) conflict.forEach(i => i.completeness = 'ambiguous');
-          else create(blueprint, rev, message, node, payload, at, false);
+          else {
+            const { node, payload } = startCandidates[0]!;
+            const identity = startCandidates.every(candidate => candidate.payload[blueprint.correlation.primary] === payload[blueprint.correlation.primary]) ? payload : {};
+            create(blueprint, rev, message, node, startCandidates.length > 1 ? identity : payload, at, false, startCandidates.length > 1 ? startCandidates.map(candidate => candidate.node) : undefined);
+          }
           consumed.add(variants[0].blueprint.id);
         }
       } else if (allowOrphan) {
-        const possibilities = blueprint.steps.filter(step => step.id !== blueprint.start && !step.repeatable && !references(step.match)).flatMap(step => {
+        const possibilities = blueprint.steps.filter(step => !starts.includes(step.id) && !step.repeatable && !references(step.match)).flatMap(step => {
           if (!matches(step.match, message, body)) return [];
           const payload = extract(step.extract, message, body);
           if (!payload || !keys(blueprint).some(key => scalar(payload[key]))) return [];

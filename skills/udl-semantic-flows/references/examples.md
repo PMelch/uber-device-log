@@ -9,6 +9,7 @@ These bundled files describe fictional application protocols. They are examples,
 | [Asset download](../assets/flows/asset-download.yaml) | Optional observation, expected failure code and stack evidence | [General events](../assets/events/sample-events.jsonl) |
 | [Bank transaction](../assets/flows/bank-transaction.yaml) | Dynamic labels, success/error/warning/info parts, preserved running state, automatic/manual-review branches, typed results and a sensitive account value | [Bank events](../assets/events/bank-transaction-events.jsonl) |
 
+| [Alternative entries](../assets/flows/entry-routes.yaml) | Two entry payload shapes, shared variables, required availability at merges and an optional sensitive label reference | Inline events in the [format reference](flow-format.md#multiple-entry-points-and-shared-variables) |
 | [Loading progress](../assets/flows/loading-progress.yaml) | Repeatable progress phase, latest accepted percentage in labels/results, optional zero-update bypass and terminal protection | [Loading events](../assets/events/loading-progress-events.jsonl) |
 
 The [configuration example](../assets/config.yaml) selects `.udl/flows` relative to the application project root. If configuration/activation is authorized, its destination is `.udl/config.yaml`; blueprint destinations are `.udl/flows/<name>.yaml`. Preserve existing project configuration and definitions. The files inside this skill's `assets/` are resources, not an automatically enabled project.

@@ -58,3 +58,15 @@ checks that sensitive error codes stay concealed in overview/header/search and o
 appear in explicitly revealed Timeline evidence. Engine adversarial regressions are
 in `server/flow-adversarial.test.ts`; the dense-DAG display regression uses a bounded
 adjacency-read counter rather than relying on machine-specific rendering times.
+
+## Alternative entries and shared variables
+
+Run `node --import tsx scripts/test-flow-multi-start.mjs` with the same Playwright
+and browser overrides. This fixture uses the actual parser, engine and workspace
+with `entry-routes.yaml`. It checks both entry paths reaching a common stream,
+unchosen-route classification in overview and Timeline, sensitive optional values,
+keyboard selection and live status language switching in all seven locales at
+1800px and 390px. `SEMANTIC_FLOWS_SCREENSHOTS` optionally captures the German
+overview and Timeline. Deterministic availability, reassignment, malformed draft,
+ambiguity, revision and reordered-evidence tests are in
+`server/flow-multi-start.test.ts`.

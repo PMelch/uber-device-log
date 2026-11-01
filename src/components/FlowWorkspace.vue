@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import type { FlowBlueprint, FlowDiagnostic, FlowInstance, FlowObservation, FlowOutcome, FlowSnapshot, FlowStep } from '../../shared/flow-types';
 import { flowErrorCode, flowPresentation, flowPresentationHistory } from '../../shared/flow-presentation';
+import { flowStarts } from '../../shared/flow-variables';
 import FlowLabel from './FlowLabel.vue';
 import FlowResults from './FlowResults.vue';
 import { cardFork, flowEdgeTone, flowSummary, forkConnectors, layoutFlowGraph, flowRouteTopology, flowRouteStates } from '../flow-path';
@@ -78,7 +79,7 @@ function elapsed(value: FlowInstance) {
 const topologyCache = new WeakMap<FlowBlueprint, ReturnType<typeof flowRouteTopology<FlowStep>>>();
 function topology(definition: FlowBlueprint) {
   let value = topologyCache.get(definition);
-  if (!value) { value = flowRouteTopology(definition.steps); topologyCache.set(definition, value); }
+  if (!value) { value = flowRouteTopology(definition.steps, flowStarts(definition)); topologyCache.set(definition, value); }
   return value;
 }
 const routeKeys = { observed: 'flowsObserved', expected: 'flowsExpected', other: 'flowsNotOnRoute', optional: 'flowsSkippedOptional', missing: 'flowsNotObserved' } as const;
@@ -122,7 +123,11 @@ function dependencies(observation: FlowObservation) {
   for (const consumer of blueprint.value?.steps ?? []) {
     const visit = (matcher: FlowStep['match']) => {
       const ref = matcher.json?.equalsFrom;
-      if (ref?.step === observation.stepId) values.push(`${ref.step}.${ref.field} → ${consumer.id}.${matcher.json!.path}`);
+      if (ref && 'step' in ref && ref.step === observation.stepId) values.push(`${ref.step}.${ref.field} → ${consumer.id}.${matcher.json!.path}`);
+      if (ref && 'variable' in ref) {
+        const producer = blueprint.value?.steps.find(step => step.id === observation.stepId);
+        if (Object.values(producer?.extract ?? {}).some(spec => spec.variable === ref.variable)) values.push(`vars.${ref.variable} → ${consumer.id}.${matcher.json!.path}`);
+      }
       matcher.all?.forEach(visit);
     };
     visit(consumer.match);
@@ -130,7 +135,7 @@ function dependencies(observation: FlowObservation) {
   return values;
 }
 async function navigate(target: typeof view.value, instance?: FlowInstance) {
-  if (instance) { selectedId.value = instance.id; selectedBlueprintId.value = instance.blueprint.id; selectedStep.value = instance.observations.at(-1)?.stepId ?? instance.blueprint.start; }
+  if (instance) { selectedId.value = instance.id; selectedBlueprintId.value = instance.blueprint.id; selectedStep.value = instance.observations.at(-1)?.stepId ?? flowStarts(instance.blueprint)[0] ?? ''; }
   reveal.value = false;
   view.value = target;
   await nextTick();

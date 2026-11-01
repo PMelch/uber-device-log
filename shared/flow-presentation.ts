@@ -1,13 +1,21 @@
+import { assignFlowVariables, flowScalar, flowStarts, type FlowVariableValue } from './flow-variables.js';
 import type { FlowBlueprint, FlowError, FlowExtractor, FlowInstance, FlowLabel, FlowLabelPart, FlowResult } from './flow-types.js';
 
 /** Template references name an exact blueprint node and one of its extraction keys. */
-export function flowLabelReference(blueprint: FlowBlueprint, token: string): { stepId: string; field: string; extractor: FlowExtractor } | undefined {
-  const candidates = [...blueprint.steps, ...(blueprint.errors ?? [])].flatMap(node => {
+export function flowLabelReference(blueprint: FlowBlueprint, token: string): ({ stepId: string; field: string; extractor: FlowExtractor; variable?: never } | { variable: string; stepId?: never; field?: never; extractor?: never }) & { optional: boolean } | undefined {
+  const optional = token.endsWith('?');
+  if (optional) token = token.slice(0, -1);
+  const nodes = [...blueprint.steps, ...(blueprint.errors ?? [])];
+  if (token.startsWith('vars.')) {
+    const variable = token.slice(5);
+    if (nodes.some(node => Object.values(node.extract ?? {}).some(spec => spec.variable === variable))) return { variable, optional };
+  }
+  const candidates = nodes.flatMap(node => {
     const prefix = `${node.id}.`;
     if (!token.startsWith(prefix)) return [];
     const field = token.slice(prefix.length);
     if (!/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(field) || field.split('.').some(key => ['__proto__', 'prototype', 'constructor'].includes(key)) || !node.extract || !Object.hasOwn(node.extract, field)) return [];
-    return [{ stepId: node.id, field, extractor: node.extract[field]! }];
+    return [{ stepId: node.id, field, extractor: node.extract[field]!, optional }];
   });
   return candidates.length === 1 ? candidates[0] : undefined;
 }
@@ -19,6 +27,7 @@ function scanPresentation(instance: FlowInstance, history?: FlowPresentation[]):
   const blueprint = instance.blueprint;
   const context = new Map<string, Record<string, unknown>>();
   const results = new Map<string, FlowResult>();
+  const variables = new Map<string, FlowVariableValue>();
   let label: FlowLabelPart[] = [{ text: blueprint.name }];
   function render(template: FlowLabel | undefined): FlowLabelPart[] | undefined {
     if (template === undefined) return;
@@ -29,16 +38,17 @@ function scanPresentation(instance: FlowInstance, history?: FlowPresentation[]):
       const tone = part.tone ? { tone: part.tone } : {};
       for (const match of part.text.matchAll(/\{([^{}]+)\}/g)) {
         const reference = flowLabelReference(blueprint, match[1]!);
-        const payload = reference && context.get(reference.stepId);
-        const value = reference && payload && Object.hasOwn(payload, reference.field) ? payload[reference.field] : undefined;
-        if (value === undefined || value === null || !['string', 'number', 'boolean'].includes(typeof value) || typeof value === 'number' && !Number.isFinite(value)) return;
+        const payload = reference?.stepId !== undefined ? context.get(reference.stepId) : undefined;
+        const assignment = reference?.variable !== undefined ? variables.get(reference.variable) : undefined;
+        const value = reference?.variable !== undefined ? assignment?.value : reference && payload && Object.hasOwn(payload, reference.field!) ? payload[reference.field!] : undefined;
+        if (!flowScalar(value) && !reference?.optional) return;
         if (match.index > offset) output.push({ text: part.text.slice(offset, match.index), ...tone });
-        output.push({ text: String(value).slice(0, 4096), ...tone, ...(reference!.extractor.sensitive ? { sensitive: true } : {}) });
+        if (flowScalar(value)) output.push({ text: String(value).slice(0, 4096), ...tone, ...(assignment?.sensitive || reference?.extractor?.sensitive ? { sensitive: true } : {}) });
         offset = match.index! + match[0].length;
       }
       if (offset < part.text.length) output.push({ text: part.text.slice(offset), ...tone });
     }
-    return output;
+    return output.some(part => part.text.trim()) ? output : undefined;
   }
   label = render(blueprint.label) ?? label;
   for (const observation of instance.observations) {
@@ -46,7 +56,8 @@ function scanPresentation(instance: FlowInstance, history?: FlowPresentation[]):
     const node = blueprint.steps.find(step => step.id === observation.stepId) ?? blueprint.errors?.find(error => error.id === observation.stepId);
     if (accepted && node) {
       context.set(node.id, observation.payload);
-      if (node.id === blueprint.start) label = render(blueprint.label) ?? label;
+      assignFlowVariables(variables, node.extract, observation.payload);
+      if (flowStarts(blueprint).includes(node.id)) label = render(blueprint.label) ?? label;
       for (const [field, extractor] of Object.entries(node.extract ?? {})) {
         if (!extractor.result || !Object.hasOwn(observation.payload, field) || observation.payload[field] === undefined) continue;
         results.set(field, { field, stepId: node.id, value: observation.payload[field], ...(extractor.sensitive ? { sensitive: true } : {}) });

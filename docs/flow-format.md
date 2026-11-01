@@ -50,11 +50,41 @@ Loading a project does not replay example logs. For a runnable emitter and more 
 
 ## How steps and branches work
 
-`start` points to the initial step. After accepting that step, the engine expects the IDs in its `next` list. A matching successor replaces that list with its own successors. An `outcome` ends the instance.
+`start` points to one initial step; alternatively, `starts` lists several entry steps. After accepting that step, the engine expects the IDs in its `next` list. A matching successor replaces that list with its own successors. An `outcome` ends the instance.
 
-**Multiple successors are alternatives, not parallel tasks.** `next: [card, wallet, voucher]` accepts one matching path. It does not wait for all three. A shared successor joins alternative routes; it is not an AND barrier. The graph must be acyclic, every step must be reachable from `start`, and at least one reachable step must have an outcome.
+**Multiple successors are alternatives, not parallel tasks.** `next: [card, wallet, voucher]` accepts one matching path. It does not wait for all three. A shared successor joins alternative routes; it is not an AND barrier. The graph must be acyclic, every step must be reachable from at least one declared entry, and at least one reachable step must have an outcome.
 
 The order of `steps` is not execution order; `start` and `next` determine progression. Without `shortLabel`, the UI uses `S1`, `S2`, etc. from the array order. Avoid overlapping matchers among eligible alternatives: if a message matches multiple candidates, the engine marks the affected instance(s) ambiguous rather than choosing the first.
+
+### Multiple entry points and shared variables
+
+Use exactly one of `start: stepId` and `starts: [entryA, entryB]`. The latter accepts 1–100 unique step IDs. Entries are alternative beginnings of one operation, not separate instances to merge. Entry steps cannot have incoming edges, be repeatable, or reference earlier values in their matchers. Each entry must extract the primary correlation field; use `required: true`. At runtime a start requires a string, finite number or boolean identity. Multiple valid entry candidates for the same record produce an ambiguous instance without selecting a route or publishing candidate extractions. Existing-instance matching still takes precedence over new starts.
+
+Each entry can have its own prefix and point to the same successor with `next`. In the overview and Timeline, unchosen entries and their exclusive continuations are alternative routes, not missing steps. No AND barrier or cross-instance merging is introduced.
+
+Publish an extracted value to a shared per-instance variable with the extractor's `variable` field. Different entries or branches can populate the same variable from different JSON paths:
+
+```yaml
+# Fragment: both entries eventually point to the common processing step.
+starts: [interactive, background]
+# In interactive.extract:
+token: { json: request.token, required: true, variable: token }
+# In background.extract:
+# token: { json: job.token, required: true, variable: token }
+# In processing.match:
+# json: { path: token, equalsFrom: { variable: token } }
+# In processing.label: 'Processing {vars.token}'
+```
+
+See the complete [alternative-entry blueprint](../test_flow_project/.udl/flows/entry-routes.yaml). For example, `{"event":"entry.background","operationId":"o1","job":{"token":"t1"}}`, then `{"event":"entry.processing","token":"t1"}`, then `{"event":"entry.completed","operationId":"o1"}` completes through the common stream.
+
+A required shared reference is valid only when **every incoming path** guarantees the variable through `required: true` extraction. An earlier shared ancestor can supply it once; every intervening step need not extract it again. At a merge the validator intersects the guarantees from all predecessors. This applies equally to multi-entry graphs and ordinary single-entry branches. Optional bypasses count as paths. An optional reassignment removes the previous guarantee. Variables are scalars only: a required variable extractor rejects missing, null, object, array and non-finite values. An optional variable extractor leaves such a value unavailable. Each accepted assignment supersedes the previous one, including clearing an absent optional value; steps without an assignment preserve it. Repeated steps use their latest assignment; their required matcher variables must remain guaranteed after each update as well as before the first update. Rejected evidence never writes variables. Variables are instance-local, retain their accepted producer's sensitivity, and do not automatically become correlation aliases.
+
+Use `{vars.token?}` or `{interactive.user?}` for an explicitly optional label reference. Missing or non-scalar optional substitutions render as empty text; surrounding literal text remains. A completely blank result preserves the previous usable summary. Optional references still need a declared producer on a possible preceding route. They cannot reference arbitrary future steps. For comparisons use `equalsFrom: { variable: token, optional: true }` or `{ step: interactive, field: token, optional: true }`. Optional means that the blueprint permits absence on a route; **a comparison with an unavailable value still does not match**. It never weakens identity matching.
+
+The same guarantee check applies to required references to earlier step payloads: the named step must occur on every incoming path and its extractor must be `required: true`. This tightens validation of earlier version 1 drafts: mark a genuinely optional reference explicitly, or make its producer required. Labels on the producing step itself retain their existing missing-value fallback. Blueprint-level labels are checked across all entries; error labels across all states where the rule can fire. Runtime fallback still handles incomplete captures safely.
+
+The `vars` and `vars.*` node namespace is reserved in blueprints that publish shared variables. A node cannot assign the same variable from two extractors. Shared variable names follow the same safe property-path rules as extracted fields.
 
 ### Three alternatives and an optional step
 
@@ -173,7 +203,8 @@ Unknown fields are rejected, including inside nested objects. Unless stated othe
 | `priority` | No | Integer from `1` (most important) to `5` (least important), default `3`. Display emphasis only; see [Flow priority](#flow-priority). |
 | `description` | No | Description shown in Info. |
 | `label` | No | Instance summary template; string or an array of text parts. See [Labels and result fields](#labels-and-result-fields). |
-| `start` | Yes | Existing step ID. Its extractor must declare the primary correlation field. |
+| `start` | One entry syntax | Existing step ID; mutually exclusive with `starts`. Its extractor must declare the primary correlation field. |
+| `starts` | One entry syntax | Array of 1–100 unique existing entry step IDs; mutually exclusive with `start`. Each entry must extract the primary correlation field. |
 | `timeout` | Yes | Positive integer followed by `ms`, `s`, `m` or `h`, e.g. `500ms`, `90s`, `2m`. The converted duration must be a positive safe integer in milliseconds (at most `9007199254740991` ms). No decimals, spaces or zero. Deadline starts when the instance is created and does not reset at each step. |
 | `correlation` | Yes | Object described below. |
 | `steps` | Yes | Array of 1–100 step objects. |
@@ -238,9 +269,9 @@ All specified conditions are combined with **AND**. Each matcher, including each
 | --- | --- | --- |
 | `path` | Yes | Safe dot-separated path in the parsed message, e.g. `payload.transactionId`. |
 | `equals` | Exactly one comparison | String, number, boolean or `null`; strict equality without coercion. Missing properties do not match, even when comparing to `null`. |
-| `equalsFrom` | Exactly one comparison | Object with required `step` and `field` strings, referring to a previous step's extracted payload field in the same instance. |
+| `equalsFrom` | Exactly one comparison | Either `{ step, field }` for earlier step payloads or `{ variable }` for a shared variable in the same instance. Optional boolean `optional` permits a reference that is not guaranteed on every route; unavailable comparisons never match. |
 
-`equalsFrom.step` must precede the consumer on **every** incoming route. Its extractor must declare `equalsFrom.field`. The engine reads the latest accepted occurrence of the producer step, requires a string, finite number or boolean value, and compares it strictly with the incoming JSON value. Referencing an optional producer that can be bypassed is invalid. The extractor need not be marked `required` for validation to pass, but if its value was absent the comparison cannot match. Error-rule matchers do not support `equalsFrom`.
+A required `equalsFrom.step` must precede the consumer on **every** incoming route and declare the field with `required: true`. Shared variable references require the equivalent all-path guarantee. Explicit `optional: true` permits producers on only some preceding routes or optional extractions. The engine reads the latest accepted producer occurrence or variable assignment, requires a string, finite number or boolean, and compares strictly. Missing/non-scalar values never match, including optional references. Start and error-rule matchers do not support `equalsFrom`.
 
 Safe paths follow `[A-Za-z_$][\w$]*` per segment separated by dots. Segments `__proto__`, `prototype` and `constructor` are forbidden. There are no array indexes, wildcards, JSONPath expressions or executable expressions. Extraction field names use the same validation; prefer simple names. A dotted extraction name is a literal payload key, not a nested object created by the engine; correlation and `equalsFrom.field` refer to that exact key.
 
@@ -256,6 +287,7 @@ There is no `any`, `or`, `not`, numeric range or regex-flags operator. Use disti
 | `regex` | Exactly one source | JavaScript regex pattern applied to original message text. Requires `group`. Extracted captures are strings. |
 | `group` | With `regex` | Name of an existing named capture, e.g. `requestId` for `(?<requestId>...)`. Numeric capture indexes are unsupported. Forbidden with a JSON extractor. |
 | `required` | No | Boolean, default `false`. If no value is extracted (`undefined`), the entire candidate is rejected. A JSON `null` counts as present, although it cannot be an identity or `equalsFrom` value. |
+| `variable` | No | Safe shared variable name to assign after acceptance; at most one assignment per name per node. Only scalar values are available. Missing/non-scalar required variables reject the candidate; optional variables clear the previous assignment. |
 | `sensitive` | No | Boolean, default `false`. Conceals the extracted field in payloads, label parts and results until revealed; it does not remove the value from memory or the captured log. |
 | `result` | No | Boolean, default `false`. Exposes the accepted extracted value in the instance result summary under its exact extraction field name. |
 
@@ -293,9 +325,9 @@ label:
   - text: ' · Reference {posted.reference}'
 ```
 
-A placeholder is exactly `{stepId.extractedField}`. Literal braces and malformed or nested placeholders are not supported. It refers to the named extraction, rather than a raw JSON path or an instance-wide global variable. References are resolved within the same flow instance from **accepted observations only**; out-of-order evidence retained without accepted progression cannot supply them. String, finite-number and boolean values can be substituted; objects, arrays, `null` and missing values cannot. Each substituted value is bounded to 4,096 JavaScript string code units; the extracted result itself retains its original value.
+A placeholder is `{stepId.extractedField}` or `{vars.variableName}`, optionally suffixed with `?` inside the braces. Literal braces and malformed or nested placeholders are not supported. It refers to the named extraction, rather than a raw JSON path or an instance-wide global variable. References are resolved within the same flow instance from **accepted observations only**; out-of-order evidence retained without accepted progression cannot supply them. String, finite-number and boolean values can be substituted; objects, arrays, `null` and missing values cannot. Each substituted value is bounded to 4,096 JavaScript string code units; the extracted result itself retains its original value.
 
-Declare referenced extraction fields explicitly. Blueprint-level labels may refer only to fields on the start step. Step labels may refer to their own fields and earlier steps that dominate them, meaning that every route to the consuming step passes through the producer. A label on a shared completion step cannot require a field unique to one alternative branch. Error-rule and known-code labels can use fields extracted by the rule itself and declared step fields, but those earlier values may be unavailable on the actual failing route. Validation does not establish that an optional extraction will be present at runtime.
+Declare referenced extraction fields explicitly. Required references to earlier steps need a producer on every incoming route with `required: true`; required shared variables need a guaranteed assignment on each route. A common completion step can use `vars.token` populated by either branch, but cannot require a field specific to just one branch. Mark such references explicitly optional with `?`. Blueprint labels are validated across entry states; error-rule and known-code labels across the rule's eligible failure states, including their own extractions. Labels on the producing node can still use its optional fields with the existing previous-label fallback. Unknown and future references remain invalid.
 
 When a label is omitted, the previous valid label remains. When any reference in a proposed label is missing or non-scalar, that update is not applied: the previous valid label remains as a whole. Before a usable label exists, the blueprint name is the fallback. A known error-code label takes precedence over the error rule label; without a code-specific label, the rule label applies. Labels are authored text and remain verbatim when the interface language changes.
 

@@ -6,17 +6,17 @@ export type FlowLabelTone = 'success' | 'error' | 'warning' | 'info';
 export type FlowLabel = string | { text: string; tone?: FlowLabelTone }[];
 export interface FlowLabelPart { text: string; tone?: FlowLabelTone; sensitive?: boolean }
 export interface FlowResult { field: string; stepId: string; value: unknown; sensitive?: boolean }
-export interface FlowReference { step: string; field: string }
+export type FlowReference = ({ step: string; field: string } | { variable: string }) & { optional?: boolean };
 export interface FlowMatcher {
   source?: 'any' | 'device' | 'webview'; platform?: 'ios' | 'android'; tag?: string; level?: string;
   contains?: string; regex?: string;
   json?: { path: string; equals?: string | number | boolean | null; equalsFrom?: FlowReference };
   all?: FlowMatcher[];
 }
-export interface FlowExtractor { json?: string; regex?: string; group?: string; required?: boolean; sensitive?: boolean; result?: boolean }
+export interface FlowExtractor { json?: string; regex?: string; group?: string; required?: boolean; variable?: string; sensitive?: boolean; result?: boolean }
 export interface FlowStep { id: string; shortLabel?: string; label?: FlowLabel; name: string; optional?: boolean; repeatable?: boolean; match: FlowMatcher; extract?: Record<string, FlowExtractor>; next?: string[]; outcome?: 'completed' | 'failed' | 'cancelled' }
 export interface FlowError { id: string; label?: FlowLabel; appliesTo: 'active' | string[]; match: FlowMatcher; extract?: Record<string, FlowExtractor>; codeField: string; codes: Record<string, { description: string; label?: FlowLabel; outcome: 'failed' | 'cancelled' }>; unknownOutcome: 'failed' | 'cancelled' }
-export interface FlowBlueprint { version: 1; id: string; name: string; priority?: FlowPriority; label?: FlowLabel; description?: string; start: string; timeout: string; correlation: { scope: 'device-session'; primary: string; aliases?: string[] }; steps: FlowStep[]; errors?: FlowError[] }
+export interface FlowBlueprint { version: 1; id: string; name: string; priority?: FlowPriority; label?: FlowLabel; description?: string; start?: string; starts?: string[]; timeout: string; correlation: { scope: 'device-session'; primary: string; aliases?: string[] }; steps: FlowStep[]; errors?: FlowError[] }
 export interface FlowDiagnostic { code: 'flowsDiagnostic'; params: { detail: string }; message: string; file?: string; line?: number; column?: number; path?: string }
 export interface FlowBlueprintFile { filename: string; source: string; revision: string }
 export interface FlowSnapshot { enabled: boolean; projectName: string; directory: string; revision: string; token?: string; blueprints: FlowBlueprint[]; files: FlowBlueprintFile[]; diagnostics: FlowDiagnostic[] }

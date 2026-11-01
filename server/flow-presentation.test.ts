@@ -69,7 +69,7 @@ test('template shape and expansion limits reject malformed input without throwin
  const b:any=blueprint();b.steps[0].label='Value {start.id}';assert.equal(text(flowPresentation(instance(b,[observation('start',{id:false})]))),'Value false');assert.equal(text(flowPresentation(instance(b,[observation('start',{id:null})]))),'Purchase');
 });
 test('step and extracted field names containing dots resolve unambiguously',()=> {
- const b:any=blueprint();b.start='start.node';b.steps[0].id='start.node';b.steps[0].extract['order.id']={json:'id'};b.label='{start.node.order.id}';
+ const b:any=blueprint();b.start='start.node';b.steps[0].id='start.node';b.steps[0].extract['order.id']={json:'id',required:true};b.label='{start.node.order.id}';
  assert.deepEqual(parseFlowBlueprint(JSON.stringify(b)).diagnostics,[]);assert.equal(text(flowPresentation(instance(b,[observation('start.node',{'order.id':'xyz'})]))),'xyz');
 });
 test('step and error IDs share one namespace for unambiguous observation provenance',()=> {

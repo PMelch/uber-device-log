@@ -41,3 +41,10 @@ Serve this directory with `python3 -m http.server 8088 --directory test_flow_pro
 `loading-progress-events.jsonl` is a separate synthetic application-message fixture; it leaves `sample-events.jsonl` and the existing demos unchanged. Emit its objects in order through a captured logger. Progress 0 → 50 → 40 → 100 updates one label/result as received. A terminal completion supplies a distinct success label; a deliberately late progress record cannot replace it. The percentage does not prove completion. Repeated updates never extend the original 30-second deadline, and timeout is missing-completion evidence rather than an invented loading error.
 
 Detailed shows the same latest label/results as Condensed, plus overview nodes. Timeline retains repeated observations within the analysis memory budget. The latest accepted progress occurrence supplies later `equalsFrom` comparisons; no keyless or most-recent-instance correlation is used. Run `node --import tsx --test server/loading-progress-sample.test.ts` from the viewer checkout to validate and replay the fixture and exercise the emitter without network APIs. Read [the format reference](../docs/flow-format.md#repeatable-progress-phases) before adapting it to a real application's verified logs.
+
+The fictional [alternative-entry example](.udl/flows/entry-routes.yaml) recognizes
+`entry.interactive` and `entry.background` as separate starts of the same graph,
+then continues through `entry.processing` and `entry.completed`. Both entries
+publish a required shared `token` from their respective payload shapes. See the
+[format reference](../docs/flow-format.md#multiple-entry-points-and-shared-variables)
+for optional references and guarantees at joins.

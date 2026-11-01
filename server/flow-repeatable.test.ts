@@ -7,7 +7,7 @@ import type { FlowBlueprint } from '../shared/flow-types.js';
 const blueprint = ():FlowBlueprint => ({version:1,id:'download',name:'Download',start:'start',timeout:'5s',correlation:{scope:'device-session',primary:'id'},steps:[
  {id:'start',name:'Start',match:{json:{path:'event',equals:'start'}},extract:{id:{json:'id',required:true}},next:['progress']},
  {id:'progress',name:'Progress',repeatable:true,match:{json:{path:'event',equals:'progress'}},extract:{id:{json:'id',required:true},percent:{json:'percent',result:true},token:{json:'token'}},label:'Download {progress.percent}%',next:['done']},
- {id:'done',name:'Done',match:{all:[{json:{path:'event',equals:'done'}},{json:{path:'token',equalsFrom:{step:'progress',field:'token'}}}]},outcome:'completed'}
+ {id:'done',name:'Done',match:{all:[{json:{path:'event',equals:'done'}},{json:{path:'token',equalsFrom:{step:'progress',field:'token',optional:true}}}]},outcome:'completed'}
 ]});
 const log=(event:string,fields:object={})=>({timestamp:'now',message:JSON.stringify({event,...fields}),source:{key:'device',name:'Phone',deviceId:'phone',platform:'android' as const}});
 function setup(b=blueprint()){let now=0;const engine=createFlowEngine(()=>now);engine.setBlueprints([b],'v1');return {engine,advance(ms:number){now+=ms;engine.tick();},setClock(ms:number){now=ms;}};}

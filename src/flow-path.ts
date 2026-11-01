@@ -189,7 +189,7 @@ function curvePoints(d: string) {
 }
 
 /** Immutable DAG metadata shared by every state lookup for a blueprint. */
-export function flowRouteTopology<T extends { id: string; next?: readonly string[]; optional?: boolean }>(steps: readonly T[]) {
+export function flowRouteTopology<T extends { id: string; next?: readonly string[]; optional?: boolean }>(steps: readonly T[], starts: readonly string[] = []) {
   const byId = new Map(steps.map(step => [step.id, step]));
   const next = new Map(steps.map(step => [step.id, [...(step.next ?? [])]]));
   const degree = new Map(steps.map(step => [step.id, 0]));
@@ -210,7 +210,7 @@ export function flowRouteTopology<T extends { id: string; next?: readonly string
     for (const id of next.get(step.id) ?? []) for (const child of reachable.get(id) ?? []) route.add(child);
     reachable.set(step.id, route);
   }
-  const exclusiveRoutes = [...next.values()].filter(targets => targets.length > 1).map(targets => {
+  const exclusiveRoutes = [...next.values(), starts].filter(targets => targets.length > 1).map(targets => {
     const routes = targets.map(id => reachable.get(id) ?? new Set<string>());
     const frequency = new Map<string, number>();
     for (const route of routes) for (const id of route) frequency.set(id, (frequency.get(id) ?? 0) + 1);

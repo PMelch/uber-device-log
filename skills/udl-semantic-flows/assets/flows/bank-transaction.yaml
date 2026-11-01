@@ -59,7 +59,7 @@ steps:
       - { text: 'Transfer completed: ', tone: success }
       - { text: '{start.amount} {start.currency} → {start.recipient}' }
       - { text: ' · Reference {posted.reference}' }
-      - { text: ' · Account {start.account}' }
+      - { text: ' · Account {start.account?}' }
     outcome: completed
 errors:
   - id: declined

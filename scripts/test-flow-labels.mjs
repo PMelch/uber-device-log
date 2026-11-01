@@ -15,7 +15,7 @@ const blueprint = {
     { id: 'registered', name: 'Registered', match: { json: { path: 'event', equals: 'label.registered' } }, extract: { id: { json: 'id', required: true }, reference: { json: 'reference', required: true, result: true } }, label: 'Transfer {registered.reference} registered', next: ['progress', 'sent'] },
     { id: 'progress', name: 'Transfer progress', repeatable: true, optional: true, match: { json: { path: 'event', equals: 'label.progress' } }, extract: { id: { json: 'id', required: true }, percent: { json: 'percent', required: true, result: true } }, label: 'Transfer {progress.percent}% complete', next: ['sent'] },
     { id: 'sent', name: 'Sent for processing', match: { json: { path: 'event', equals: 'label.sent' } }, extract: { id: { json: 'id', required: true } }, next: ['done'] },
-    { id: 'done', name: 'Settled', match: { json: { path: 'event', equals: 'label.done' } }, extract: { id: { json: 'id', required: true }, amount: { json: 'amount', result: true } }, label: [{ text: 'Transfer {registered.reference}: ' }, { text: 'successful', tone: 'success' }, { text: ' for {start.recipient}' }], outcome: 'completed' },
+    { id: 'done', name: 'Settled', match: { json: { path: 'event', equals: 'label.done' } }, extract: { id: { json: 'id', required: true }, amount: { json: 'amount', result: true } }, label: [{ text: 'Transfer {registered.reference}: ' }, { text: 'successful', tone: 'success' }, { text: ' for {start.recipient?}' }], outcome: 'completed' },
   ],
   errors: [{id:'private-error',appliesTo:'active',match:{json:{path:'event',equals:'label.failure'}},extract:{id:{json:'id',required:true},code:{json:'code',required:true,sensitive:true}},codeField:'code',codes:{},unknownOutcome:'failed'}],
 };
