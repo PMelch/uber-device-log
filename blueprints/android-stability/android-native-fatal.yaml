@@ -1,0 +1,48 @@
+# Source-derived, single-record observation; see ../README.md for evidence and limitations.
+version: 1
+id: android-native-fatal
+name: Android native fatal signal reported
+description: Observes the libc debuggerd fatal-signal header with reported thread and process IDs. Does not interpret arbitrary signal text, infer an OOM from SIGKILL or reconstruct a tombstone from unrelated lines. Addresses and signal codes remain in the original evidence.
+priority: 1
+start: observed
+timeout: 1s
+correlation:
+  scope: device-session
+  primary: record
+steps:
+  - id: observed
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      tag: libc
+      regex: ^Fatal signal [0-9]+ \(SIG[A-Z0-9]+\), code -?[0-9]+ \([^\r\n]+\)(?:, (?:fault addr|syscall) [^\r\n]+)? in tid [0-9]+ \([^\r\n]*\), pid [0-9]+ \([^\r\n]*\)$
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      signalNumber:
+        regex: "^Fatal signal (?<signalNumber>[0-9]+) "
+        group: signalNumber
+        required: true
+        result: true
+      signal:
+        regex: ^Fatal signal [0-9]+ \((?<signal>SIG[A-Z0-9]+)\)
+        group: signal
+        required: true
+        result: true
+      tid:
+        regex: " in tid (?<tid>[0-9]+) \\("
+        group: tid
+        required: true
+        result: true
+      affectedPid:
+        regex: ", pid (?<affectedPid>[0-9]+) \\("
+        group: affectedPid
+        required: true
+        result: true
+    label:
+      - text: "Native fatal signal reported: {observed.signal} (PID {observed.affectedPid})"
+        tone: error
+    outcome: failed

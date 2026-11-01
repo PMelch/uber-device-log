@@ -78,3 +78,15 @@ Playwright/browser overrides. It serves fictional bundles over local HTTP, uses
 temporary home/project directories, and tests global/project installation, enable,
 disable, retained evidence, form errors, keyboard access and seven-language layout
 at desktop and mobile widths. No external download or physical device is needed.
+
+## Android diagnostic bundles
+
+After building, run `node --import tsx scripts/test-android-diagnostics.mjs` with
+the same Playwright/browser overrides. It installs the three curated archives
+into an isolated temporary project through the real API, then emits fictional
+Logcat-shaped records through SSE and the analysis worker. It verifies nine
+diagnostic kinds, repeats, immediate outcomes, results/affected PID, raw-evidence
+reveal, HTML escaping, keyboard Timeline navigation and all seven languages at
+1440, 390 and 320 pixels in three display modes and light/dark themes.
+`SEMANTIC_FLOWS_SCREENSHOTS` optionally captures the German layouts. Source evidence,
+known limits and installation instructions are in [the bundle library](../blueprints/README.md).

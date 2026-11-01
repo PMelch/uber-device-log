@@ -1,0 +1,33 @@
+# Source-derived, single-record observation; see ../README.md for evidence and limitations.
+version: 1
+id: android-skipped-frames
+name: Android frame scheduling delay
+description: Observes Choreographer skipped-frame reports. The count describes reported scheduling delay, not measured FPS or a proven CPU/GC cause. Completion means this diagnostic record was recognized.
+priority: 2
+start: observed
+timeout: 1s
+correlation:
+  scope: device-session
+  primary: record
+steps:
+  - id: observed
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      tag: Choreographer
+      regex: ^Skipped [0-9]+ frames! +The application may be doing too much work on its main thread\.$
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      skippedFrames:
+        regex: ^Skipped (?<skippedFrames>[0-9]+) frames!
+        group: skippedFrames
+        required: true
+        result: true
+    label:
+      - text: "Frame scheduling delayed: {observed.skippedFrames} skipped frames reported"
+        tone: warning
+    outcome: completed

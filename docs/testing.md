@@ -256,3 +256,20 @@ ZIP/manifest validation, temporary homes and projects, activation, duplicate IDs
 disabling pinned recognition, atomic installs, API permissions and translated UI.
 The [bundle guide](blueprint-bundles.md) documents the contract and browser fixture.
 Tests must inject temporary homes, never use or modify the real user's bundle store.
+
+## Android diagnostic bundle regression
+
+`server/android-diagnostics.test.ts` validates the nine source-derived definitions,
+their extracted values, immediate terminal outcomes, repeated identical records,
+device isolation and negative source/tag/platform cases. It also checks that the
+three distributed archives match their source YAML and install disabled before
+explicit activation. `npm run blueprints:build` regenerates the archives;
+`npm run blueprints:check` verifies them without writing. Evidence and supported
+shapes are documented in [the bundle library](../blueprints/README.md).
+
+After building, `node --import tsx scripts/test-android-diagnostics.mjs` installs
+the real archives through the API and exercises the SSE/worker/production UI with
+fictional Android records. It checks repeated single events, affected PID/results,
+raw-evidence reveal, escaping, keyboard Timeline access, three display modes and
+seven languages at desktop/mobile widths in light/dark themes. No physical Android
+validation is implied by these synthetic checks.

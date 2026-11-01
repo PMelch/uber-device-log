@@ -1,0 +1,62 @@
+# Source-derived, single-record observation; see ../README.md for evidence and limitations.
+version: 1
+id: android-art-gc
+name: Android ART collection observed
+description: Observes selected ART concurrent collection log shapes. Pauses and total time are preserved with their original units. Total collection time is not a stop-the-world pause. This observation does not establish a leak, allocation storm or frame-drop cause; not every collection is logged.
+priority: 4
+start: observed
+timeout: 1s
+correlation:
+  scope: device-session
+  primary: record
+steps:
+  - id: observed
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      regex: "^(?:Background|Explicit|Alloc|NativeAlloc) (?:(?:young|partial|sticky) )?concurrent (?:copying|mark compact|mark sweep)(?: \\(sampled\\))? GC freed (?:[0-9]+\\([0-9]+(?:\\.[0-9]+)?[KMGT]?B\\)|[0-9]+(?:\\.[0-9]+)?[KMGT]?B) AllocSpace (?:objects|bytes), [0-9]+\\([0-9]+(?:\\.[0-9]+)?[KMGT]?B\\) LOS objects, [0-9]+% free, [0-9]+(?:\\.[0-9]+)?[KMGT]?B/[0-9]+(?:\\.[0-9]+)?[KMGT]?B, paused [0-9]+(?:\\.[0-9]+)?(?:ns|us|ms|s)(?:, ?[0-9]+(?:\\.[0-9]+)?(?:ns|us|ms|s))* total [0-9]+(?:\\.[0-9]+)?(?:ns|us|ms|s)$"
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      collector:
+        regex: "^(?<collector>.+?) GC freed "
+        group: collector
+        required: true
+        result: true
+      freedAllocSpace:
+        regex: " GC freed (?<freedAllocSpace>(?:[0-9]+\\([0-9]+(?:\\.[0-9]+)?[KMGT]?B\\)|[0-9]+(?:\\.[0-9]+)?[KMGT]?B)) AllocSpace"
+        group: freedAllocSpace
+        required: true
+        result: true
+      freePercent:
+        regex: " LOS objects, (?<freePercent>[0-9]+)% free,"
+        group: freePercent
+        required: true
+        result: true
+      heapUsed:
+        regex: "% free, (?<heapUsed>[0-9]+(?:\\.[0-9]+)?[KMGT]?B)/"
+        group: heapUsed
+        required: true
+        result: true
+      heapSize:
+        regex: "% free, [0-9]+(?:\\.[0-9]+)?[KMGT]?B/(?<heapSize>[0-9]+(?:\\.[0-9]+)?[KMGT]?B), paused"
+        group: heapSize
+        required: true
+        result: true
+      pauses:
+        regex: ", paused (?<pauses>[0-9]+(?:\\.[0-9]+)?(?:ns|us|ms|s)(?:, ?[0-9]+(?:\\.[0-9]+)?(?:ns|us|ms|s))*) total "
+        group: pauses
+        required: true
+        result: true
+      totalTime:
+        regex: " total (?<totalTime>[0-9]+(?:\\.[0-9]+)?(?:ns|us|ms|s))$"
+        group: totalTime
+        required: true
+        result: true
+    label:
+      - text: "ART GC observed: pauses {observed.pauses}; total {observed.totalTime}"
+        tone: info
+    outcome: completed

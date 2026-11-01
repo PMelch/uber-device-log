@@ -35,6 +35,10 @@ The responsive interface offers System, Light and Dark appearance options.
 
 ## Get started
 
+For opt-in diagnostics from existing Android logs, see the [Android diagnostic
+Blueprint bundles](blueprints/README.md). They recognize rendering, memory and
+stability signals without adding application instrumentation.
+
 **Minimum Node.js version: 22.12.0.** A browser and the device setup below are also required.
 Node.js must be installed and available on `PATH`, including when launching with `bunx`.
 Check your installed version with `node --version`.

@@ -10,6 +10,10 @@ Unreleased
 ----------
 
 Added
+- Provide opt-in Android diagnostic Blueprint bundles for frame scheduling,
+  slow rendering, startup, ART garbage collection, allocation failures,
+  low-memory kills, ANRs and fatal reports using existing Logcat signals.
+  Include reproducible archives, source evidence and installation guidance.
 - Load global Semantic Flows from ~/.udl alongside project definitions. Install
   validated .blueprint ZIP bundles from a URL through the interface or CLI, inspect
   their names, descriptions and specification versions, and enable or disable them

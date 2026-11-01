@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FlowProject } from '../flow-project.js';
 
-export async function createSemanticFlowsFixture(autoReplay = true) {
+export async function createSemanticFlowsFixture(autoReplay = true, platform: 'ios' | 'android' = 'ios') {
   const repository = fileURLToPath(new URL('../../', import.meta.url));
   const root = await mkdtemp(join(tmpdir(), 'semantic-flows-ui-'));
   const projectDirectory = join(root, 'test_flow_project');
@@ -18,7 +18,7 @@ export async function createSemanticFlowsFixture(autoReplay = true) {
     await writeFile(file, (await readFile(file, 'utf8')).replace(/^timeout: .+$/m, 'timeout: 3s'));
   }
   const project = await FlowProject.create(projectDirectory, { home: root });
-  const device = { id: 'semantic-phone', platform: 'ios', name: 'iPhone Semantic Fixture', state: 'connected', webviews: [{ id: 'checkout', socket: 'fixture-webview', title: 'Shop WebView', url: 'https://example.test/checkout' }] };
+  const device = { id: 'semantic-phone', platform, name: platform === 'ios' ? 'iPhone Semantic Fixture' : 'Android Semantic Fixture', state: 'connected', webviews: [{ id: 'checkout', socket: 'fixture-webview', title: 'Shop WebView', url: 'https://example.test/checkout' }] };
   const app = express();
   const clients = new Map<express.Response, boolean>();
   const timers = new Set<ReturnType<typeof setTimeout>>();
@@ -73,6 +73,9 @@ export async function createSemanticFlowsFixture(autoReplay = true) {
   return { app, projectDirectory, homeDirectory: root, emit(body: Record<string, unknown>, webview = false) {
     const record = { timestamp: new Date().toISOString(), message: JSON.stringify(body), level: 'INFO', tag: 'LabelFixture' };
     for (const [client, target] of clients) if (target === webview) client.write(`event: logs\ndata: ${JSON.stringify([record])}\n\n`);
+  }, emitNative(record: { message: string; tag?: string; pid?: number; level?: string }) {
+    const message = { timestamp: new Date().toISOString(), message: record.message, tag: record.tag, pid: record.pid, level: record.level ?? 'I' };
+    for (const [client, webview] of clients) if (!webview) client.write(`event: logs\ndata: ${JSON.stringify([message])}\n\n`);
   }, close: async () => { for (const timer of timers) clearTimeout(timer); for (const response of clients.keys()) response.end(); await rm(root, { recursive: true, force: true }); } };
 }
 

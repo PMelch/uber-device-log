@@ -1,0 +1,41 @@
+# Source-derived, single-record observation; see ../README.md for evidence and limitations.
+version: 1
+id: android-anr
+name: Android ANR reported
+description: Observes an ActivityManager ANR header. Optional PID and reason are extracted only from the same record, never guessed from following lines or the system logger PID. Does not diagnose CPU, lock, Binder, I/O or GC causation or claim a crash.
+priority: 1
+start: observed
+timeout: 1s
+correlation:
+  scope: device-session
+  primary: record
+steps:
+  - id: observed
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      tag: ActivityManager
+      regex: "^ANR in [A-Za-z0-9_.$:-]+(?: \\([^\\r\\n]*\\))?(?:\\r?\\n|$)"
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      process:
+        regex: ^ANR in (?<process>[A-Za-z0-9_.$:-]+)
+        group: process
+        required: true
+        result: true
+      affectedPid:
+        regex: "(?:^|\\r?\\n)PID: (?<affectedPid>[0-9]+)(?:\\r?\\n|$)"
+        group: affectedPid
+        result: true
+      reason:
+        regex: "(?:^|\\r?\\n)Reason: (?<reason>[^\\r\\n]+)"
+        group: reason
+        result: true
+    label:
+      - text: "ANR reported: {observed.process}"
+        tone: error
+    outcome: failed

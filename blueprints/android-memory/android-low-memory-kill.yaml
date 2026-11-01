@@ -1,0 +1,62 @@
+# Source-derived, single-record observation; see ../README.md for evidence and limitations.
+version: 1
+id: android-low-memory-kill
+name: Android low-memory kill
+description: Observes the AOSP lowmemorykiller kill record. affectedPid and process are parsed from the message; the Logcat PID is the killer daemon, not the victim. Does not classify ordinary ActivityManager lifecycle kills or establish that the victim caused system-wide pressure.
+priority: 2
+start: observed
+timeout: 1s
+correlation:
+  scope: device-session
+  primary: record
+steps:
+  - id: observed
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      tag: lowmemorykiller
+      regex: "^Kill '[^'\\r\\n]+' \\([0-9]+\\), uid [0-9]+, oom_score_adj -?[0-9]+ to free [0-9]+kB rss, [0-9]+k[Bb] swap(?:; reason: [^\\r\\n]+)?$"
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      process:
+        regex: ^Kill '(?<process>[^'\r\n]+)'
+        group: process
+        required: true
+        result: true
+      affectedPid:
+        regex: "' \\((?<affectedPid>[0-9]+)\\), uid"
+        group: affectedPid
+        required: true
+        result: true
+      uid:
+        regex: ", uid (?<uid>[0-9]+),"
+        group: uid
+        required: true
+        result: true
+      oomScoreAdj:
+        regex: oom_score_adj (?<oomScoreAdj>-?[0-9]+) to free
+        group: oomScoreAdj
+        required: true
+        result: true
+      rssKB:
+        regex: to free (?<rssKB>[0-9]+)kB rss
+        group: rssKB
+        required: true
+        result: true
+      swapKB:
+        regex: ", (?<swapKB>[0-9]+)k[Bb] swap"
+        group: swapKB
+        required: true
+        result: true
+      reason:
+        regex: "; reason: (?<reason>[^\\r\\n]+)$"
+        group: reason
+        result: true
+    label:
+      - text: "Low-memory kill reported: {observed.process} (PID {observed.affectedPid})"
+        tone: warning
+    outcome: failed

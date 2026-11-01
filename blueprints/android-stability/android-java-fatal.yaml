@@ -1,0 +1,41 @@
+# Source-derived, single-record observation; see ../README.md for evidence and limitations.
+version: 1
+id: android-java-fatal
+name: Android Java fatal exception reported
+description: Observes the AndroidRuntime FATAL EXCEPTION header. Process and affected PID are optional and are extracted only when present in the same record. A custom uncaught-exception handler may prevent process termination, so this diagnosis does not prove the process exited.
+priority: 1
+start: observed
+timeout: 1s
+correlation:
+  scope: device-session
+  primary: record
+steps:
+  - id: observed
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      tag: AndroidRuntime
+      regex: "^FATAL EXCEPTION: [^\\r\\n]+(?:\\r?\\n|$)"
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      thread:
+        regex: "^FATAL EXCEPTION: (?<thread>[^\\r\\n]+)"
+        group: thread
+        required: true
+        result: true
+      process:
+        regex: "(?:^|\\r?\\n)Process: (?<process>[^,\\r\\n]+), PID:"
+        group: process
+        result: true
+      affectedPid:
+        regex: "(?:^|\\r?\\n)(?:Process: [^,\\r\\n]+, )?PID: (?<affectedPid>[0-9]+)(?:\\r?\\n|$)"
+        group: affectedPid
+        result: true
+    label:
+      - text: Java fatal exception reported on {observed.thread}
+        tone: error
+    outcome: failed
