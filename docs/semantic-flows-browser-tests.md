@@ -70,3 +70,11 @@ keyboard selection and live status language switching in all seven locales at
 overview and Timeline. Deterministic availability, reassignment, malformed draft,
 ambiguity, revision and reordered-evidence tests are in
 `server/flow-multi-start.test.ts`.
+
+## Global Blueprint bundles
+
+Run `node --import tsx scripts/test-flow-bundles.mjs` after building, using the same
+Playwright/browser overrides. It serves fictional bundles over local HTTP, uses
+temporary home/project directories, and tests global/project installation, enable,
+disable, retained evidence, form errors, keyboard access and seven-language layout
+at desktop and mobile widths. No external download or physical device is needed.

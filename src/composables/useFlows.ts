@@ -37,7 +37,7 @@ export function useFlows() {
         snapshot.value = { ...result, revision: acknowledgedRevision, blueprints: snapshot.value?.blueprints ?? [] };
         if (result.revision !== requestedRevision) {
           loading.value = true;
-          analysis.snapshot(result.blueprints, result.revision); requestedRevision = result.revision;
+          analysis.snapshot(result.blueprints, result.revision, { sourceGenerations: result.sourceGenerations, sourceIds: result.sourceIds, inactiveSources: result.inactiveSources, conflictedBlueprintIds: result.conflictedBlueprintIds }); requestedRevision = result.revision;
           if (coldGap) analysis.gap();
           analysis.ingest(cold); cold = []; coldGap = false;
         }

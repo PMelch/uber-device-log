@@ -2,16 +2,21 @@
   "formatVersion": 1,
   "viewerPackageVersion": "0.9.0",
   "compatibility": "Snapshot of the source contract, including unreleased changes. This package version is provenance, not a minimum supported release. Validate with a viewer that implements these features.",
-  "contractDigest": "ec18d91851cb6da1a71a43472392e8f37b88035faee0fdd385c8a19a90bca4e9",
+  "contractDigest": "283da0290f49cfae72bec0353f8b6c095038ec958f1b74a81988db091af84429",
   "sourceFingerprints": {
-    "shared/flow-types.ts": "d40f75ffc7a9156c6449262e7f39a34870024a3c4e671127651f4780f8dc4217",
+    "shared/flow-types.ts": "d741a0fba06e34746e850250817db9f6ce725648b602ef71c56c25c692e334db",
     "shared/flow-blueprints.ts": "f32f7467dd19fde436b9a04fdc45b92b4b188c6b18801756187ce80e13d17ce0",
-    "shared/flow-engine.ts": "81ce79f65b05361461874da7eebc963256071623c8890225d2c52560e6c3e0a1",
+    "shared/flow-engine.ts": "c8f826d14a889db2db7bd7ff05fbb1938e2d6a7a50468e22f6314de06faccb9f",
     "shared/flow-presentation.ts": "14ebbce7ba7249c6b472d8236f48d6a34836cda2224af6502836ae79ed126343",
-    "shared/flow-variables.ts": "b8cf6c593048786357718d57bd269c721362c15f4b037f6820565ed7afc70d77"
+    "shared/flow-variables.ts": "b8cf6c593048786357718d57bd269c721362c15f4b037f6820565ed7afc70d77",
+    "server/flow-bundles.ts": "103f788ac95923cb86657a8c88b23815b0b902d98d9ee03526cdc85700ce88d3",
+    "server/flow-storage.ts": "2c442417fe95adf82ac9fee4bfbe7d8fbaaed9669dab58b3eefdc19af904b95e",
+    "server/flow-project.ts": "da21de524daaac2ca7c05d1610e9916a85a6c5d2432842ba3d279c5eec7c6a2b"
   },
   "resources": {
-    "references/flow-format.md": "43b37eb37c03fca97966a932adbccc50dfbe46f05e9bc95cb8cec6f600528d79",
+    "references/blueprint-bundles.md": "16ef9b28ff4e1cd1fc2e484caf4e0ae67127b7325cb583c938e264c591b81a9b",
+    "assets/bundles/example.blueprint": "c8b7b48276bde5edfc3fdbfdddd7aa4514172e3bc75db97c6bb94d872efbb5ca",
+    "references/flow-format.md": "01eab44ed34bb3a095f247e1e6fa9a18b454240eba14b2e12336482b63b347fa",
     "references/authoring-guide.md": "dbe487ed9244c5b80c29a81825fd96c8a7d4ef99f73a3352bb4da7aba605b1db",
     "references/api.md": "3d702bd81f6a2a61af40a96595885e9b611b238f3fb055fca7b8ba23660c3032",
     "assets/flows/purchase.yaml": "72023dc3f641c1cdff4ca313c621ba2409713c4da972a3eb395d650687488f4b",

@@ -48,6 +48,8 @@ For example, a captured WebView console can emit `console.log(JSON.stringify({ e
 
 Loading a project does not replay example logs. For a runnable emitter and more complete examples, see the [test project](examples.md).
 
+For global sources and ZIP-based `.blueprint` packages, see [Blueprint bundles](blueprint-bundles.md). Bundles do not change the per-Blueprint DSL.
+
 ## How steps and branches work
 
 `start` points to one initial step; alternatively, `starts` lists several entry steps. After accepting that step, the engine expects the IDs in its `next` list. A matching successor replaces that list with its own successors. An `outcome` ends the instance.

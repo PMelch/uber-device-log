@@ -247,3 +247,12 @@ visible. Without permission, Chrome rejected the WebSocket with
 permission guidance. This establishes the browser/proxy integration, not physical
 Android WebView compatibility. Safari guidance has synthetic UI coverage only;
 no physical iOS Safari inspection was performed for this change.
+
+## Global Blueprint bundle regression
+
+`server/flow-bundles.test.ts`, `flow-catalog.test.ts`, `flow-bundle-api.test.ts`,
+`flow-download.test.ts`, `flow-cli.test.ts` and `flow-source-ui.test.ts` exercise
+ZIP/manifest validation, temporary homes and projects, activation, duplicate IDs,
+disabling pinned recognition, atomic installs, API permissions and translated UI.
+The [bundle guide](blueprint-bundles.md) documents the contract and browser fixture.
+Tests must inject temporary homes, never use or modify the real user's bundle store.

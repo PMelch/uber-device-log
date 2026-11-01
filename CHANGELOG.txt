@@ -10,6 +10,11 @@ Unreleased
 ----------
 
 Added
+- Load global Semantic Flows from ~/.udl alongside project definitions. Install
+  validated .blueprint ZIP bundles from a URL through the interface or CLI, inspect
+  their names, descriptions and specification versions, and enable or disable them
+  independently per project or globally without a project. Report duplicate IDs
+  with their origins and stop recognition for disabled bundles while retaining logs.
 - Recognize alternative Semantic Flow entry points that converge on shared steps.
   Share per-instance variables across entries and branches, and mark unchosen
   entry paths as alternatives in the overview and Timeline.

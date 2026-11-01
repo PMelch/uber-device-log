@@ -12,6 +12,11 @@ import { listDevices, openLogs, type Stop } from './devices.js';
 import { streamLogs } from './stream.js';
 
 const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
+if (options.install) {
+  const { runBlueprintInstall } = await import('./flow-cli.js');
+  console.log(await runBlueprintInstall(options));
+  process.exit(0);
+}
 const project = initializeProject(options.project);
 const root = fileURLToPath(new URL(process.argv.includes('--production') ? '../..' : '..', import.meta.url));
 const app = express();

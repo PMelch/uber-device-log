@@ -1,11 +1,12 @@
 import { assignFlowVariables, flowScalar, flowStarts, type FlowVariableValue } from './flow-variables.js';
-import type { FlowReference, FlowBlueprint, FlowEngineState, FlowInstance, FlowMatcher, FlowExtractor, FlowObservation, FlowStep, FlowError } from './flow-types.js';
+import type { FlowActivationPolicy, FlowReference, FlowBlueprint, FlowEngineState, FlowInstance, FlowMatcher, FlowExtractor, FlowObservation, FlowStep, FlowError } from './flow-types.js';
 import type { LogMessage } from './types.js';
 
 /** Pure, session-local recognition. A worker owns the clock, queues and lifecycle. */
 export function createFlowEngine(now: () => number = () => performance.now()) {
   let blueprints: FlowBlueprint[] = [], revision = '', epoch = 0, serial = 0, gaps = 0, stateVersion = 0;
   let instances: FlowInstance[] = [];
+  const retired = new WeakSet<FlowInstance>();
   type BlueprintScope = { id: string; revisions: string[]; nodeCandidates?: Record<string, string[]>; futureNodes?: string[] };
   let pending: { message: LogMessage; at: number; scopes: BlueprintScope[] }[] = [];
   const sizes = new Map<string, number>();
@@ -101,7 +102,7 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
   function owns(scopes: BlueprintScope[] | undefined, instance: FlowInstance, nodeId: string) {
     return !scopes || !!scopes.find(scope => scope.id === instance.blueprint.id)?.nodeCandidates?.[nodeId]?.includes(instance.id);
   }
-  function active(instance: FlowInstance) { return instance.epoch === epoch && (instance.outcome === 'running' || instance.outcome === 'timed_out'); }
+  function active(instance: FlowInstance) { return !retired.has(instance) && instance.epoch === epoch && (instance.outcome === 'running' || instance.outcome === 'timed_out'); }
   function definitions() {
     const values = new Map<string, { blueprint: FlowBlueprint; revision: string }>();
     for (const blueprint of blueprints) values.set(`${revision}:${blueprint.id}`, { blueprint, revision });
@@ -355,7 +356,27 @@ export function createFlowEngine(now: () => number = () => performance.now()) {
     }
   }
   return {
-    setBlueprints(next: FlowBlueprint[], rev: string) { if (JSON.stringify(next).length * 2 > budget / 2) throw new Error('Blueprint snapshot exceeds analysis budget.'); blueprints = structuredClone(next); revision = rev; stateVersion++; trim(); },
+    setBlueprints(next: FlowBlueprint[], rev: string, policy: FlowActivationPolicy = {}) {
+      if (JSON.stringify(next).length * 2 > budget / 2) throw new Error('Blueprint snapshot exceeds analysis budget.');
+      const stoppedIds = new Set(policy.conflictedBlueprintIds ?? []), stoppedSources = new Set(policy.inactiveSources ?? []);
+      const availableSources = policy.sourceIds === undefined ? undefined : new Set(policy.sourceIds);
+      const stopped = (blueprint: FlowBlueprint) => !!blueprint.sourceGeneration && !!blueprint.sourceId && !!policy.sourceGenerations?.[blueprint.sourceId] && policy.sourceGenerations[blueprint.sourceId] !== blueprint.sourceGeneration || stoppedIds.has(blueprint.id) || !!blueprint.sourceId && (stoppedSources.has(blueprint.sourceId) || !!availableSources && !availableSources.has(blueprint.sourceId));
+      const stoppedRevisions = new Set<string>();
+      for (const blueprint of blueprints) if (stopped(blueprint)) stoppedRevisions.add(`${blueprint.id}:${revision}`);
+      for (const instance of instances) if (stopped(instance.blueprint)) {
+        retired.add(instance); stoppedRevisions.add(`${instance.blueprint.id}:${instance.revision}`);
+        if (instance.outcome === 'running') { instance.outcome = 'interrupted'; instance.endedAt = Math.max(instance.updatedAt, now()); }
+      }
+      pending = pending.flatMap(row => {
+        row.scopes = row.scopes.filter(scope => {
+          if (stoppedIds.has(scope.id)) return false;
+          scope.revisions = scope.revisions.filter(rev => !stoppedRevisions.has(`${scope.id}:${rev}`));
+          return scope.revisions.length > 0;
+        });
+        return row.scopes.length ? [row] : [];
+      });
+      blueprints = structuredClone(next); revision = rev; stateVersion++; trim();
+    },
     ingest(messages: LogMessage[]) {
       const at = now();
       expireDeadlines(at); expirePending();

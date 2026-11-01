@@ -1,0 +1,197 @@
+import { initializeProject } from './project-context.js';
+import { randomBytes, createHash } from 'node:crypto';
+import { constants } from 'node:fs';
+import { lstat, mkdir, readdir, realpath, rename, unlink, open } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { parseDocument } from 'yaml';
+import { FLOW_FILE_LIMIT, flowDiagnostic, parseFlowBlueprint } from '../shared/flow-blueprints.js';
+import type { FlowBlueprint, FlowBlueprintFile, FlowSnapshot } from '../shared/flow-types.js';
+const hash = (source: string) => createHash('sha256').update(source).digest('hex');
+export const within = (root: string, path: string) => { const p = relative(root, path); return p === '' || (!p.startsWith(`..${sep}`) && p !== '..' && !isAbsolute(p)); };
+export class FlowProjectError extends Error { constructor(message: string, public status = 400) { super(message); } }
+export async function readBoundedBytes(path: string, label: string, limit = FLOW_FILE_LIMIT) {
+  const sizeLabel = limit === FLOW_FILE_LIMIT ? '256 KiB' : '4 MiB';
+  const before = await lstat(path);
+  if (before.isSymbolicLink() || !before.isFile()) throw new FlowProjectError(`${label} must be a regular file, not a symlink.`);
+  if (before.size > limit) throw new FlowProjectError(`${label} exceeds ${sizeLabel}.`);
+  // NONBLOCK prevents a replacement FIFO from hanging open; NOFOLLOW rejects
+  // replacement symlinks. Validate the opened descriptor before reading it.
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const opened = await handle.stat();
+    if (!opened.isFile()) throw new FlowProjectError(`${label} must be a regular file.`);
+    if (opened.size > limit) throw new FlowProjectError(`${label} exceeds ${sizeLabel}.`);
+    // Read at most limit+1 bytes even if an external writer grows the file.
+    const buffer = Buffer.alloc(limit + 1);
+    let length = 0;
+    while (length < buffer.length) {
+      const { bytesRead } = await handle.read(buffer, length, buffer.length - length, length);
+      if (!bytesRead) break;
+      length += bytesRead;
+    }
+    if (length > limit) throw new FlowProjectError(`${label} exceeds ${sizeLabel}.`);
+    return buffer.subarray(0, length);
+  } finally { await handle.close(); }
+}
+export async function readBoundedSource(path: string, label: string) { return (await readBoundedBytes(path, label)).toString('utf8'); }
+export function parseProjectConfig(source: string, label: string) {
+  const doc = parseDocument(source, { schema: 'core', uniqueKeys: true });
+  if (doc.errors.length || doc.warnings.length) throw new Error(`Invalid ${label}: ${[...doc.errors, ...doc.warnings].map(e => e.message).join('; ')}`);
+  const value = doc.toJS({ maxAliasCount: 0 });
+  const config = value ?? {};
+  if (value === null) doc.setIn([], doc.createNode({}));
+  if (typeof config !== 'object' || Array.isArray(config) || (config.blueprints !== undefined && (typeof config.blueprints !== 'string' || !config.blueprints.trim()))) throw new Error(`${label} must be a mapping with optional blueprints: <relative directory>.`);
+  return { doc, config };
+}
+export async function optionalStat(path: string) {
+  try { return await lstat(path); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; return undefined; }
+}
+async function migrateLegacyProject(root: string, configFile: string) {
+  // A nonempty shared config is authoritative and is never rewritten.
+  if ((await readBoundedSource(configFile, '.udl/config.yaml')).length) return;
+  const legacyConfig = resolve(root, '.flowsrc');
+  const hasLegacyConfig = !!await optionalStat(legacyConfig);
+  const source = hasLegacyConfig ? await readBoundedSource(legacyConfig, '.flowsrc') : '';
+  const { doc, config } = parseProjectConfig(source, '.flowsrc');
+  const legacyDirectory = resolve(root, config.blueprints ?? '.flows');
+  if (!within(root, legacyDirectory) || legacyDirectory === root) throw new Error('Blueprint directory must be inside the project root.');
+  if (legacyDirectory === resolve(root, '.flows')) {
+    if (hasLegacyConfig) doc.set('blueprints', '.udl/flows');
+    const before = await optionalStat(legacyDirectory);
+    if (before) {
+      if (before.isSymbolicLink() || !before.isDirectory()) throw new Error('Legacy .flows must be a directory, not a symlink.');
+      const destination = resolve(root, '.udl', 'flows');
+      if (await optionalStat(destination)) throw new Error('Migration conflict: both .flows and .udl/flows exist. Reconcile them before restarting.');
+      await rename(legacyDirectory, destination);
+    }
+  }
+  if (hasLegacyConfig) {
+    // Retain .flowsrc as a backup. Only populate the empty shared config created
+    // by initializeProject; never truncate a config another instance has filled.
+    const handle = await open(configFile, constants.O_RDWR | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    try {
+      const stat = await handle.stat();
+      if (!stat.isFile() || stat.size !== 0) throw new Error('Project configuration changed during migration. Restart to use it.');
+      await handle.writeFile(doc.toString(), 'utf8');
+      await handle.sync();
+    } finally { await handle.close(); }
+  }
+}
+export class FlowDirectory {
+  private token = randomBytes(32).toString('hex');
+  private snapshot: FlowSnapshot;
+  private serial: Promise<unknown> = Promise.resolve();
+  private constructor(private projectRoot?: string, private blueprintDirectory?: string) {
+    this.snapshot = { enabled: !!projectRoot, projectName: projectRoot ? basename(projectRoot) : '', directory: blueprintDirectory && projectRoot ? relative(projectRoot, blueprintDirectory) : '', revision: hash('[]'), token: this.token, blueprints: [], files: [], diagnostics: [] };
+  }
+  static async create(directory?: string, optional = false) {
+    if (directory === undefined) return new FlowDirectory();
+    const context = optional ? { directory } : initializeProject(directory)!;
+    const root = await realpath(context.directory);
+    if (!(await lstat(root)).isDirectory()) throw new Error(`Flow project is not a directory: ${directory}`);
+    const configFile = resolve(root, '.udl', 'config.yaml');
+    if (!optional) await migrateLegacyProject(root, configFile);
+    const source = optional && !await optionalStat(configFile) ? '' : await readBoundedSource(configFile, '.udl/config.yaml');
+    const { config } = parseProjectConfig(source, '.udl/config.yaml');
+    const path = resolve(root, config.blueprints ?? '.udl/flows');
+    if (!within(root, path) || path === root) throw new Error('Blueprint directory must be inside the project root.');
+    const project = new FlowDirectory(root, path);
+    await project.safeDirectory(false);
+    await project.reload();
+    return project;
+  }
+  private async safeDirectory(create: boolean) {
+    if (!this.projectRoot || !this.blueprintDirectory) throw new FlowProjectError('No flow project configured.', 409);
+    let cursor = this.projectRoot;
+    for (const segment of relative(this.projectRoot, this.blueprintDirectory).split(sep)) {
+      cursor = resolve(cursor, segment);
+      try { const stat = await lstat(cursor); if (stat.isSymbolicLink() || !stat.isDirectory()) throw new FlowProjectError('Blueprint directory must not contain symlinks or non-directories.'); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; if (create) await mkdir(cursor); else return false; }
+    }
+    if (!within(this.projectRoot, await realpath(this.blueprintDirectory))) throw new FlowProjectError('Blueprint directory is outside the project.');
+    return true;
+  }
+  private filename(value: unknown): string {
+    if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.ya?ml$/.test(value)) throw new FlowProjectError('Use a plain .yaml or .yml filename (maximum 125 characters).');
+    if (/\.draft\.ya?ml$/i.test(value)) throw new FlowProjectError('Draft filenames are inactive. Remove .draft before saving an active blueprint.');
+    return value;
+  }
+  private async file(filename: string) {
+    const path = resolve(this.blueprintDirectory!, this.filename(filename));
+    const source = await readBoundedSource(path, 'Blueprint');
+    return { filename, source, revision: hash(source) };
+  }
+  private async scan(replace?: FlowBlueprintFile) {
+    const diagnostics = [];
+    const files: FlowBlueprintFile[] = [];
+    const blueprints: FlowBlueprint[] = [];
+    const ids = new Set<string>();
+    const conflictedBlueprintIds: string[] = [];
+    if (!await this.safeDirectory(false)) return { files, blueprints, conflictedBlueprintIds, diagnostics: [flowDiagnostic('Blueprint directory does not exist. Save a new blueprint to create it.')] };
+    const names = (await readdir(this.blueprintDirectory!)).filter(n => /\.ya?ml$/.test(n) && !/\.draft\.ya?ml$/i.test(n)).sort();
+    if (replace && !names.includes(replace.filename)) names.push(replace.filename);
+    if (names.length > 100) return { files, blueprints, conflictedBlueprintIds, diagnostics: [flowDiagnostic('At most 100 blueprint files are allowed.')] };
+    for (const filename of names.sort()) {
+      try {
+        const file = filename === replace?.filename ? replace : await this.file(filename);
+        files.push(file);
+        const parsed = parseFlowBlueprint(file.source, filename);
+        diagnostics.push(...parsed.diagnostics);
+        if (parsed.blueprint) {
+          if (ids.has(parsed.blueprint.id)) { conflictedBlueprintIds.push(parsed.blueprint.id); diagnostics.push(flowDiagnostic(`Duplicate blueprint ID: ${parsed.blueprint.id}`, filename)); }
+          else ids.add(parsed.blueprint.id);
+          blueprints.push({ ...parsed.blueprint, sourceFile: filename });
+        }
+      } catch (error) { diagnostics.push(flowDiagnostic(error instanceof Error ? error.message : String(error), filename)); }
+    }
+    return { files, blueprints, diagnostics, conflictedBlueprintIds };
+  }
+  private async refresh() {
+    if (!this.projectRoot) return this.snapshot;
+    try {
+      const scanned = await this.scan();
+      const revision = hash(JSON.stringify(scanned.files.map(f => [f.filename, f.revision])));
+      this.snapshot = { ...this.snapshot, files: scanned.files, diagnostics: scanned.diagnostics, conflictedBlueprintIds: scanned.conflictedBlueprintIds, ...(scanned.diagnostics.some(item => !item.message.startsWith('Duplicate blueprint ID:')) ? {} : { blueprints: scanned.blueprints, revision }) };
+    } catch (error) { this.snapshot = { ...this.snapshot, diagnostics: [flowDiagnostic(error instanceof Error ? error.message : String(error))] }; }
+    return this.snapshot;
+  }
+  private queue<T>(action: () => Promise<T>): Promise<T> {
+    const operation = this.serial.then(action, action);
+    this.serial = operation.then(() => undefined, () => undefined);
+    return operation;
+  }
+  reload() { return this.queue(() => this.refresh()); }
+  async save(filenameValue: unknown, sourceValue: unknown, revision?: unknown, create = false) {
+    return this.queue(async () => {
+      const filename = this.filename(filenameValue);
+      if (typeof sourceValue !== 'string' || Buffer.byteLength(sourceValue) > FLOW_FILE_LIMIT) throw new FlowProjectError('Source must be a string of at most 256 KiB.');
+      const parsed = parseFlowBlueprint(sourceValue, filename);
+      if (parsed.diagnostics.length) return { diagnostics: parsed.diagnostics };
+      await this.safeDirectory(true);
+      let old: FlowBlueprintFile | undefined;
+      try { old = await this.file(filename); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+      if (create ? !!old : !old || typeof revision !== 'string' || old.revision !== revision) throw new FlowProjectError('Blueprint changed or already exists. Reload before saving.', 409);
+      const candidate = { filename, source: sourceValue, revision: hash(sourceValue) };
+      const scanned = await this.scan(candidate);
+      if (scanned.diagnostics.length) return { diagnostics: scanned.diagnostics };
+      const target = resolve(this.blueprintDirectory!, filename);
+      const temporary = resolve(dirname(target), `.flow-${randomBytes(12).toString('hex')}.tmp`);
+      const handle = await open(temporary, 'wx', 0o600);
+      try { await handle.writeFile(sourceValue, 'utf8'); await handle.sync(); } finally { await handle.close(); }
+      try {
+        await this.safeDirectory(false);
+        if (create) {
+          // Link performs an exclusive atomic create; an external file cannot be overwritten.
+          const { link } = await import('node:fs/promises');
+          try { await link(temporary, target); } catch (error) { if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new FlowProjectError('Blueprint already exists.', 409); throw error; }
+        } else {
+          const current = await this.file(filename);
+          if (current.revision !== revision) throw new FlowProjectError('Blueprint changed. Reload before saving.', 409);
+          await rename(temporary, target);
+        }
+      } finally { await unlink(temporary).catch(() => {}); }
+      return this.refresh();
+    });
+  }
+}

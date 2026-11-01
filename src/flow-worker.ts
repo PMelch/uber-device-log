@@ -6,7 +6,7 @@ let sentVersion = -1;
 self.onmessage = (event: MessageEvent<FlowCommand & { id: number }>) => {
   const command = event.data;
   try {
-    if (command.type === 'snapshot') engine.setBlueprints(command.blueprints, command.revision);
+    if (command.type === 'snapshot') engine.setBlueprints(command.blueprints, command.revision, command.policy);
     else if (command.type === 'ingest') engine.ingest(command.messages);
     else if (command.type === 'clear') engine.clear();
     else if (command.type === 'interrupt') engine.interrupt();

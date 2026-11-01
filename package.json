@@ -23,7 +23,8 @@
     "@tanstack/vue-virtual": "^3.13.44",
     "appium-ios-device": "^3.1.24",
     "express": "^5.2.1",
-    "yaml": "^2.9.1"
+    "yaml": "^2.9.1",
+    "yauzl": "3.4.0"
   },
   "overrides": {
     "shell-quote": "1.12.0",

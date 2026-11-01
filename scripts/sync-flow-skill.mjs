@@ -20,6 +20,8 @@ function portableLinks(content) {
     .replaceAll('semantic-flows-agent-guide.md', 'authoring-guide.md')
     .replaceAll('semantic-flows-browser-tests.md', 'validation.md');
 }
+output.set('references/blueprint-bundles.md', (await read('docs/blueprint-bundles.md')).replaceAll('../test_flow_project/bundles/', '../assets/bundles/'));
+output.set('assets/bundles/example.blueprint', await readFile(resolve(root, 'test_flow_project/bundles/example.blueprint')));
 const format = await read('docs/flow-format.md');
 output.set('references/flow-format.md', portableLinks(format.split('## Implementation and further reading')[0]) + `## Bundled resources\n\n- [Authoring guide](authoring-guide.md) for extracting flows from application code.\n- [Validation](validation.md) for editor, API and optional viewer-checkout checks.\n- [Examples](examples.md) for fictional YAML definitions and event fixtures.\n- [API](api.md#semantic-flows) for local draft validation and file operations.\n- [Contract fingerprint](contract.json) identifies the source contract used to generate this copy.\n`);
 let guide = await read('docs/semantic-flows-agent-guide.md');
@@ -40,7 +42,7 @@ for (const filename of ['sample-events.jsonl', 'bank-transaction-events.jsonl', 
 output.set('assets/config.yaml', await read('test_flow_project/.udl/config.yaml'));
 output.set('LICENSE', await read('LICENSE'));
 output.set('INSTALL.md', (await read('docs/flow-authoring-skill.md')).replaceAll('../skills/udl-semantic-flows/SKILL.md', 'SKILL.md'));
-const contractSources = ['shared/flow-types.ts', 'shared/flow-blueprints.ts', 'shared/flow-engine.ts', 'shared/flow-presentation.ts', 'shared/flow-variables.ts'];
+const contractSources = ['shared/flow-types.ts', 'shared/flow-blueprints.ts', 'shared/flow-engine.ts', 'shared/flow-presentation.ts', 'shared/flow-variables.ts', 'server/flow-bundles.ts', 'server/flow-storage.ts', 'server/flow-project.ts'];
 const sourceFingerprints = Object.fromEntries(await Promise.all(contractSources.map(async path => [path, hash(await read(path))])));
 const packageMetadata = JSON.parse(await read('package.json'));
 output.set('references/contract.json', JSON.stringify({
@@ -55,8 +57,8 @@ const stale = [];
 for (const [path, content] of output) {
   const destination = resolve(directory, path);
   if (check) {
-    let current; try { current = await readFile(destination, 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-    if (current !== content) stale.push(path);
+    let current; try { current = await readFile(destination, Buffer.isBuffer(content) ? undefined : 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (Buffer.isBuffer(content) ? !Buffer.isBuffer(current) || !current.equals(content) : current !== content) stale.push(path);
   } else {
     await mkdir(dirname(destination), { recursive: true });
     await writeFile(destination, content);

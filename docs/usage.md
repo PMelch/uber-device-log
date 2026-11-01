@@ -174,3 +174,12 @@ details. On the Mac connected to the device, enable Safari's developer features;
 enable Web Inspector on the iOS device. In Safari's Develop menu, choose the
 device, then the corresponding app and page. There is no direct Safari deep link
 to an individual remote WebView.
+
+## Global Flow sources and bundles
+
+Global standalone Blueprints in `~/.udl/flows` are available without a project. A
+selected project adds its own sources. Use **Flows → Blueprint sources** to inspect
+names, descriptions, specification versions, scope and active counts, enable or
+disable bundles, or install from a `.blueprint` URL. A bundle selection is saved in
+the selected project's `.udl/config.yaml`, or globally without a project argument.
+See [the bundle guide](blueprint-bundles.md) for the full contract and CLI commands.

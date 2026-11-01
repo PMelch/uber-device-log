@@ -14,7 +14,7 @@ async function fixture() {
 }
 test('config discovery defaults and creates missing directory only on valid save', async () => {
  const f = await fixture(); try {
- const project = await FlowProject.create(f.root);
+ const project = await FlowProject.create(f.root, { home: f.root });
  assert.ok((await project.reload()).diagnostics.length);
  const saved = await project.save('test.yaml',source,undefined,true);
  assert.equal('blueprints' in saved && saved.blueprints.length,1);
@@ -25,7 +25,7 @@ test('config discovery defaults and creates missing directory only on valid save
 });
 test('invalid reload keeps complete last-good definitions and revision', async () => {
  const f = await fixture(); try {
- const project = await FlowProject.create(f.root);
+ const project = await FlowProject.create(f.root, { home: f.root });
  await project.save('test.yaml',source,undefined,true);
  const before = await project.reload();
  await writeFile(join(f.root,'.udl','flows','test.yaml'),'invalid: true');
@@ -35,7 +35,7 @@ test('invalid reload keeps complete last-good definitions and revision', async (
 });
 test('external edit conflicts, invalid candidate sets and symlinks are rejected', async () => {
  const f = await fixture(); try {
- const project = await FlowProject.create(f.root);
+ const project = await FlowProject.create(f.root, { home: f.root });
  await project.save('test.yaml',source,undefined,true);
  const previous = await project.reload();
  await writeFile(join(f.root,'.udl','flows','test.yaml'),source+'# external');
@@ -49,15 +49,15 @@ test('external edit conflicts, invalid candidate sets and symlinks are rejected'
 test('config rejects escaping roots, aliases and directory symlinks', async () => {
  const f = await fixture(); try {
  for (const config of ['blueprints: ..', 'blueprints: &a .flows\nother: *a']) {
- await writeFile(join(f.root,'.udl','config.yaml'),config); await assert.rejects(FlowProject.create(f.root));
+ await writeFile(join(f.root,'.udl','config.yaml'),config); await assert.rejects(FlowProject.create(f.root, { home: f.root }));
  }
  await writeFile(join(f.root,'.udl','config.yaml'),'blueprints: linked');
  await mkdir(join(f.root,'target')); await symlink(join(f.root,'target'),join(f.root,'linked'));
- await assert.rejects(FlowProject.create(f.root),/symlink/);
+ await assert.rejects(FlowProject.create(f.root, { home: f.root }),/symlink/);
  } finally {await f.cleanup();}
 });
 test('API requires token and JSON for mutations and validates without writing', async () => {
- const f = await fixture(); const app = express(); const project = await FlowProject.create(f.root); app.use('/api/flows',project.router());
+ const f = await fixture(); const app = express(); const project = await FlowProject.create(f.root, { home: f.root }); app.use('/api/flows',project.router());
  const server = app.listen(0,'127.0.0.1'); await new Promise<void>(r => server.once('listening',r));
  const address = server.address() as {port:number}; const url = `http://127.0.0.1:${address.port}/api/flows`;
  try {
@@ -75,9 +75,9 @@ test('API requires token and JSON for mutations and validates without writing', 
 test('config rejects oversized and non-regular files before reading', async () => {
  const f = await fixture(); try {
  await writeFile(join(f.root,'.udl','config.yaml'),'#'.repeat(256*1024+1));
- await assert.rejects(FlowProject.create(f.root), /256 KiB/);
+ await assert.rejects(FlowProject.create(f.root, { home: f.root }), /256 KiB/);
  await rm(join(f.root,'.udl','config.yaml')); await mkdir(join(f.root,'.udl','config.yaml'));
- await assert.rejects(FlowProject.create(f.root), /regular file/);
+ await assert.rejects(FlowProject.create(f.root, { home: f.root }), /regular file/);
  } finally {await f.cleanup();}
 });
 test('blocked draft files never prevent valid blueprints from activating', async () => {
@@ -86,7 +86,7 @@ test('blocked draft files never prevent valid blueprints from activating', async
  await writeFile(join(f.root,'.udl','flows','purchase.yaml'),source);
  await writeFile(join(f.root,'.udl','flows','assets.draft.yaml'),'version: 1\nid: blocked\n');
  await writeFile(join(f.root,'.udl','flows','other.draft.yml'),'broken: [');
- const project=await FlowProject.create(f.root);
+ const project=await FlowProject.create(f.root, { home: f.root });
  const snapshot=await project.reload();
  assert.deepEqual(snapshot.diagnostics,[]);
  assert.deepEqual(snapshot.files.map(file=>file.filename),['purchase.yaml']);
@@ -99,7 +99,7 @@ test('blocked draft files never prevent valid blueprints from activating', async
 test('project setup creates missing shared config and uses .udl/flows', async () => {
  const f=await fixture(); try {
  await rm(join(f.root,'.udl'),{recursive:true});
- const project=await FlowProject.create(f.root);
+ const project=await FlowProject.create(f.root, { home: f.root });
  assert.equal(await readFile(join(f.root,'.udl','config.yaml'),'utf8'),'');
  assert.equal((await project.reload()).directory,join('.udl','flows'));
  await project.save('test.yaml',source,undefined,true);
@@ -110,7 +110,7 @@ test('flow settings coexist with future project settings and custom paths', asyn
  const f=await fixture(); try {
  const config='blueprints: custom-flows\nfutureSetting: true\n';
  await writeFile(join(f.root,'.udl','config.yaml'),config);
- const project=await FlowProject.create(f.root);
+ const project=await FlowProject.create(f.root, { home: f.root });
  await project.save('test.yaml',source,undefined,true);
  assert.equal(await readFile(join(f.root,'custom-flows','test.yaml'),'utf8'),source);
  assert.equal(await readFile(join(f.root,'.udl','config.yaml'),'utf8'),config);
@@ -124,13 +124,13 @@ test('legacy default config and blueprints migrate automatically and repeat safe
  await writeFile(join(f.root,'.flowsrc'),'# legacy comment\nblueprints: .flows\n');
  await mkdir(join(f.root,'.flows'));
  await writeFile(join(f.root,'.flows','test.yaml'),source);
- const project=await FlowProject.create(f.root);
+ const project=await FlowProject.create(f.root, { home: f.root });
  assert.equal((await project.reload()).blueprints.length,1);
  assert.match(await readFile(join(f.root,'.udl','config.yaml'),'utf8'),/blueprints: .udl\/flows/);
  assert.match(await readFile(join(f.root,'.udl','config.yaml'),'utf8'),/# legacy comment/);
  assert.equal(await readFile(join(f.root,'.udl','flows','test.yaml'),'utf8'),source);
  await assert.rejects(readFile(join(f.root,'.flows','test.yaml')), {code:'ENOENT'});
- assert.equal((await (await FlowProject.create(f.root)).reload()).blueprints.length,1);
+ assert.equal((await (await FlowProject.create(f.root, { home: f.root })).reload()).blueprints.length,1);
  } finally {await f.cleanup();}
 });
 test('legacy custom flow paths are preserved while migrating an empty shared config', async () => {
@@ -138,7 +138,7 @@ test('legacy custom flow paths are preserved while migrating an empty shared con
  await writeFile(join(f.root,'.flowsrc'),'blueprints: custom-flows\n');
  await mkdir(join(f.root,'custom-flows'));
  await writeFile(join(f.root,'custom-flows','test.yaml'),source);
- const project=await FlowProject.create(f.root);
+ const project=await FlowProject.create(f.root, { home: f.root });
  assert.equal((await project.reload()).directory,'custom-flows');
  assert.equal((await project.reload()).blueprints.length,1);
  } finally {await f.cleanup();}
@@ -150,7 +150,7 @@ test('migration refuses conflicting legacy and destination directories without a
  await writeFile(join(f.root,'.flows','old.yaml'),source);
  await mkdir(join(f.root,'.udl','flows'));
  await writeFile(join(f.root,'.udl','flows','new.yaml'),'preserve');
- await assert.rejects(FlowProject.create(f.root),/both|conflict/i);
+ await assert.rejects(FlowProject.create(f.root, { home: f.root }),/both|conflict/i);
  assert.equal(await readFile(join(f.root,'.flows','old.yaml'),'utf8'),source);
  assert.equal(await readFile(join(f.root,'.udl','flows','new.yaml'),'utf8'),'preserve');
  assert.equal(await readFile(join(f.root,'.udl','config.yaml'),'utf8'),'');
@@ -161,7 +161,7 @@ test('existing nonempty shared configuration takes precedence over legacy config
  const config='futureSetting: true\nblueprints: custom-flows\n';
  await writeFile(join(f.root,'.udl','config.yaml'),config);
  await writeFile(join(f.root,'.flowsrc'),'invalid: [');
- const project=await FlowProject.create(f.root);
+ const project=await FlowProject.create(f.root, { home: f.root });
  assert.equal((await project.reload()).directory,'custom-flows');
  assert.equal(await readFile(join(f.root,'.udl','config.yaml'),'utf8'),config);
  } finally {await f.cleanup();}
@@ -170,12 +170,12 @@ test('legacy .flows migrates with no legacy config and rejects directory symlink
  const f=await fixture(); try {
  await mkdir(join(f.root,'.flows'));
  await writeFile(join(f.root,'.flows','test.yaml'),source);
- assert.equal((await (await FlowProject.create(f.root)).reload()).blueprints.length,1);
+ assert.equal((await (await FlowProject.create(f.root, { home: f.root })).reload()).blueprints.length,1);
  } finally {await f.cleanup();}
  const g=await fixture(); try {
  await mkdir(join(g.root,'target'));
  await symlink(join(g.root,'target'),join(g.root,'.flows'));
- await assert.rejects(FlowProject.create(g.root),/symlink/);
+ await assert.rejects(FlowProject.create(g.root, { home: g.root }),/symlink/);
  } finally {await g.cleanup();}
 });
 
@@ -185,7 +185,7 @@ test('symlinked .udl cannot move legacy flows outside the project', async () => 
  await symlink(outside.root,join(f.root,'.udl'),'junction');
  await mkdir(join(f.root,'.flows'));
  await writeFile(join(f.root,'.flows','test.yaml'),source);
- await assert.rejects(FlowProject.create(f.root),/not a symlink/);
+ await assert.rejects(FlowProject.create(f.root, { home: f.root }),/not a symlink/);
  assert.equal(await readFile(join(f.root,'.flows','test.yaml'),'utf8'),source);
  await assert.rejects(readFile(join(outside.root,'config.yaml')),{code:'ENOENT'});
  await assert.rejects(readFile(join(outside.root,'flows','test.yaml')),{code:'ENOENT'});
@@ -198,8 +198,8 @@ test('legacy YAML null configuration migrates like an empty mapping', async () =
  await writeFile(join(f.root,'.flowsrc'),config);
  await mkdir(join(f.root,'.flows'));
  await writeFile(join(f.root,'.flows','test.yaml'),source);
- assert.equal((await (await FlowProject.create(f.root)).reload()).blueprints.length,1);
- assert.equal((await (await FlowProject.create(f.root)).reload()).blueprints.length,1);
+ assert.equal((await (await FlowProject.create(f.root, { home: f.root })).reload()).blueprints.length,1);
+ assert.equal((await (await FlowProject.create(f.root, { home: f.root })).reload()).blueprints.length,1);
  } finally {await f.cleanup();}
  }
 });

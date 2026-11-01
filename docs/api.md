@@ -321,3 +321,23 @@ session can be replaced while active inspectors remain protected. Errors return 
 `inspectorInvalid`, `inspectorBusy` or `inspectorUnavailable` notification codes
 with an English fallback. Browsers can require local-network permission for the
 hosted frontend to connect. Safari guidance uses no backend inspector endpoint.
+
+## Flow source and bundle management
+
+`GET /api/flows/snapshot` works with global sources even without a project argument.
+The response includes `context` (`global` or `project`), `configRevision`, `sources`,
+`sourceIds`, `sourceGenerations`, `inactiveSources` and `conflictedBlueprintIds` in addition to the existing fields.
+Each source identifies its scope, kind, name/description, filename, specification
+version when bundled, content revision, installed-file selection revision, activation generation, selection, declared IDs, active IDs and diagnostics.
+Effective Blueprints include technical `sourceId`/`sourceFile` provenance.
+
+Like existing mutations, the following require JSON and `X-Flow-Token`:
+
+- `POST /api/flows/bundles/install`: `{ "url": "https://example.com/example.blueprint", "scope": "global" }`. Scope may be `project` only with explicit project context. Downloads and validates before an exclusive install; successful responses are updated snapshots. Existing installs return 409.
+- `POST /api/flows/bundles/activation`: `{ "sourceId": "global:bundle:example", "enabled": true, "revision": "<configRevision>" }`. Selection is saved in the current launch context; stale configuration returns 409. Successful responses include the effective recognition policy.
+
+Validation failures return diagnostics with stable codes/parameters and English
+fallbacks; `flowsBundleError` carries original technical `detail`, and
+`flowsSourceConflict` identifies the original `id` and `sources`. HTTP 200 snapshots
+may still contain source diagnostics: inspect source active IDs and the effective
+Blueprint set. See [bundle behavior and limits](blueprint-bundles.md).

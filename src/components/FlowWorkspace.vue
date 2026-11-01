@@ -4,6 +4,7 @@ import type { FlowBlueprint, FlowDiagnostic, FlowInstance, FlowObservation, Flow
 import { flowErrorCode, flowPresentation, flowPresentationHistory } from '../../shared/flow-presentation';
 import { flowStarts } from '../../shared/flow-variables';
 import FlowLabel from './FlowLabel.vue';
+import FlowSources from './FlowSources.vue';
 import FlowResults from './FlowResults.vue';
 import { cardFork, flowEdgeTone, flowSummary, forkConnectors, layoutFlowGraph, flowRouteTopology, flowRouteStates } from '../flow-path';
 import { translate, translateMessage, type Locale } from '../i18n';
@@ -13,7 +14,7 @@ import './flow-workspace.css';
 
 const props = defineProps<{ snapshot: FlowSnapshot | null; instances: FlowInstance[]; loading: boolean; gapCount: number; activeSources: number; locale: Locale }>();
 const emit = defineEmits<{ clear: []; reload: [] }>();
-function diagnosticLocation(value: FlowDiagnostic) { return [value.file && [value.file, value.line, value.column].filter(part => part !== undefined).join(':'), value.path].filter(Boolean).join(' · '); }
+function diagnosticLocation(value: FlowDiagnostic) { return [value.sourceId, value.file && [value.file, value.line, value.column].filter(part => part !== undefined).join(':'), value.path].filter(Boolean).join(' · '); }
 const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, key, params);
 const view = ref<'list' | 'timeline' | 'info' | 'editor'>('list');
 const query = ref('');
@@ -218,6 +219,7 @@ async function request(action: 'validate' | 'save') {
     <template v-else-if="snapshot?.enabled">
       <template v-if="view === 'list'">
         <div class="flow-toolbar"><input v-model="query" type="search" :placeholder="t('flowsSearch')" :aria-label="t('flowsSearch')"><div class="flow-display-toggle" role="group" :aria-label="t('flowsDisplayMode')"><button v-for="mode in (['minimal', 'condensed', 'detailed'] as const)" :key="mode" type="button" :aria-pressed="displayMode === mode" @click="setDisplayMode(mode)">{{ t(mode === 'minimal' ? 'flowsDisplayMinimal' : mode === 'detailed' ? 'flowsDisplayDetailed' : 'flowsDisplayCondensed') }}</button></div><button type="button" @click="openEditor">{{ t('flowsBlueprints') }} <span class="flow-count">{{ snapshot.files.length }}</span></button><button type="button" :disabled="!instances.length" @click="emit('clear')">{{ t('flowsClear') }}</button></div>
+        <FlowSources v-if="snapshot.sources" :snapshot="snapshot" :locale="locale" @changed="emit('reload')" />
         <details class="flow-priority-legend"><summary>{{ t('flowsPriority') }}</summary><span v-for="level in priorityOptions" :key="level"><i :data-priority="level" aria-hidden="true"></i>{{ t(priorityKeys[level]) }}</span></details><div v-if="!visible.length" class="flow-empty"><h2>{{ t(query ? 'flowsNoResults' : !snapshot.blueprints.length ? 'flowsNoBlueprints' : 'flowsEmpty') }}</h2><p>{{ t(!snapshot.blueprints.length ? 'flowsEditorHelp' : 'flowsEmptyHint') }}</p><button v-if="!snapshot.blueprints.length" type="button" @click="openEditor">{{ t('flowsNewBlueprint') }}</button></div>
         <article v-for="instance in visible" :key="instance.id" class="flow-card" :data-priority="instance.blueprint.priority ?? 3" :data-outcome="instance.outcome">
           <header><div class="flow-card-heading"><span v-if="displayMode === 'detailed'" class="flow-card-kind">{{ instance.blueprint.name }} <small>({{ instance.blueprint.id }})</small></span><h2><button v-if="displayMode === 'minimal'" type="button" class="flow-minimal-open" :title="t('flowsTimeline')" @click="navigate('timeline', instance)"><FlowLabel :parts="presentation(instance).label" :concealed="t('flowsSensitive')" /></button><FlowLabel v-else :parts="presentation(instance).label" :concealed="t('flowsSensitive')" /></h2><span v-if="displayMode !== 'minimal'" class="flow-priority-mark">{{ t('flowsPriorityValue', { priority: instance.blueprint.priority ?? 3 }) }}</span><span v-if="displayMode !== 'minimal'" class="flow-badge" :data-outcome="instance.outcome"><span v-if="instance.outcome === 'running'" class="flow-status-spinner" aria-hidden="true"></span>{{ t(outcomes[instance.outcome]) }}</span></div><div v-if="displayMode !== 'minimal'" class="flow-actions"><button type="button" @click="navigate('timeline', instance)">{{ t('flowsTimeline') }}</button><button type="button" @click="navigate('info', instance)">{{ t('flowsInfo') }}</button></div></header>

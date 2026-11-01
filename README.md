@@ -349,3 +349,14 @@ private information before sharing log excerpts.
 ## License
 
 [GNU General Public License v3.0 only](LICENSE).
+
+### Global Blueprints and bundles
+
+Put reusable Flow definitions in `~/.udl/flows`, or install a `.blueprint` ZIP bundle
+from **Flows → Blueprint sources**. Bundles include a name, description and
+Blueprint specification version. Install from the terminal with
+`udl install-blueprint <url> --global` or
+`udl install-blueprint <url> --project <directory>`, then enable the bundle in the
+interface. Selections are stored in the selected project when launched with
+`--project`/`--flows`, otherwise globally. See [the bundle guide](docs/blueprint-bundles.md)
+for the format, conflicts, limits and installation examples.

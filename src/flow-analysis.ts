@@ -1,6 +1,6 @@
-import type { FlowBlueprint, FlowEngineState } from '../shared/flow-types';
+import type { FlowActivationPolicy, FlowBlueprint, FlowEngineState } from '../shared/flow-types';
 import type { LogMessage } from '../shared/types';
-export type FlowCommand = { type: 'snapshot'; blueprints: FlowBlueprint[]; revision: string } | { type: 'ingest'; messages: LogMessage[] } | { type: 'clear' | 'interrupt' | 'gap' | 'tick' };
+export type FlowCommand = { type: 'snapshot'; blueprints: FlowBlueprint[]; revision: string; policy?: FlowActivationPolicy } | { type: 'ingest'; messages: LogMessage[] } | { type: 'clear' | 'interrupt' | 'gap' | 'tick' };
 export interface FlowWorkerLike { postMessage(message: FlowCommand & { id: number }): void; terminate(): void; onmessage: ((event: { data: { id: number; state?: FlowEngineState; error?: string; activatedRevision?: string } }) => void) | null; onerror: (() => void) | null }
 /** One bounded job in flight, epoch barrier for Clear, watchdog for hostile regex. */
 export function createFlowAnalysis(connect: () => FlowWorkerLike, callbacks: { state(value: FlowEngineState): void; error(): void; activated?(revision: string): void }) {
@@ -35,8 +35,8 @@ export function createFlowAnalysis(connect: () => FlowWorkerLike, callbacks: { s
   }
   function enqueue(command: FlowCommand) { if (!disposed && !failed && (snapshot || command.type === 'snapshot')) { queue.push({ ...command, id: ++id }); schedule(); } }
   return {
-    snapshot(blueprints: FlowBlueprint[], revision: string) {
-      snapshot = { type: 'snapshot', blueprints, revision };
+    snapshot(blueprints: FlowBlueprint[], revision: string, policy?: FlowActivationPolicy) {
+      snapshot = { type: 'snapshot', blueprints, revision, ...(policy ? { policy } : {}) };
       if (!worker && !failed) { try { start(); } catch { fail(); return; } }
       enqueue(snapshot);
     },
