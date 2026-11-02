@@ -11,16 +11,20 @@ if (process.argv.slice(2).some(argument => argument !== '--check')) throw new Er
 const read = path => readFile(resolve(root, path), 'utf8');
 const hash = content => createHash('sha256').update(content).digest('hex');
 const output = new Map();
+output.set('scripts/blueprint_bundle.py', await read('scripts/blueprint_bundle.py'));
 function portableLinks(content) {
   return content.replaceAll('../test_flow_project/README.md', 'examples.md')
     .replaceAll('[interactive console emitter](../test_flow_project/loading-progress-demo.html)', 'message replay patterns described in [validation](validation.md)')
     .replaceAll('../test_flow_project/.udl/flows/', '../assets/flows/')
     .replaceAll('../test_flow_project/bank-transaction-events.jsonl', '../assets/events/bank-transaction-events.jsonl')
     .replaceAll('../test_flow_project/loading-progress-events.jsonl', '../assets/events/loading-progress-events.jsonl')
+    .replaceAll('../test_flow_project/bundles/', '../assets/bundles/')
     .replaceAll('semantic-flows-agent-guide.md', 'authoring-guide.md')
-    .replaceAll('semantic-flows-browser-tests.md', 'validation.md');
+    .replaceAll('semantic-flows-browser-tests.md', 'validation.md')
+    .replaceAll('blueprint-bundle-authoring.md', 'bundle-authoring.md');
 }
-output.set('references/blueprint-bundles.md', (await read('docs/blueprint-bundles.md')).replaceAll('../test_flow_project/bundles/', '../assets/bundles/'));
+output.set('references/blueprint-bundles.md', portableLinks(await read('docs/blueprint-bundles.md')));
+output.set('references/bundle-authoring.md', portableLinks(await read('docs/blueprint-bundle-authoring.md')));
 output.set('assets/bundles/example.blueprint', await readFile(resolve(root, 'test_flow_project/bundles/example.blueprint')));
 const format = await read('docs/flow-format.md');
 output.set('references/flow-format.md', portableLinks(format.split('## Implementation and further reading')[0]) + `## Bundled resources\n\n- [Authoring guide](authoring-guide.md) for extracting flows from application code.\n- [Validation](validation.md) for editor, API and optional viewer-checkout checks.\n- [Examples](examples.md) for fictional YAML definitions and event fixtures.\n- [API](api.md#semantic-flows) for local draft validation and file operations.\n- [Contract fingerprint](contract.json) identifies the source contract used to generate this copy.\n`);

@@ -77,7 +77,12 @@ Run `node --import tsx scripts/test-flow-bundles.mjs` after building, using the 
 Playwright/browser overrides. It serves fictional bundles over local HTTP, uses
 temporary home/project directories, and tests global/project installation, enable,
 disable, retained evidence, form errors, keyboard access and seven-language layout
-at desktop and mobile widths. No external download or physical device is needed.
+at desktop and mobile widths. Source management also checks grouped list selection,
+search and its empty state, preserved selection after filtering and activation reload,
+inactive bundle inventory in the detail inspector, and the initially collapsed URL
+installation form opened from the header. Loose sources have no activation switch.
+Optional `SEMANTIC_FLOWS_SCREENSHOTS` captures the German source panels in both
+light and dark themes. No external download or physical device is needed.
 
 ## Android diagnostic bundles
 

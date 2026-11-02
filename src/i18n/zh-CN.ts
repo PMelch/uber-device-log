@@ -1,5 +1,18 @@
 import type { Messages } from './en';
 export const zhCN = {
+  flowsSourceSearch: "搜索蓝图来源…",
+  flowsSourceNoResults: "没有与搜索条件匹配的来源。",
+  flowsSourceNoSources: "暂无蓝图来源。",
+  flowsSourceEnabled: "已启用",
+  flowsSourceDisabled: "已禁用",
+  flowsSourceAlwaysLoaded: "自动加载",
+  flowsSourceInventory: "包含的蓝图",
+  flowsSourceInventoryEmpty: "暂无蓝图定义。",
+  flowsSourceStored: "定义数：{count}",
+  flowsSourcePath: "文件或目录",
+  flowsSourceIdentifier: "来源 ID",
+  flowsSourceNeedsAttention: "需要检查",
+  flowsSourcePartial: "部分定义未被纳入分析。请检查工作区诊断信息。",
   flowsBlueprintSources: "Blueprint 来源",
   flowsContextProject: "捆绑包选择仅适用于此项目。",
   flowsContextGlobal: "捆绑包选择全局生效。",

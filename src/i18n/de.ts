@@ -1,5 +1,18 @@
 import type { Messages } from './en';
 export const de = {
+  flowsSourceSearch: "Blueprint-Quellen durchsuchen…",
+  flowsSourceNoResults: "Keine Quellen für diese Suche.",
+  flowsSourceNoSources: "Keine Blueprint-Quellen vorhanden.",
+  flowsSourceEnabled: "Aktiviert",
+  flowsSourceDisabled: "Deaktiviert",
+  flowsSourceAlwaysLoaded: "Automatisch geladen",
+  flowsSourceInventory: "Enthaltene Blueprints",
+  flowsSourceInventoryEmpty: "Keine Blueprint-Definitionen verfügbar.",
+  flowsSourceStored: "Definitionen: {count}",
+  flowsSourcePath: "Datei oder Verzeichnis",
+  flowsSourceIdentifier: "Quellen-ID",
+  flowsSourceNeedsAttention: "Prüfen",
+  flowsSourcePartial: "Einige Definitionen werden nicht erfasst. Prüfe die Diagnosen im Workspace.",
   flowsBlueprintSources: "Blueprint-Quellen",
   flowsContextProject: "Die Bundle-Auswahl gilt für dieses Projekt.",
   flowsContextGlobal: "Die Bundle-Auswahl gilt global.",

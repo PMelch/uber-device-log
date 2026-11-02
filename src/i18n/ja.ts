@@ -1,5 +1,18 @@
 import type { Messages } from './en';
 export const ja = {
+  flowsSourceSearch: "Blueprint のソースを検索…",
+  flowsSourceNoResults: "検索条件に一致するソースはありません。",
+  flowsSourceNoSources: "Blueprint のソースはありません。",
+  flowsSourceEnabled: "有効",
+  flowsSourceDisabled: "無効",
+  flowsSourceAlwaysLoaded: "自動読み込み",
+  flowsSourceInventory: "含まれる Blueprint",
+  flowsSourceInventoryEmpty: "Blueprint の定義はありません。",
+  flowsSourceStored: "定義数: {count}",
+  flowsSourcePath: "ファイルまたはディレクトリ",
+  flowsSourceIdentifier: "ソース ID",
+  flowsSourceNeedsAttention: "要確認",
+  flowsSourcePartial: "一部の定義は解析対象になっていません。ワークスペースの診断を確認してください。",
   flowsBlueprintSources: "Blueprint の読み込み元",
   flowsContextProject: "バンドルの選択はこのプロジェクトに適用されます。",
   flowsContextGlobal: "バンドルの選択はグローバルに適用されます。",

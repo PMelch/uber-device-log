@@ -9,6 +9,11 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Changed
+- Browse Blueprint sources in a searchable global/project list with a selected-source
+  inspector for descriptions, metadata, definitions and diagnostics. Keep bundle
+  installation collapsed until needed and stack the panels on smaller screens.
+
 Added
 - Provide opt-in Android diagnostic Blueprint bundles for frame scheduling,
   slow rendering, startup, ART garbage collection, allocation failures,
@@ -33,7 +38,10 @@ Added
   in downstream references. Include a loading-progress example and authoring skill guidance.
 - Provide a copyable, self-contained Semantic Flows authoring skill with the
   format specification, extraction and validation guidance, fictional fixtures
-  and cross-agent installation instructions. Check bundled references for drift.
+  and cross-agent installation instructions. Ask which output to create when
+  unspecified: project Blueprint, new bundle or existing-bundle addition. Include
+  portable bundle packaging, safe unpacking and whole-bundle validation guidance.
+  Check bundled references and helper resources for drift.
 - Define dynamic Semantic Flow labels with payload references and semantic text
   colors. Show explicitly marked result fields, switch between detailed node
   views and condensed summaries, and keep sensitive values concealed. Leave

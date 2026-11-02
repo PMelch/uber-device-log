@@ -12,6 +12,19 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  flowsSourceSearch: c("Source manager search input placeholder and accessible label.", "Filter definition sources by original name, description, filename or identifier and localized scope/type. Does not filter captured logs or change activation."),
+  flowsSourceNoResults: c("Source manager empty search state.", "No source matches the current search. Existing sources and activation are retained."),
+  flowsSourceNoSources: c("Source manager empty inventory state.", "No Blueprint definition sources are currently available."),
+  flowsSourceEnabled: c("Bundle switch adjacent visible state.", "The bundle is selected for recognition in this context. Does not guarantee that every definition is tracked after conflicts; the separate tracked count shows this."),
+  flowsSourceDisabled: c("Bundle switch adjacent visible state.", "The bundle is not selected for recognition in this context. Files and inventory remain available."),
+  flowsSourceAlwaysLoaded: c("Loose YAML source selection status.", "Loose source files are loaded automatically and have no bundle activation switch. Conflicting definitions may still be excluded."),
+  flowsSourceInventory: c("Selected source inspector section heading.", "Known Blueprint definition inventory, including inactive definitions. Original authored names appear when available; otherwise retain actual IDs."),
+  flowsSourceInventoryEmpty: c("Selected source inspector empty inventory.", "There are no known Blueprint definitions in this source. Invalid archive diagnostics are shown separately when present."),
+  flowsSourceStored: c("Source row inventory count.", "Number of known definitions in the source including inactive definitions. Distinct from active recognition count. Avoid singular/plural grammar.", { count: "Number of known Blueprint definitions in this source; locale-formatted integer, zero, one or many, no unit." }),
+  flowsSourcePath: c("Selected source metadata label.", "Original bundle filename or loose Blueprint directory, kept verbatim."),
+  flowsSourceIdentifier: c("Selected source technical metadata label.", "Stable technical source identifier, distinct from the Blueprint definition identifiers."),
+  flowsSourceNeedsAttention: c("Source list warning marker.", "A source has validation/conflict diagnostics or some selected definitions are excluded. Select it for details. Do not imply every warning is an invalid archive."),
+  flowsSourcePartial: c("Selected source recognition explanation.", "Some selected definitions are not tracked, for example due to conflicts or capacity limits. Direct the user to workspace diagnostics. Do not describe saved bundle selection as disabled."),
   flowsBlueprintSources: c("Sources management details summary inside Flow workspace.", "Heading for Blueprint definition sources and installable bundles, distinct from the existing flowsSources count of device/WebView capture providers."),
   flowsContextProject: c("Sources management context explanation.", "When launched with a project argument, bundle activation choices are saved only in that project; they do not change global or other project selections."),
   flowsContextGlobal: c("Sources management context explanation.", "Without a project argument, bundle activation choices are saved in user-home global configuration."),

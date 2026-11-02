@@ -14,10 +14,12 @@
     "server/flow-project.ts": "da21de524daaac2ca7c05d1610e9916a85a6c5d2432842ba3d279c5eec7c6a2b"
   },
   "resources": {
+    "scripts/blueprint_bundle.py": "2f7d033c74dbcd74077b3b50fbf4fc43a8261d1dc1ab487ec5decc560c4504ff",
     "references/blueprint-bundles.md": "16ef9b28ff4e1cd1fc2e484caf4e0ae67127b7325cb583c938e264c591b81a9b",
+    "references/bundle-authoring.md": "484ec0434569f7998f188fe117f97c0ab05d02693123e9b90916440a51668f9d",
     "assets/bundles/example.blueprint": "c8b7b48276bde5edfc3fdbfdddd7aa4514172e3bc75db97c6bb94d872efbb5ca",
     "references/flow-format.md": "01eab44ed34bb3a095f247e1e6fa9a18b454240eba14b2e12336482b63b347fa",
-    "references/authoring-guide.md": "dbe487ed9244c5b80c29a81825fd96c8a7d4ef99f73a3352bb4da7aba605b1db",
+    "references/authoring-guide.md": "1f95101f9499469622e7ab0e1da9b3d9fc77886b4702bf3ccff7742b1d2048d0",
     "references/api.md": "3d702bd81f6a2a61af40a96595885e9b611b238f3fb055fca7b8ba23660c3032",
     "assets/flows/purchase.yaml": "72023dc3f641c1cdff4ca313c621ba2409713c4da972a3eb395d650687488f4b",
     "assets/flows/login.yaml": "dff6f8169206af49529b52aabb7822bfde86f59e319a94121c4af9df2f32dc1b",
@@ -30,6 +32,6 @@
     "assets/events/loading-progress-events.jsonl": "ac937eb757fcfb8b3ed07526aae175c864b4e868e41b4823d7920e7ae5634821",
     "assets/config.yaml": "1ca11782eb4b12ef1976886812137910eedd1c37633210a8e7385496dad1ce35",
     "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
-    "INSTALL.md": "7cc65503aebdb749a4d0c6c1837100f32bfc6ad3e597bb9226ca4a11ad10539f"
+    "INSTALL.md": "898d207ef2616d23696cfaf0427afb02799a1196d0c9d3c91a632c21ca9c46e3"
   }
 }

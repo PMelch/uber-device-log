@@ -250,6 +250,15 @@ no physical iOS Safari inspection was performed for this change.
 
 ## Global Blueprint bundle regression
 
+`server/flow-bundle-skill.test.ts` copies the portable skill to temporary storage
+and executes its helper for pack/inspect/unpack/whole-bundle validation. These
+tests require Python 3.9+ (`python3`, or `python` on Windows; override with `PYTHON`).
+They exercise offline draft status, the actual viewer validator, existing-bundle
+extension without data loss, no-overwrite behavior, unsafe paths, duplicates,
+symlinks, CRC/size/count failures and malformed manifest/DSL. No bundle is installed
+or activated by the helper. The independent skill review also checks ambiguous
+creation requests and explicit project/new-bundle/extension prompts.
+
 `server/flow-bundles.test.ts`, `flow-catalog.test.ts`, `flow-bundle-api.test.ts`,
 `flow-download.test.ts`, `flow-cli.test.ts` and `flow-source-ui.test.ts` exercise
 ZIP/manifest validation, temporary homes and projects, activation, duplicate IDs,

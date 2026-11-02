@@ -1,5 +1,18 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  flowsSourceSearch: "Search Blueprint sources…",
+  flowsSourceNoResults: "No sources match your search.",
+  flowsSourceNoSources: "No Blueprint sources available.",
+  flowsSourceEnabled: "Enabled",
+  flowsSourceDisabled: "Disabled",
+  flowsSourceAlwaysLoaded: "Loaded automatically",
+  flowsSourceInventory: "Included blueprints",
+  flowsSourceInventoryEmpty: "No Blueprint definitions available.",
+  flowsSourceStored: "Definitions: {count}",
+  flowsSourcePath: "File or directory",
+  flowsSourceIdentifier: "Source ID",
+  flowsSourceNeedsAttention: "Needs attention",
+  flowsSourcePartial: "Some definitions are not tracked. Check the workspace diagnostics.",
   flowsBlueprintSources: "Blueprint sources",
   flowsContextProject: "Bundle selections apply to this project.",
   flowsContextGlobal: "Bundle selections apply globally.",

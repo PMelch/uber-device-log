@@ -2,7 +2,7 @@
 
 [`skills/udl-semantic-flows`](../skills/udl-semantic-flows/SKILL.md) is a self-contained Agent Skills folder for deriving Semantic Flows blueprints from application code and actual emitted logs. It includes the current format reference, extraction/validation guidance, fictional YAML/event examples and the GPL-3.0-only license. Copy the whole folder; `SKILL.md` alone does not include its supporting resources.
 
-This is one focused skill with resources, not a vendor plugin or an MCP integration. ZIP packaging is an optional transport for that same folder. After copying it, an agent can read the authoring instructions offline without access to the viewer repository. Actual validation remains optional runtime work: it needs an already-running compatible viewer or an available viewer checkout and dependencies. The bundle does not contain a standalone validator.
+This is one focused skill with resources, not a vendor plugin or an MCP integration. ZIP packaging is an optional transport for that same skill folder; a Flow `.blueprint` bundle is a different artifact. After copying, an agent can read the instructions offline. The included Python 3.9+ standard-library helper inspects, safely unpacks and packages Flow bundles without third-party Python dependencies. It reports archive checks separately from actual manifest/DSL validation, which needs an explicitly supplied compatible viewer checkout/package and its existing Node dependencies. The skill does not contain a standalone DSL validator.
 
 ## Install in an application repository
 
@@ -61,9 +61,15 @@ This is an explicit instruction fallback, not a guarantee that every agent reads
 
 ## Use and validate
 
+For creation, the skill first asks whether to create a single project Blueprint, a new Blueprint bundle, or add to an existing bundle whenever the prompt does not explicitly choose. It waits before inspecting the target project or writing files. Explicit task choices and answers are retained; read-only questions, validation/review and edits to identified artifacts do not trigger an unnecessary packaging question.
+
+Bundle creation/extension follows the included `references/bundle-authoring.md` and `scripts/blueprint_bundle.py`. The workflow covers required manifest descriptions, flat automatic YAML discovery, preservation of existing definitions/identity, complete rebuilt-archive validation and separate installation/activation. The portable helper runs from any directory; see its `--help`. `pack --viewer-root` validates with the actual viewer before publishing a new file. `--structural-only` is an explicit draft-only fallback, never a claim of manifest/DSL validity. Existing archives/output directories are not overwritten.
+
 A useful request names the action, completion boundary, platform/build and available providers:
 
-> Use udl-semantic-flows to derive a blueprint for checkout through backend confirmation. Trace the actual logging code, identify payload IDs reused by later steps, and provide a draft, evidence report and sanitized fixtures. Include branches, errors, dynamic labels and result fields where supported. Do not change logging or enable unverified definitions. Report which viewer checks were actually available.
+> Use udl-semantic-flows to derive a single project Blueprint for checkout through backend confirmation, using the project's existing configured Blueprint directory. Trace the actual logging code, identify payload IDs reused by later steps, and provide a draft, evidence report and sanitized fixtures. Include branches, errors, dynamic labels and result fields where supported. Do not change logging or enable unverified definitions. Report which viewer checks were actually available.
+
+For a new archive, explicitly request “create a new .blueprint bundle” and name its intended contents/metadata. For extension, explicitly request “add this flow to the existing payments.blueprint bundle” and identify that archive. A generic request such as “create a blueprint for checkout” intentionally prompts for the output type first.
 
 The agent should inspect real code and logged serializers, preserve observed field names/types and distinguish business outcome from incomplete evidence. The bundled examples are fictional and inactive; choosing an example does not establish that its events occur in the application. Flow labels/results are author data, while progress state is independent of label text.
 
