@@ -80,7 +80,11 @@ disable, retained evidence, form errors, keyboard access and seven-language layo
 at desktop and mobile widths. Source management also checks grouped list selection,
 search and its empty state, preserved selection after filtering and activation reload,
 inactive bundle inventory in the detail inspector, and the initially collapsed URL
-installation form opened from the header. Loose sources have no activation switch.
+installation form opened from the header. The toolbar opens a native modal with
+forward/reverse focus containment, initial search focus, header/footer/Escape dismissal
+and focus restoration. Closing/reopening retains a pending installation and its
+cancellation control. Check viewport-bounded scrolling with reachable close controls
+on narrow screens and short landscape windows. Loose sources have no activation switch.
 Optional `SEMANTIC_FLOWS_SCREENSHOTS` captures the German source panels in both
 light and dark themes. No external download or physical device is needed.
 

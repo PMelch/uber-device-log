@@ -13,6 +13,8 @@ export const ja = {
   flowsSourceIdentifier: "ソース ID",
   flowsSourceNeedsAttention: "要確認",
   flowsSourcePartial: "一部の定義は解析対象になっていません。ワークスペースの診断を確認してください。",
+  flowsSourcesClose: "閉じる",
+  flowsSourcesAutoSave: "有効・無効の変更は自動的に保存されます。",
   flowsBlueprintSources: "Blueprint の読み込み元",
   flowsContextProject: "バンドルの選択はこのプロジェクトに適用されます。",
   flowsContextGlobal: "バンドルの選択はグローバルに適用されます。",

@@ -15,7 +15,7 @@
   },
   "resources": {
     "scripts/blueprint_bundle.py": "2f7d033c74dbcd74077b3b50fbf4fc43a8261d1dc1ab487ec5decc560c4504ff",
-    "references/blueprint-bundles.md": "16ef9b28ff4e1cd1fc2e484caf4e0ae67127b7325cb583c938e264c591b81a9b",
+    "references/blueprint-bundles.md": "6e27e724e3ceca447d15cea26908981a5fcabdbdea79ac7080a4531ba7dd6757",
     "references/bundle-authoring.md": "484ec0434569f7998f188fe117f97c0ab05d02693123e9b90916440a51668f9d",
     "assets/bundles/example.blueprint": "c8b7b48276bde5edfc3fdbfdddd7aa4514172e3bc75db97c6bb94d872efbb5ca",
     "references/flow-format.md": "01eab44ed34bb3a095f247e1e6fa9a18b454240eba14b2e12336482b63b347fa",

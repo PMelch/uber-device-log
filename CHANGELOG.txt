@@ -10,9 +10,10 @@ Unreleased
 ----------
 
 Changed
-- Browse Blueprint sources in a searchable global/project list with a selected-source
-  inspector for descriptions, metadata, definitions and diagnostics. Keep bundle
-  installation collapsed until needed and stack the panels on smaller screens.
+- Manage Blueprint sources in a toolbar-opened dialog with a searchable global/project
+  list and a selected-source inspector for descriptions, metadata, definitions and
+  diagnostics. Keep bundle installation collapsed, retain drafts when closing, and
+  support keyboard focus, Escape dismissal and smaller screens.
 
 Added
 - Provide opt-in Android diagnostic Blueprint bundles for frame scheduling,

@@ -13,6 +13,8 @@ export const en = {
   flowsSourceIdentifier: "Source ID",
   flowsSourceNeedsAttention: "Needs attention",
   flowsSourcePartial: "Some definitions are not tracked. Check the workspace diagnostics.",
+  flowsSourcesClose: "Close",
+  flowsSourcesAutoSave: "Activation changes are saved automatically.",
   flowsBlueprintSources: "Blueprint sources",
   flowsContextProject: "Bundle selections apply to this project.",
   flowsContextGlobal: "Bundle selections apply globally.",

@@ -33,7 +33,33 @@ try {
   await page.goto(origin);
   await page.locator('#workspace-tab-flows').click();
   const manager = page.locator('.flow-source-manager');
-  await manager.locator(':scope > summary').focus(); await page.keyboard.press('Enter');
+  const trigger = page.locator('.flow-source-trigger');
+  assert.equal(await manager.isVisible(), false, 'configuration is not shown inline');
+  assert.equal(await trigger.getAttribute('aria-haspopup'), 'dialog');
+  const openManager = async () => { await trigger.focus(); await page.keyboard.press('Enter'); await manager.waitFor({ state: 'visible' }); };
+  await openManager();
+  assert.equal(await manager.evaluate(node => node.matches('dialog:modal')), true, 'configuration uses native modality');
+  assert.equal(await manager.locator('.flow-source-search').evaluate(node => document.activeElement === node), true, 'opening focuses source search');
+  for (let index = 0; index < 12; index++) {
+    await page.keyboard.press('Tab');
+    assert.equal(await manager.evaluate(node => node.contains(document.activeElement)), true, 'Tab focus stays inside modal');
+  }
+  for (let index = 0; index < 12; index++) {
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(await manager.evaluate(node => node.contains(document.activeElement)), true, 'reverse Tab stays inside modal');
+  }
+  assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).overflow), 'hidden', 'background scrolling is locked');
+  await page.keyboard.press('Escape');
+  assert.equal(await manager.isVisible(), false);
+  assert.notEqual(await page.evaluate(() => getComputedStyle(document.documentElement).overflow), 'hidden', 'closing releases background scrolling');
+  assert.equal(await trigger.evaluate(node => document.activeElement === node), true, 'Escape restores trigger focus');
+  await openManager();
+  await manager.locator('.flow-source-header-close').click();
+  assert.equal(await manager.isVisible(), false);
+  await openManager();
+  await manager.locator('.flow-source-footer button').click();
+  assert.equal(await trigger.evaluate(node => document.activeElement === node), true, 'footer Close restores trigger focus');
+  await openManager();
   await manager.locator('.flow-source-search').waitFor();
   const inspector = manager.locator('.flow-source-inspector');
   const installation = manager.locator('.flow-bundle-disclosure');
@@ -98,7 +124,7 @@ try {
   assert.equal(await card.count(), 2);
   // A fresh manager initially chooses the enabled bundle without an explicit row click.
   await page.reload(); await page.locator('#workspace-tab-flows').click();
-  await manager.locator(':scope > summary').focus(); await page.keyboard.press('Enter');
+  await openManager();
   assert.equal(await global.locator('.flow-source-select').getAttribute('aria-pressed'), 'true');
   await setEnabled(false);
   await setEnabled(true);
@@ -114,18 +140,32 @@ try {
   // A pending install can be cancelled without losing the current definitions or selection.
   await manager.locator('#flow-bundle-url').fill(`${downloads}/slow.blueprint`);
   await manager.getByRole('button', { name: translate('en', 'flowsBundleInstall'), exact: true }).click();
+  await manager.locator('.flow-source-header-close').click();
+  assert.equal(await manager.isVisible(), false, 'closing is available during installation');
+  await openManager();
+  assert.equal(await manager.locator('#flow-bundle-url').inputValue(), `${downloads}/slow.blueprint`, 'reopening retains URL draft');
   await manager.getByRole('button', { name: translate('en', 'flowsBundleCancel'), exact: true }).click();
   await manager.getByRole('status').filter({ hasText: translate('en', 'flowsBundleCancelled') }).waitFor();
   assert.equal(await toggle.getAttribute('aria-checked'), 'true');
   // Keep a validation status visible while switching languages; technical details remain verbatim.
   assert.equal(await install('broken', 'global'), 400);
   for (const width of [1440, 390, 320]) for (const locale of ['en', 'de', 'es', 'fr', 'it', 'ja', 'zh-CN']) {
-    await page.setViewportSize({ width, height: 1080 });
+    await page.keyboard.press('Escape');
+    await page.setViewportSize({ width, height: width <= 390 ? 740 : 1080 });
     await page.locator('.precision-settings summary').click();
     await page.locator('#settings-language').selectOption(locale);
     await page.locator('#settings-theme').selectOption(width === 320 ? 'dark' : 'light');
     await page.locator('.precision-settings header button').click();
-    assert.equal(await manager.locator(':scope > summary').innerText(), translate(locale, 'flowsBlueprintSources'));
+    assert.equal(await trigger.innerText(), translate(locale, 'flowsBlueprintSources'));
+    await openManager();
+    assert.equal((await manager.locator('#flow-source-title').innerText()).replace(/\s+/g, ' '), translate(locale, 'flowsBlueprintSources') + ' ' + 'test_flow_project');
+    const box = await manager.boundingBox();
+    const viewport = page.viewportSize();
+    assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width + 1 && box.y + box.height <= viewport.height + 1, 'dialog fits the viewport');
+    assert.equal(await manager.evaluate(node => node.scrollWidth <= node.clientWidth), true, 'dialog has no horizontal overflow');
+    assert.equal(await manager.locator('.flow-source-footer').isVisible(), true);
+    const closeBox = await manager.locator('.flow-source-footer button').boundingBox();
+    assert.ok(closeBox.y >= 0 && closeBox.y + closeBox.height <= viewport.height + 1, 'footer Close remains reachable without scrolling');
     await manager.getByRole('button', { name: translate(locale, 'flowsBundleInstall'), exact: true }).waitFor();
     assert.equal(await toggle.getAttribute('aria-label'), translate(locale, 'flowsBundleDisableLabel', { name: 'Example bundle' }));
     assert.ok((await manager.getByRole('status').first().innerText()).includes(translate(locale, 'flowsNetworkError')));
@@ -159,10 +199,17 @@ try {
       await mkdir(process.env.SEMANTIC_FLOWS_SCREENSHOTS, { recursive: true });
       await installation.locator('summary').click();
       await manager.scrollIntoViewIfNeeded();
-      await manager.screenshot({ path: join(process.env.SEMANTIC_FLOWS_SCREENSHOTS, `bundles-${width}.png`) });
+      await page.screenshot({ path: join(process.env.SEMANTIC_FLOWS_SCREENSHOTS, `bundles-${width}.png`) });
       await installation.locator('summary').click();
     }
   }
+  // Compact landscape still keeps close controls inside the viewport while body scrolls.
+  await page.setViewportSize({ width: 844, height: 390 });
+  const compactBox = await manager.boundingBox();
+  assert.ok(compactBox.y >= 0 && compactBox.y + compactBox.height <= 391);
+  await manager.locator('.flow-source-footer button').click();
+  assert.equal(await manager.isVisible(), false);
+  assert.equal(await trigger.evaluate(node => document.activeElement === node), true);
   assert.deepEqual(errors, []);
   console.log('Bundle browser checks passed: grouped source search/selection and empty state, inactive inventory, stable selection across reloads, collapsed installation/focus, both install targets, worker interruption/re-enable, cancellation, validation, seven languages, keyboard access and three viewport widths.');
 } finally {

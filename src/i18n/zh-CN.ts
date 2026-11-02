@@ -13,6 +13,8 @@ export const zhCN = {
   flowsSourceIdentifier: "来源 ID",
   flowsSourceNeedsAttention: "需要检查",
   flowsSourcePartial: "部分定义未被纳入分析。请检查工作区诊断信息。",
+  flowsSourcesClose: "关闭",
+  flowsSourcesAutoSave: "启用状态的更改会自动保存。",
   flowsBlueprintSources: "Blueprint 来源",
   flowsContextProject: "捆绑包选择仅适用于此项目。",
   flowsContextGlobal: "捆绑包选择全局生效。",

@@ -13,6 +13,8 @@ export const de = {
   flowsSourceIdentifier: "Quellen-ID",
   flowsSourceNeedsAttention: "Prüfen",
   flowsSourcePartial: "Einige Definitionen werden nicht erfasst. Prüfe die Diagnosen im Workspace.",
+  flowsSourcesClose: "Schließen",
+  flowsSourcesAutoSave: "Aktivierungsänderungen werden automatisch gespeichert.",
   flowsBlueprintSources: "Blueprint-Quellen",
   flowsContextProject: "Die Bundle-Auswahl gilt für dieses Projekt.",
   flowsContextGlobal: "Die Bundle-Auswahl gilt global.",

@@ -178,7 +178,8 @@ to an individual remote WebView.
 ## Global Flow sources and bundles
 
 Global standalone Blueprints in `~/.udl/flows` are available without a project. A
-selected project adds its own sources. Use **Flows → Blueprint sources** to inspect
+selected project adds its own sources. Open **Blueprint sources** in the Flow
+toolbar to inspect
 names, descriptions, specification versions, scope and active counts, enable or
 disable bundles, or install from a `.blueprint` URL. A bundle selection is saved in
 the selected project's `.udl/config.yaml`, or globally without a project argument.

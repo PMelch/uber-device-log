@@ -13,6 +13,8 @@ export const fr = {
   flowsSourceIdentifier: "ID de la source",
   flowsSourceNeedsAttention: "À vérifier",
   flowsSourcePartial: "Certaines définitions ne sont pas prises en compte. Consultez les diagnostics de l’espace de travail.",
+  flowsSourcesClose: "Fermer",
+  flowsSourcesAutoSave: "Les changements d’activation sont enregistrés automatiquement.",
   flowsBlueprintSources: "Sources de blueprints",
   flowsContextProject: "La sélection des bundles s’applique à ce projet.",
   flowsContextGlobal: "La sélection des bundles s’applique globalement.",
