@@ -48,6 +48,8 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   let offset = 0;
   let cursor = 0;
   let disposed = false;
+  let pauseBlinkTimer: ReturnType<typeof setInterval> | undefined;
+  let pauseHighlighted = false;
   let consolePanel: ReturnType<typeof createConsolePanel> | undefined;
   let modal: BoxRenderable | undefined;
   let modalFocus: Renderable[] = [];
@@ -213,6 +215,24 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     }
     logs.title = `[${fullscreen ? '↙' : '⛶'}] ${t('logStream')} · ${translate(locale, 'messageCount', { count: items.length })}`;
   }
+  function paintPause() {
+    pause.box.backgroundColor = model.paused && pauseHighlighted ? colors.selected : colors.background;
+    pause.box.borderColor = model.paused ? colors.warn : colors.border;
+    pause.text.fg = model.paused ? colors.warn : colors.text;
+  }
+  function updatePause() {
+    if (model.paused && !pauseBlinkTimer) {
+      pauseHighlighted = true;
+      pauseBlinkTimer = setInterval(() => {
+        if (disposed) return;
+        pauseHighlighted = !pauseHighlighted;
+        paintPause();
+      }, 600);
+    } else if (!model.paused && pauseBlinkTimer) {
+      clearInterval(pauseBlinkTimer); pauseBlinkTimer = undefined; pauseHighlighted = false;
+    }
+    paintPause();
+  }
   function refresh() {
     if (disposed) return;
     for (const label of labels) label.text.content = t(label.key);
@@ -222,6 +242,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     collapsedSources.title = renderer.width >= 100 ? '[+]' : `[+] ${t('tuiSources')}`;
     sources.text.content = t(options.demo === false ? 'tuiSources' : 'tuiDemo');
     pause.text.content = t(model.paused ? 'backToLive' : 'pause');
+    updatePause();
     searchBox.title = t('literalSearch'); search.placeholder = t('searchPlaceholder');
     details.title = t('message');
     details.visible = !fullscreen && (!options.syncSources || renderer.width >= 100 || !!model.selected);
@@ -476,7 +497,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     ingest(messages: LogMessage[]) { if (!disposed) { model.ingest(messages); refresh(); } },
     setStatus(value: UiMessage | string, live = capturing) { status = value; capturing = live; refresh(); },
     dispose() {
-      consolePanel?.dispose(); consolePanel = undefined; disposed = true; discovery++; clearTimeout(discoveryTimer); renderer.off('palette', onPalette); renderer.off('theme_mode', detectPalette); closeModal(); renderer.keyInput.off('keypress', onKey); renderer.off('resize', layout); root.destroyRecursively(); mainFocus = [];
+      consolePanel?.dispose(); consolePanel = undefined; disposed = true; clearInterval(pauseBlinkTimer); discovery++; clearTimeout(discoveryTimer); renderer.off('palette', onPalette); renderer.off('theme_mode', detectPalette); closeModal(); renderer.keyInput.off('keypress', onKey); renderer.off('resize', layout); root.destroyRecursively(); mainFocus = [];
     },
   };
 }

@@ -19,6 +19,7 @@ Added
   Click the controls in the Sources and Log stream borders to change their layout.
   Adapt terminal colors automatically or choose light, dark or monochrome display;
   severity and source accents preserve readable contrast, including selected rows.
+  Blink the pause button while the view is frozen, keeping its label readable.
 - Add a terminal WebView JavaScript console with explicit target/context selection,
   command history and expandable result properties while log capture continues.
 

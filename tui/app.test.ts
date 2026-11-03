@@ -434,3 +434,30 @@ test('reselecting a source resumes an empty frozen view while keeping the search
     expect(t.app.model.rows().map(r => r.message)).toEqual(['new message']);
   } finally { t.app.dispose(); await t.dispose(); }
 });
+
+
+test('paused button blinks through log arrivals and theme changes, then stops on resume', async () => {
+  const t = await setup();
+  try {
+    const pause = t.app.controls.pause;
+    pause.focus(); t.mockInput.pressEnter();
+    expect(t.app.model.paused).toBe(true);
+    const highlighted = pause.backgroundColor;
+    t.app.ingest([{ timestamp: '2026-11-03T12:00:01Z', message: 'still capturing' }]);
+    expect(pause.backgroundColor).toEqual(highlighted);
+    await Bun.sleep(650);
+    expect(pause.backgroundColor).not.toEqual(highlighted);
+    t.app.setTheme('mono');
+    const dimmed = pause.backgroundColor;
+    await Bun.sleep(600);
+    expect(pause.backgroundColor).not.toEqual(dimmed);
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain('Back to live');
+    expect(t.app.model.rows().some(row => row.message === 'still capturing')).toBe(false);
+    t.mockInput.pressEnter();
+    expect(t.app.model.paused).toBe(false);
+    const live = pause.backgroundColor;
+    await Bun.sleep(650);
+    expect(pause.backgroundColor).toEqual(live);
+  } finally { t.app.dispose(); await t.dispose(); }
+});
