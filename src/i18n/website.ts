@@ -1,5 +1,8 @@
 // Website-only catalogs: deliberately not imported by the packaged application.
 const en = {
+  "siteFlowsBundlesTitle": "Start with ready-made Android Blueprints.",
+  "siteFlowsBundlesBody": "Download bundles for Android UI performance, memory and stability from our GitHub repository. They recognize existing Logcat messages without changes to your app’s logging. Download links and installation instructions are in the English README.",
+  "siteFlowsBundlesLink": "Android Blueprints on GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "See the operation behind the logs.",
   "siteFlowsBody": "Follow a sync, a checkout or a single event without piecing together every log line. Semantic Flows brings matching messages into one card with steps, elapsed time and an outcome.",
@@ -76,6 +79,9 @@ const en = {
   "siteHybridBody": "A hybrid app brings a web app running in a WebView together with native code. Web app logging alone shows only part of the picture. Über Device Log provides combined logging: see JavaScript console output alongside native logs from the same device, merged by timestamp with each source identified. If your app uses multiple inspectable WebViews, you can include their consoles too.",
 } as const;
 const de = {
+  "siteFlowsBundlesTitle": "Starte mit fertigen Android-Blueprints.",
+  "siteFlowsBundlesBody": "In unserem GitHub-Repository findest du Bundles für Android-UI-Performance, Speicher und Stabilität zum Herunterladen. Sie erkennen vorhandene Logcat-Meldungen, ohne dass du das Logging deiner App ändern musst. Downloadlinks und Installationsanleitung stehen in der englischen README.",
+  "siteFlowsBundlesLink": "Android-Blueprints auf GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "Die Abläufe hinter den Logs verstehen.",
   "siteFlowsBody": "Verfolge eine Synchronisierung, einen Checkout oder ein einzelnes Ereignis, ohne jede Logzeile selbst zuzuordnen. Semantic Flows fasst passende Meldungen in einer Karte mit Schritten, Dauer und Ergebnis zusammen.",
@@ -152,6 +158,9 @@ const de = {
   "siteHybridBody": "Eine Hybrid-App verbindet eine Web-App in einer WebView mit nativem Code. Web-App-Logging allein zeigt nur einen Teil des Geschehens. Über Device Log führt die Logs zusammen: JavaScript-Konsolenausgaben erscheinen neben nativen Logs desselben Geräts, nach Zeitstempel sortiert und mit erkennbarer Quelle. Nutzt deine App mehrere inspizierbare WebViews, kannst du auch deren Konsolen einbeziehen.",
 } as const;
 const es = {
+  "siteFlowsBundlesTitle": "Empieza con Blueprints de Android listos para usar.",
+  "siteFlowsBundlesBody": "Descarga paquetes para el rendimiento de la interfaz, la memoria y la estabilidad de Android desde nuestro repositorio de GitHub. Reconocen mensajes de Logcat existentes sin modificar los logs de tu app. Los enlaces de descarga y las instrucciones de instalación están en el README en inglés.",
+  "siteFlowsBundlesLink": "Blueprints de Android en GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "Entiende la operación detrás de los logs.",
   "siteFlowsBody": "Sigue una sincronización, una compra o un evento aislado sin reconstruir cada línea del log. Semantic Flows reúne los mensajes coincidentes en una tarjeta con pasos, tiempo transcurrido y resultado.",
@@ -228,6 +237,9 @@ const es = {
   "siteHybridBody": "Una app híbrida combina una aplicación web en una WebView con código nativo. Los logs de la aplicación web solo muestran una parte. Über Device Log combina los logs: consulta la salida de consola JavaScript junto con los logs nativos del mismo dispositivo, ordenados por marca de tiempo y con cada origen identificado. Si tu app utiliza varias WebViews inspeccionables, también puedes incluir sus consolas.",
 } as const;
 const fr = {
+  "siteFlowsBundlesTitle": "Commencez avec des Blueprints Android prêts à l’emploi.",
+  "siteFlowsBundlesBody": "Téléchargez des packs pour les performances de l’interface, la mémoire et la stabilité Android depuis notre dépôt GitHub. Ils reconnaissent les messages Logcat existants sans modifier la journalisation de votre application. Les liens de téléchargement et les instructions d’installation figurent dans le README en anglais.",
+  "siteFlowsBundlesLink": "Blueprints Android sur GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "Comprenez les opérations derrière les logs.",
   "siteFlowsBody": "Suivez une synchronisation, un achat ou un événement isolé sans reconstituer chaque ligne de log. Semantic Flows regroupe les messages correspondants dans une fiche avec les étapes, la durée et le résultat.",
@@ -304,6 +316,9 @@ const fr = {
   "siteHybridBody": "Une app hybride associe une application web dans une WebView à du code natif. Les logs de l’application web ne montrent qu’une partie du contexte. Über Device Log réunit les logs : consultez les sorties de console JavaScript avec les logs natifs du même appareil, triés par horodatage et avec chaque source identifiée. Si votre app utilise plusieurs WebViews inspectables, vous pouvez aussi inclure leurs consoles.",
 } as const;
 const it = {
+  "siteFlowsBundlesTitle": "Inizia con i Blueprint Android già pronti.",
+  "siteFlowsBundlesBody": "Scarica i pacchetti per prestazioni dell’interfaccia, memoria e stabilità di Android dal nostro repository GitHub. Riconoscono i messaggi Logcat esistenti senza modificare la registrazione dei log della tua app. I link per il download e le istruzioni di installazione sono nel README in inglese.",
+  "siteFlowsBundlesLink": "Blueprint Android su GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "Comprendi le operazioni dietro i log.",
   "siteFlowsBody": "Segui una sincronizzazione, un acquisto o un singolo evento senza ricostruire ogni riga di log. Semantic Flows riunisce i messaggi corrispondenti in una scheda con passaggi, tempo trascorso ed esito.",
@@ -380,6 +395,9 @@ const it = {
   "siteHybridBody": "Un’app ibrida combina un’app web in una WebView con codice nativo. I log dell’app web mostrano solo parte del contesto. Über Device Log combina i log: visualizza l’output della console JavaScript insieme ai log nativi dello stesso dispositivo, ordinati per timestamp e con ogni origine identificata. Se la tua app usa più WebView ispezionabili, puoi includere anche le loro console.",
 } as const;
 const zhCN = {
+  "siteFlowsBundlesTitle": "从现成的 Android Blueprint 开始。",
+  "siteFlowsBundlesBody": "从我们的 GitHub 仓库下载用于 Android 界面性能、内存和稳定性的包。它们识别现有的 Logcat 消息，无需修改应用的日志记录方式。下载链接和安装说明位于英文 README 中。",
+  "siteFlowsBundlesLink": "在 GitHub 查看 Android Blueprint ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "看懂日志背后的处理流程。",
   "siteFlowsBody": "无需逐行拼凑日志，即可跟踪同步、结账或单个事件。Semantic Flows 将匹配的消息汇总为一张卡片，展示步骤、耗时和结果。",
@@ -456,6 +474,9 @@ const zhCN = {
   "siteHybridBody": "混合应用将 WebView 中运行的 Web 应用与原生代码结合在一起。仅查看 Web 应用日志只能了解部分情况。Über Device Log 提供合并日志视图：将 JavaScript 控制台输出与同一设备的原生日志按时间戳合并，并标明每个来源。如果应用使用多个可检查的 WebView，也可以将它们的控制台一并纳入。",
 } as const;
 const ja = {
+  "siteFlowsBundlesTitle": "すぐに使える Android Blueprint から始めよう。",
+  "siteFlowsBundlesBody": "Android の UI パフォーマンス、メモリ、安定性向けのバンドルを GitHub リポジトリからダウンロードできます。アプリのログ出力を変更せずに、既存の Logcat メッセージを認識します。ダウンロードリンクとインストール手順は英語の README にあります。",
+  "siteFlowsBundlesLink": "GitHub で Android Blueprint を見る ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "ログから処理の流れを読み解く。",
   "siteFlowsBody": "同期、購入処理、単一のイベントを、ログを一行ずつ突き合わせずに追跡できます。Semantic Flows は一致するメッセージを、ステップ、経過時間、結果を示すひとつのカードにまとめます。",
