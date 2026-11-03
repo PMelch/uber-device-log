@@ -4,6 +4,8 @@ import { translate, translateMessage, languages, type Locale, type UiMessage } f
 import type { MessageKey } from '../src/i18n/en';
 import type { Device, LogMessage } from '../shared/types';
 import { createTuiTheme, tuiThemeModes, type TuiThemeMode, type TerminalThemeColors } from './theme';
+import { createFlowsPanel } from './flows-panel';
+import type { TuiFlows } from './flows-model';
 import { createConsolePanel } from './console-panel';
 import type { AcquireConsole } from './console-model';
 import { featureStatuses, featureStatusCopy } from '../src/feature-status';
@@ -13,6 +15,7 @@ import { sourceKey } from './local-client';
 import { createLogModel, terminalText } from './model';
 
 export interface TuiOptions {
+  flows?: TuiFlows;
   acquireConsole?: AcquireConsole;
   theme?: TuiThemeMode;
   detectTerminalTheme?: boolean;
@@ -51,6 +54,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   let disposed = false;
   let pauseBlinkTimer: ReturnType<typeof setInterval> | undefined;
   let pauseHighlighted = false;
+  let flowsPanel: ReturnType<typeof createFlowsPanel> | undefined;
   let consolePanel: ReturnType<typeof createConsolePanel> | undefined;
   let modal: BoxRenderable | undefined;
   let settingsPicker: { close(): void; update(): void; onKey(key: KeyEvent): void } | undefined;
@@ -100,6 +104,8 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   const consoleButton = button(toolbar, 'javascript-console', 'consoleTitle', openConsole);
   consoleButton.box.visible = !!options.acquireConsole;
   button(toolbar, 'settings', 'settings', openSettings);
+  const flowsButton = button(toolbar, 'flows', 'flowsTabFlows', openFlows);
+  flowsButton.box.visible = !!options.flows;
   const searchBox = new BoxRenderable(renderer, { height: 3, flexShrink: 0, border: true, borderColor: colors.border });
   const search = new InputRenderable(renderer, { id: 'search', width: '100%', placeholder: t('searchPlaceholder'), maxLength: 500,
     textColor: colors.text, backgroundColor: colors.panel, focusedBackgroundColor: colors.selected });
@@ -282,7 +288,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
       const node = sourceNodes[index];
       if (node instanceof BoxRenderable) node.backgroundColor = selectedSources.some(item => sourceKey(item) === sourceKey(device)) ? colors.selected : colors.panel;
     });
-    refresh(); consolePanel?.update();
+    refresh(); consolePanel?.update(); flowsPanel?.update();
   }
   function onPalette(value: TerminalThemeColors) {
     if (disposed) return;
@@ -342,9 +348,10 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     const key = sourceKey(device);
     const differentParent = viewParent && (viewParent.id !== device.id || viewParent.platform !== device.platform);
     viewParent = device;
-    if (differentParent) { selectedSources = []; model.clear(); model.resume(); }
+    if (differentParent) { options.flows?.interrupt(); selectedSources = []; model.clear(); model.resume(); }
     const included = selectedSources.some(item => sourceKey(item) === key);
     selectedSources = included ? selectedSources.filter(item => sourceKey(item) !== key) : [...selectedSources, device];
+    if (included) { options.flows?.gap(); if (!selectedSources.length) options.flows?.interrupt(); }
     model.removeSource(key);
     if (!included) {
       model.resume(); renderer.clearSelection(); offset = 0; cursor = 0;
@@ -367,6 +374,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
         const keys = new Set(result.map(sourceKey));
         const remaining = selectedSources.filter(device => keys.has(sourceKey(device)));
         if (remaining.length !== selectedSources.length) {
+          options.flows?.gap(); if (!remaining.length) options.flows?.interrupt();
           selectedSources = remaining;
           options.syncSources?.(remaining);
           sourceName = remaining.map(item => item.webview?.title || item.name).join(' + ');
@@ -408,8 +416,14 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     catch (error) { status = { code: 'tuiFailure', params: { detail: String(error) } }; }
     finally { saving = false; refresh(); }
   }
+  function openFlows() {
+    if (!options.flows || flowsPanel || consolePanel || modal) return;
+    root.visible = false;
+    flowsPanel = createFlowsPanel(renderer, { flows: options.flows, locale: () => locale, colors: () => colors,
+      close() { flowsPanel?.dispose(); flowsPanel = undefined; root.visible = true; flowsButton.box.focus(); } });
+  }
   function openConsole() {
-    if (!options.acquireConsole || !options.sources || consolePanel || modal) return;
+    if (!options.acquireConsole || !options.sources || consolePanel || flowsPanel || modal) return;
     root.visible = false;
     consolePanel = createConsolePanel(renderer, { acquire: options.acquireConsole, sources: options.sources,
       locale: () => locale, colors: () => colors, close() {
@@ -428,7 +442,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     restoreFocus?.focus();
   }
   function openSettings() {
-    if (modal || consolePanel || disposed) return;
+    if (modal || consolePanel || flowsPanel || disposed) return;
     restoreFocus = renderer.currentFocusedRenderable;
     root.visible = false;
     modal = new BoxRenderable(renderer, { id: 'settings-dialog', width: '100%', height: '100%',
@@ -574,7 +588,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     }
   }
   function onKey(key: KeyEvent) {
-    if (consolePanel) return;
+    if (consolePanel || flowsPanel) return;
     if (settingsPicker) { settingsPicker.onKey(key); return; }
     if (!modal && (key.name === 'f11' || (fullscreen && key.name === 'escape'))) { key.preventDefault(); toggleFullscreen(); return; }
     if (!modal && !fullscreen && key.name === 'f6' && options.syncSources) { key.preventDefault(); toggleSources(); return; }
@@ -621,11 +635,11 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   layout(); setTheme(themeMode); mainFocus[0]!.focus();
   if (options.syncSources) void refreshSources();
   return {
-    model, openSettings, openConsole, get consolePanel() { return consolePanel; }, setTheme, get theme() { return colors; }, refreshSources, toggleSource, toggleSources, toggleFullscreen, controls: { sidebar, collapsedSources, collapse: collapse.box, maximize: maximize.box, search, logs, pause: pause.box, sources: sources.box, details, rows, scrollbar }, setQuery,
-    ingest(messages: LogMessage[]) { if (!disposed) { model.ingest(messages); refresh(); } },
+    model, openSettings, openFlows, openConsole, get consolePanel() { return consolePanel; }, setTheme, get theme() { return colors; }, refreshSources, toggleSource, toggleSources, toggleFullscreen, controls: { sidebar, collapsedSources, collapse: collapse.box, maximize: maximize.box, search, logs, pause: pause.box, sources: sources.box, details, rows, scrollbar }, setQuery,
+    ingest(messages: LogMessage[]) { if (!disposed) { options.flows?.ingest(messages); model.ingest(messages); refresh(); } },
     setStatus(value: UiMessage | string, live = capturing) { status = value; capturing = live; refresh(); },
     dispose() {
-      consolePanel?.dispose(); consolePanel = undefined; disposed = true; clearInterval(pauseBlinkTimer); discovery++; clearTimeout(discoveryTimer); renderer.off('palette', onPalette); renderer.off('theme_mode', detectPalette); closeModal(); renderer.keyInput.off('keypress', onKey); renderer.off('resize', layout); root.destroyRecursively(); mainFocus = [];
+      flowsPanel?.dispose(); flowsPanel = undefined; consolePanel?.dispose(); consolePanel = undefined; disposed = true; clearInterval(pauseBlinkTimer); discovery++; clearTimeout(discoveryTimer); renderer.off('palette', onPalette); renderer.off('theme_mode', detectPalette); closeModal(); renderer.keyInput.off('keypress', onKey); renderer.off('resize', layout); root.destroyRecursively(); mainFocus = [];
     },
   };
 }

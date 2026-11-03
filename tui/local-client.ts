@@ -6,12 +6,16 @@ export const sourceKey = (device: Device) => JSON.stringify([device.platform, de
 /** Own collectors directly; no HTTP listener or SSE connection is created. */
 export function createLocalClient(callbacks: {
   logs(messages: LogMessage[]): void;
+  gap?(): void;
+  ended?(live: boolean): void;
   status(message: UiMessage | string, live: boolean): void;
 }, dependencies: { list(): Promise<DeviceList>; open: OpenLogs }) {
   const active = new Map<string, { stop?: Stop; timer?: ReturnType<typeof setTimeout>; live: boolean; ended?: boolean }>();
   let closed = false;
   let queue: LogMessage[] = [];
-  const flush = setInterval(() => { if (queue.length) callbacks.logs(queue.splice(0)); }, 50);
+  let dropped = false;
+  function reportGap() { if (dropped) { dropped = false; callbacks.gap?.(); } }
+  const flush = setInterval(() => { reportGap(); if (queue.length) callbacks.logs(queue.splice(0)); }, 50);
   const live = () => [...active.values()].some(entry => entry.live);
   function remove(key: string) {
     const entry = active.get(key);
@@ -37,16 +41,18 @@ export function createLocalClient(callbacks: {
         const owned = () => !closed && active.get(key) === entry && !entry.ended;
         const finish = (message: UiMessage | string) => {
           if (!owned()) return;
+          reportGap();
           const final = queue.filter(record => record.source?.key === key);
           if (final.length) callbacks.logs(final);
           entry.ended = true; entry.live = false; clearTimeout(entry.timer); entry.stop?.(); entry.stop = undefined;
           queue = queue.filter(record => record.source?.key !== key);
+          callbacks.gap?.(); callbacks.ended?.(live());
           callbacks.status(message, live());
         };
         entry.timer = setTimeout(() => finish({ code: 'streamTimeout' }), 15000);
         void dependencies.open(device, message => {
           if (!owned()) return;
-          if (queue.length >= 2000) queue.shift();
+          if (queue.length >= 2000) { queue.shift(); dropped = true; }
           queue.push({ ...message, source: { key, name: device.webview?.title || device.name, platform: device.platform,
             deviceId: device.id, ...(device.webview ? { webview: device.webview } : {}) } });
         }, finish).then(stop => {

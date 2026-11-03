@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const es = {
   tuiPrototype: "Prototipo OpenTUI",
   tuiDemo: "Demostración",
+  tuiFlowsHelp: "Tab: controles · ↑↓: navegar · Enter: inspeccionar · Esc: volver",
   tuiRefreshSources: "Actualizar",
   tuiSources: "Fuentes",
   tuiHelp: "Tab: foco · Enter: abrir · ↑↓: navegar · Esc: cerrar · Ctrl+C: salir",

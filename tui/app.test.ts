@@ -681,3 +681,20 @@ test('settings frame X closes the screen and restores its trigger focus', async 
     expect(t.app.model.paused).toBe(false);
   } finally { t.app.dispose(); await t.dispose(); }
 });
+
+test('Flows consumes arrivals while logs are paused and returns focus without changing log state', async () => {
+  const { createTuiFlows } = await import('./flows-model');
+  const flows = createTuiFlows({ load: async () => ({ enabled: true, projectName: 'Fixture', directory: '.', revision: 'v1', blueprints: [], files: [], diagnostics: [] }), pollMs: 0 });
+  const t = await setup({ flows });
+  try {
+    await flows.reload(); t.app.model.pause(); const count = t.app.model.rows().length;
+    t.renderer.root.findDescendantById('flows')!.focus(); t.mockInput.pressEnter(); await t.renderOnce();
+    expect(t.captureCharFrame()).toContain('Semantic Flows');
+    t.app.ingest([{ timestamp: 'now', message: 'background event' }]);
+    expect(t.app.model.rows().length).toBe(count);
+    expect(t.app.model.liveCount).toBe(count + 1);
+    t.mockInput.pressEscape(); await Bun.sleep(50);
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('flows');
+    expect(t.app.model.paused).toBe(true);
+  } finally { t.app.dispose(); flows.dispose(); await t.dispose(); }
+});

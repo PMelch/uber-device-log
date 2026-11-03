@@ -14,6 +14,7 @@ const detail = { detail: 'Original technical diagnostic or HTTP status; retain v
 export const translationContext = {
   tuiPrototype: c("Terminal header.", "Identifies the experimental OpenTUI proof of concept. OpenTUI remains verbatim."),
   tuiDemo: c("Terminal source button.", "Synthetic demo source; no actual device is being captured."),
+  tuiFlowsHelp: c("Terminal Flows footer.", "Keyboard guide for the flow list and event timeline. Tab changes controls, arrow keys move through flows or events, Enter opens the highlighted item, Escape returns to the list or closes Flows. Keep key names verbatim."),
   tuiRefreshSources: c("Button at the end of the terminal Sources panel.", "Manually repeat device and WebView discovery; does not restart capture. Keep short to fit the narrow panel (18 terminal columns). The surrounding panel supplies source context."),
   tuiSources: c("Terminal source picker trigger and heading.", "Choose one native device or WebView capture source. The proof of concept captures one source at a time."),
   tuiHelp: c("Terminal footer.", "Keyboard guide: Tab moves focus, Enter activates or opens a log, arrows navigate, Escape closes a dialog, Ctrl+C exits. Retain key names verbatim."),

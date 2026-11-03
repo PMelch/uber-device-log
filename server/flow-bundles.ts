@@ -1,4 +1,4 @@
-import { createRequire } from 'node:module';
+import yauzlModule from 'yauzl';
 import { crc32 } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import type { EventEmitter } from 'node:events';
@@ -13,7 +13,7 @@ export interface FlowBundleManifest { id: string; name: string; description: str
 export interface ValidatedFlowBundle { manifest: FlowBundleManifest; blueprints: FlowBlueprint[]; files: FlowBlueprintFile[] }
 interface Entry { fileName: string; uncompressedSize: number; crc32: number; compressionMethod: number; generalPurposeBitFlag: number; externalFileAttributes: number }
 interface Zip extends EventEmitter { entryCount: number; readEntry(): void; close(): void; openReadStream(entry: Entry, callback: (error: Error | null, stream: Readable) => void): void }
-const yauzl = createRequire(import.meta.url)('yauzl') as { fromBuffer(input: Buffer, options: object, callback: (error: Error | null, zip: Zip) => void): void };
+const yauzl = yauzlModule as { fromBuffer(input: Buffer, options: object, callback: (error: Error | null, zip: Zip) => void): void };
 export const flowHash = (source: string | Buffer) => createHash('sha256').update(source).digest('hex');
 export function parseBundleManifest(source: string): FlowBundleManifest {
   const doc = parseDocument(source, { schema: 'core', uniqueKeys: true });

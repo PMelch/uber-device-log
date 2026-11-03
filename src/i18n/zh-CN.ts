@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const zhCN = {
   tuiPrototype: "OpenTUI 原型",
   tuiDemo: "演示",
+  tuiFlowsHelp: "Tab：控件 · ↑↓：浏览 · Enter：查看 · Esc：返回",
   tuiRefreshSources: "刷新来源",
   tuiSources: "来源",
   tuiHelp: "Tab: 焦点 · Enter: 打开 · ↑↓: 导航 · Esc: 关闭 · Ctrl+C: 退出",

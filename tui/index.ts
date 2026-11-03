@@ -4,6 +4,8 @@ import { writeFile } from 'node:fs/promises';
 import { createCliRenderer } from '@opentui/core';
 import { catalogs, resolveLocale, type Locale } from '../src/i18n';
 import { serializeLogExport } from '../shared/log-export';
+import { createTuiFlows, type TuiFlows } from './flows-model';
+import { FlowProject } from '../server/flow-project';
 import { createTui } from './app';
 import { createLocalClient } from './local-client';
 import { initializeProject } from '../server/project-context';
@@ -45,8 +47,9 @@ Ctrl+C or Quit exits the client. The separately running server stays active.`);
   const locale = (values.locale as Locale | undefined) ?? resolveLocale(null, [process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || 'en']);
   const project = values.local ? initializeProject(values.project) : undefined;
   let device = demoDevice;
+  let flows: TuiFlows | undefined;
   let app: ReturnType<typeof createTui> | undefined;
-  const callbacks = { logs: (records: import('../shared/types').LogMessage[]) => app?.ingest(records),
+  const callbacks = { gap: () => flows?.gap(), ended: (live: boolean) => { if (!live) flows?.interrupt(); }, logs: (records: import('../shared/types').LogMessage[]) => app?.ingest(records),
     status: (message: import('../src/i18n').UiMessage | string, live: boolean) => app?.setStatus(message, live) };
   const local = values.local ? createLocalClient(callbacks, { list: (await import('../server/devices')).listDevices, open: (await import('../server/devices')).openLogs }) : undefined;
   const client = values.server ? createTuiClient(values.server, {
@@ -57,7 +60,7 @@ Ctrl+C or Quit exits the client. The separately running server stays active.`);
   let closed = false;
   const cleanup = () => {
     if (closed) return;
-    closed = true; clearInterval(timer); client?.close(); local?.close(); app?.dispose();
+    closed = true; clearInterval(timer); client?.close(); local?.close(); app?.dispose(); flows?.dispose();
     process.off('SIGTERM', quit); process.off('SIGINT', quit);
   };
   function quit() { cleanup(); renderer.destroy(); }
@@ -65,9 +68,14 @@ Ctrl+C or Quit exits the client. The separately running server stays active.`);
   renderer.keyInput.on('keypress', key => { if (key.ctrl && key.name === 'c') { key.preventDefault(); quit(); } });
   process.once('SIGTERM', quit); process.once('SIGINT', quit);
   try {
+    if (local) {
+      let registry: FlowProject | undefined;
+      flows = createTuiFlows({ load: async () => { registry ??= await FlowProject.create(project?.directory); return registry.reload(); } });
+      void flows.reload();
+    }
     app = createTui(renderer, {
       acquireConsole: local ? (await import('../server/devices')).acquireWebView : undefined,
-      locale, capacity, demo: !client && !local, quit, project: project?.directory,
+      flows, locale, capacity, demo: !client && !local, quit, project: project?.directory,
       syncSources: local ? selected => { if (selected[0]) device = selected[0]; local.sync(selected); } : undefined,
       sources: () => local ? local.sources() : client ? client.sources() : Promise.resolve([demoDevice]),
       chooseSource: selected => { device = selected; client?.select(selected); },

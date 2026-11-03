@@ -10,6 +10,10 @@ Unreleased
 ----------
 
 Added
+- Add a terminal Semantic Flows screen with searchable live summaries, status and
+  completeness indicators, an event timeline, masked payloads and explicit raw-log
+  inspection. Analyze selected sources in an isolated worker using the same global
+  and project blueprints as the web viewer, with capture-gap and timeout handling.
 - Add an optional terminal log viewer via `udl --tui` with direct device capture
   without a web server, combined native/WebView sources, mouse and Tab navigation,
   literal search, paused inspection and JSON export. Project options remain usable;

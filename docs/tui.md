@@ -20,7 +20,7 @@ node bin/uber-device-log.mjs --tui --project .
 
 `udl --tui` starts direct native/WebView collectors without starting the HTTP
 server. `--project` and `--flows` initialize the same project context; `--port`
-is accepted and validated but unused. Flows and Blueprint editing are not implemented yet.
+is accepted and validated but unused. Blueprint editing is not implemented yet.
 
 Settings shows one compact field with the current value for language, terminal
 colors, message order and retained record capacity. Enter/Space or a click opens
@@ -184,7 +184,7 @@ reviewed `docs/architecture.md`, `src/App.vue`'s documented invariants,
   No captured log text is translated.
 
 The terminal viewer still omits severity/tag/PID controls, multi-record range
-selection, Semantic Flows, clipboard commands, settings persistence, and update UI.
+selection, Blueprint editing, clipboard commands, settings persistence, and update UI.
 These remain follow-up features, not implied parity with the web application.
 
 ## Verify
@@ -203,3 +203,31 @@ mouse text selection during arrivals, draggable scrolling with 100,000 records,
 resize, and a real loopback HTTP/SSE fixture. Tests require permission to bind
 local ephemeral ports. Headless frames can check layout but do not replace real
 terminal and physical-device checks.
+
+
+## Semantic Flows
+
+The Flows toolbar button in direct/local mode opens a dedicated screen. Its list
+shows live labels, source/device identity, priority, outcome and completeness.
+Search matches visible labels, blueprint names, devices and localized outcomes.
+Use arrows or PageUp/PageDown to navigate; Enter or a click opens the timeline.
+New arrivals preserve a deliberately navigated row and the selected flow.
+
+The detail screen shows expected steps and results, chronological observed events,
+and a separate payload inspector. Sensitive extractions and label substitutions
+remain masked. Raw log inspection requires choosing Raw log and explicitly
+revealing values. Escape returns to the list, then to logs. Info shows loaded
+blueprints and diagnostics; Reload files refreshes definitions without a server.
+Clear resets only flow analysis history; clearing or pausing the log view does
+not stop recognition or erase flows.
+
+Definitions come from the same global/project registry and activation policy as
+the web interface. Files refresh every three seconds after the prior request
+settles; timeouts advance even without new logs. The worker shares the web
+engine, bounded analysis queue and watchdog. Source changes, disconnects,
+truncation and queue loss mark incomplete capture or interrupt sessions. Restart
+analysis recovers from a failed worker and starts a fresh recognition history.
+
+The terminal build includes `tui/flow-worker.ts` as a second executable entrypoint;
+keep it in custom build commands. Demo and legacy `--server` modes do not expose
+the Flows screen. Blueprint editing and bundle management remain follow-up work.

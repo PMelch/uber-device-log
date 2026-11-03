@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "viewerPackageVersion": "0.10.0",
   "compatibility": "Snapshot of the source contract, including unreleased changes. This package version is provenance, not a minimum supported release. Validate with a viewer that implements these features.",
-  "contractDigest": "c2835177b92c24da90945c6f96fb69f021576c49bb334542958ca09350660507",
+  "contractDigest": "94227a2cfbe11c364e54c9c1cdc04d97ef4216feeb5e0e22fe00c334d6b20fe8",
   "sourceFingerprints": {
     "shared/flow-types.ts": "a6d2477e020d970f676559dcde060b889ead9021f2205e21525d4a07ebfaf706",
     "shared/flow-blueprints.ts": "bddb6d5e6c8153fb7c9f5ea55de2771438ef1f16f3a612b18724bb1c72cd9fb8",
@@ -10,7 +10,7 @@
     "shared/flow-presentation.ts": "68bc3995f40c0be95ae5bac184ce66ef465d7eea502ed395df40f2b5165d1a0f",
     "shared/flow-variables.ts": "5280b2b8b3e4815be1aa389c4e9d7935e22b3e57b8abf9a1131a76cfb8041bbc",
     "shared/flow-error-code.ts": "84f70f83b2a8a742d2caf959d7eed5fc49b458253745337a4e016339a3a79eed",
-    "server/flow-bundles.ts": "103f788ac95923cb86657a8c88b23815b0b902d98d9ee03526cdc85700ce88d3",
+    "server/flow-bundles.ts": "a0110c80e56ad6b5822b72e399ce719bb2f67b4fc2c6b5510a0ff32b90880b0d",
     "server/flow-storage.ts": "2c442417fe95adf82ac9fee4bfbe7d8fbaaed9669dab58b3eefdc19af904b95e",
     "server/flow-project.ts": "fc0e615bf4ae0133a8b7671a63d932d7d980ce7817bba4dd1f18ee4a5e383fcf"
   },

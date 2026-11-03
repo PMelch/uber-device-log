@@ -2,6 +2,7 @@ import { notificationMessages } from '../../shared/notifications';
 export const en = {
   tuiPrototype: "OpenTUI prototype",
   tuiDemo: "Demo",
+  tuiFlowsHelp: "Tab: controls · ↑↓: navigate · Enter: inspect · Esc: back",
   tuiRefreshSources: "Refresh sources",
   tuiSources: "Sources",
   tuiHelp: "Tab: focus · Enter: open · ↑↓: navigate · Esc: close · Ctrl+C: quit",

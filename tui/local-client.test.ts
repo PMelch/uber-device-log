@@ -77,3 +77,16 @@ test('reselecting a source delivers fresh events and ignores old collector callb
     await new Promise(r => setTimeout(r, 60)); expect(received).toEqual(['fresh']);
   } finally { client.close(); }
 });
+
+test('collector overflow reports one analysis gap before delivering the bounded batch', async () => {
+  const events: string[] = []; let emit!: (row: LogMessage) => void;
+  const client = createLocalClient({ logs: rows => events.push(`logs:${rows.length}`), gap: () => events.push('gap'), status() {} }, {
+    list: async () => ({ devices: [], warnings: [] }), open: async (_device, message) => { emit = message; return () => {}; },
+  });
+  try {
+    client.sync([device]); await Promise.resolve();
+    for (let i = 0; i < 2100; i++) emit({ timestamp: 'now', message: String(i) });
+    await Bun.sleep(60);
+    expect(events).toEqual(['gap', 'logs:2000']);
+  } finally { client.close(); }
+});
