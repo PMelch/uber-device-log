@@ -1,4 +1,68 @@
-# OpenTUI proof of concept
+# Terminal log viewer
+
+During development, start the TUI directly from source (Bun required):
+
+```sh
+npm run dev -- --tui
+npm run dev -- --tui --project .
+```
+
+No compiled executable is required. Restart the TUI to apply source changes.
+Without `--tui`, `npm run dev` keeps the web server's tsx watcher.
+
+For the package-style entry point, build the web/server and host-specific terminal executable:
+
+```sh
+npm run build
+npm run build:tui
+node bin/uber-device-log.mjs --tui --project .
+```
+
+`udl --tui` starts direct native/WebView collectors without starting the HTTP
+server. `--project` and `--flows` initialize the same project context; `--port`
+is accepted and validated but unused. Settings, Flows and Blueprint editing are not implemented yet.
+
+Sources refresh automatically two seconds after each completed discovery; the
+Sources button also refreshes immediately. Closed WebViews disappear and stop
+capturing, while existing log history and other active sources remain. New
+WebViews require explicit selection. An open console target picker updates too. Use F6 or the Hide/Show sources button
+to collapse the source panel. F11 or Fullscreen expands the log stream; F11,
+Escape or Exit fullscreen restores the previous layout. Capture, search and
+selection survive these layout changes. The Sources border also offers `[-]`
+and a collapsed `[+]` control; the Log stream border offers a fullscreen icon
+and a restore arrow. These have the same behavior as the toolbar and shortcuts. Source checkboxes combine native logs
+and WebViews belonging to one parent device. Selecting another parent clears the
+view and stops the old collectors. Disabling/re-enabling a source replaces its
+buffer. Explicitly enabling a source resumes the live view and clears the current
+selection while keeping the search query. Narrow terminals stack the source list above logs. Tab scrolls source
+controls into view; Enter or Space toggles the focused source. Search is currently
+a global literal search; per-source severity/tag/PID filters are not yet available.
+
+Open **JavaScript console · Alpha** to inspect a WebView without changing the
+selected log sources. Select a discovered WebView and explicitly choose its
+execution context. Enter or Run executes the current expression once; Up/Down
+in the expression field navigates the last 50 commands. Result objects expand
+on demand, with bounded property pages and no automatic getter invocation.
+Reconnect and target changes invalidate old handles; navigation requires choosing
+a context again. Clear output releases retained results. Escape or Close returns
+to the logs, whose capture continues in the background. Console access is
+available in direct local mode, not the synthetic demo or legacy HTTP client.
+
+The Colors toolbar button cycles Auto, Light, Dark and Off (monochrome).
+Auto reads the terminal foreground, background and ANSI palette and responds to
+reported palette changes. Unsupported queries fall back to a fixed dark palette.
+Text roles are adjusted to at least 4.5:1 contrast against normal, panel and
+selected backgrounds. Timestamp and debug levels are subdued, warning/error
+levels are colored and bold, source names use an accent, and message text stays
+neutral. Level labels and selection markers remain available in monochrome.
+Appearance changes apply to the current session without changing captured data.
+
+The executable is a local build, not part of the published npm distribution.
+Use Bun 1.3.14 or newer as below. If an older macOS Bun creates an executable
+with an invalid signature, rebuild using a supported Bun, or ad-hoc sign the
+local binary with `codesign --force --sign - build/udl-tui`.
+
+## Development demo and HTTP client
 
 The TUI uses **OpenTUI Core 0.8.2** with its direct TypeScript API. This is an
 optional development prototype on `feature/tui`, not a replacement for the web
@@ -82,8 +146,8 @@ npm run build:tui
 
 Bun embeds its runtime and OpenTUI's native assets. This builds for the current
 host; the resulting TUI executable does not invoke an installed Node or Bun.
-Cross-platform release packaging is not implemented here. The backend is not
-bundled, so live device capture still needs the separately running UDL server.
+Cross-platform release packaging is not implemented here. Direct capture uses bundled device adapters; the optional `--server` client
+still connects to a separately running UDL server.
 Physical Android/iOS capture and other OS/architecture combinations need device
 and platform validation. This PoC does not establish release readiness.
 

@@ -485,4 +485,12 @@ export const de = {
   detailPower: "Die Meldung berichtet einen Fehler beim Setzen eines internen Energiezustands. Ursache und praktische Auswirkung sind aus diesem Eintrag nicht bestimmbar.",
   detailInvalidType: "Ein Wert entspricht nicht dem erwarteten Datentyp. Der betroffene Inhalt und die ursprüngliche Ursache lassen sich aus diesem Eintrag allein nicht bestimmen.",
   detailStack: "Der Text enthält ein erkanntes Ausnahme-, Stackframe- oder Diagnosemuster. Er kann ein Fragment sein; dies ist keine vollständige Absturzdiagnose.",
+  tuiHideSources: "Quellen ausblenden · F6",
+  tuiShowSources: "Quellen einblenden · F6",
+  tuiFullscreen: "Vollbild · F11",
+  tuiExitFullscreen: "Vollbild verlassen · F11",
+  tuiThemeAuto: "Farben: Automatisch",
+  tuiThemeLight: "Farben: Hell",
+  tuiThemeDark: "Farben: Dunkel",
+  tuiThemeMono: "Farben: Aus",
 } satisfies Messages;

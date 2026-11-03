@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["tui/**/*.ts"],
+  "include": ["tui/**/*.ts", "server/ios-types.d.ts"],
   "exclude": ["tui/**/*.test.ts"]
 }

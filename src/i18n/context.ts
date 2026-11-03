@@ -489,6 +489,14 @@ export const translationContext = {
   detailPower: c("Interpretation for the observed AppleSPU power-state error.", "A setting operation reports failure; do not diagnose a hardware defect."),
   detailInvalidType: c("Interpretation for mobileassetd invalid-type messages.", "Type mismatch is visible, but the particular asset and root cause are not established."),
   detailStack: c("Interpretation when existing stack/diagnostic syntax recognition matches.", "Recognized text may be incomplete, not necessarily a new or complete crash report."),
+  "tuiHideSources": c("TUI main log toolbar", "Hide the terminal source panel without stopping capture. F6 is the keyboard shortcut, keep it verbatim."),
+  "tuiShowSources": c("TUI main log toolbar", "Show the terminal source panel again. F6 is the keyboard shortcut, keep it verbatim."),
+  "tuiFullscreen": c("TUI main log toolbar", "Expand logs to fill the terminal, hiding other panels. F11 is the keyboard shortcut, keep it verbatim."),
+  "tuiExitFullscreen": c("TUI main log toolbar", "Leave terminal log fullscreen and restore previous panel state. F11 is the keyboard shortcut, keep it verbatim."),
+  tuiThemeAuto: c("TUI toolbar appearance button", "Cycle terminal appearance modes; current mode follows the detected terminal palette, with contrast correction and a dark fallback."),
+  tuiThemeLight: c("TUI toolbar appearance button", "Cycle terminal appearance modes; current mode uses a fixed light background and contrast-corrected colors."),
+  tuiThemeDark: c("TUI toolbar appearance button", "Cycle terminal appearance modes; current mode uses a fixed dark background and contrast-corrected colors."),
+  tuiThemeMono: c("TUI toolbar appearance button", "Cycle terminal appearance modes; current mode uses neutral grayscale only, with level labels and emphasis retained."),
 } satisfies Record<MessageKey, TranslationContext>;
 
 /** Public website copy is separate from the application catalogs and npm bundle. */
@@ -683,5 +691,5 @@ export const websiteTranslationContext = {
   "siteOpenSource": {
     "location": "Public landing page: OpenSource",
     "meaning": "OPEN SOURCE"
-  }
+  },
 } as const;

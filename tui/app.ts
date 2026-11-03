@@ -1,30 +1,54 @@
 import { BoxRenderable, InputRenderable, InputRenderableEvents, TextRenderable, ScrollBoxRenderable, ScrollBarRenderable,
-  type CliRenderer, type Renderable, type KeyEvent } from '@opentui/core';
+  StyledText, fg, bold, type CliRenderer, type Renderable, type KeyEvent } from '@opentui/core';
 import { translate, translateMessage, languages, type Locale, type UiMessage } from '../src/i18n';
 import type { MessageKey } from '../src/i18n/en';
 import type { Device, LogMessage } from '../shared/types';
+import { createTuiTheme, tuiThemeModes, type TuiThemeMode, type TerminalThemeColors } from './theme';
+import { createConsolePanel } from './console-panel';
+import type { AcquireConsole } from './console-model';
+import { featureStatuses, featureStatusCopy } from '../src/feature-status';
+import { logLevel } from '../shared/log-view';
+import { sourceKey } from './local-client';
 import { createLogModel, terminalText } from './model';
 
 export interface TuiOptions {
+  acquireConsole?: AcquireConsole;
+  theme?: TuiThemeMode;
+  detectTerminalTheme?: boolean;
+  project?: string;
+  syncSources?: (devices: Device[]) => void;
   locale?: Locale;
   capacity?: number;
   demo?: boolean;
   sources?: () => Promise<Device[]>;
+  sourceRefreshMs?: number;
   chooseSource?: (device: Device) => void;
   save?: (messages: LogMessage[]) => Promise<string>;
   quit?: () => void;
 }
-const colors = { background: '#101923', panel: '#162330', text: '#d8e6ef', muted: '#91a6b7', border: '#38546a', accent: '#70ddd0', selected: '#254659' };
 
 export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
+  let themeMode = options.theme ?? 'auto';
+  let terminalColors: TerminalThemeColors | undefined;
+  let colors = createTuiTheme(themeMode);
   const model = createLogModel(options.capacity);
   let locale = options.locale ?? 'en';
   let sourceName = '';
+  let available: Device[] = [];
+  let selectedSources: Device[] = [];
+  let viewParent: Device | undefined;
+  let sourceNodes: Renderable[] = [];
+  let discovery = 0;
+  let discoveryTimer: ReturnType<typeof setTimeout> | undefined;
+  let pendingDiscovery: Promise<void> | undefined;
+  let sourcesCollapsed = false;
+  let fullscreen = false;
   let status: UiMessage | string = '';
   let capturing = options.demo !== false;
   let offset = 0;
   let cursor = 0;
   let disposed = false;
+  let consolePanel: ReturnType<typeof createConsolePanel> | undefined;
   let modal: BoxRenderable | undefined;
   let modalFocus: Renderable[] = [];
   let modalScroller: ScrollBoxRenderable | undefined;
@@ -54,7 +78,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     box.add(text); parent.add(box); target.push(box); actions.set(box, action); labels.push({ text, key });
     return { box, text };
   }
-  const sources = button(toolbar, 'sources', 'tuiSources', () => { void openSources(); });
+  const sources = button(toolbar, 'sources', 'tuiSources', () => { void (options.syncSources ? refreshSources() : openSources()); });
   const pause = button(toolbar, 'pause', 'pause', () => {
     if (model.paused) { model.resume(); renderer.clearSelection(); } else model.pause();
     refresh();
@@ -66,6 +90,15 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     refresh();
   });
   button(toolbar, 'quit', 'tuiQuit', () => options.quit?.());
+  const collapse = button(toolbar, 'toggle-sources', 'tuiHideSources', toggleSources);
+  collapse.box.visible = !!options.syncSources;
+  const maximize = button(toolbar, 'fullscreen', 'tuiFullscreen', toggleFullscreen);
+  const fullscreenBar = new BoxRenderable(renderer, { height: 3, flexShrink: 0, visible: false });
+  root.add(fullscreenBar);
+  button(fullscreenBar, 'exit-fullscreen', 'tuiExitFullscreen', toggleFullscreen);
+  const themeButton = button(toolbar, 'theme', 'tuiThemeAuto', () => setTheme(tuiThemeModes[(tuiThemeModes.indexOf(themeMode) + 1) % tuiThemeModes.length]!));
+  const consoleButton = button(toolbar, 'javascript-console', 'consoleTitle', openConsole);
+  consoleButton.box.visible = !!options.acquireConsole;
   const searchBox = new BoxRenderable(renderer, { height: 3, flexShrink: 0, border: true, borderColor: colors.border });
   const search = new InputRenderable(renderer, { id: 'search', width: '100%', placeholder: t('searchPlaceholder'), maxLength: 500,
     textColor: colors.text, backgroundColor: colors.panel, focusedBackgroundColor: colors.selected });
@@ -73,8 +106,29 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   search.on(InputRenderableEvents.INPUT, () => setQuery(search.value));
   const content = new BoxRenderable(renderer, { id: 'content', flexGrow: 1, minHeight: 4, flexDirection: 'row', gap: 1 });
   root.add(content);
+  const sidebar = new ScrollBoxRenderable(renderer, { id: 'source-sidebar', width: 24, height: '100%', flexShrink: 0,
+    border: true, borderColor: colors.border, scrollX: false, scrollY: true, visible: !!options.syncSources,
+    onMouseDown(event) {
+      if (event.button === 0 && event.y === sidebar.y && event.x >= sidebar.x + 2 && event.x < sidebar.x + 5) {
+        event.stopPropagation(); event.preventDefault(); toggleSources(); logs.focus();
+      }
+    } });
+  content.add(sidebar);
+  const collapsedSources = new BoxRenderable(renderer, { id: 'collapsed-sources', width: 24, height: 3,
+    flexShrink: 0, border: true, borderColor: colors.border, visible: false,
+    onMouseDown(event) {
+      if (event.button === 0 && event.y === collapsedSources.y && event.x >= collapsedSources.x + 2 && event.x < collapsedSources.x + 5) {
+        event.stopPropagation(); event.preventDefault(); toggleSources(); logs.focus();
+      }
+    } });
+  content.add(collapsedSources);
   const logs = new BoxRenderable(renderer, { id: 'logs', width: '60%', height: '100%', border: true, borderColor: colors.border,
     focusedBorderColor: colors.accent, focusable: true, overflow: 'hidden', flexDirection: 'row', flexShrink: 0,
+    onMouseDown(event) {
+      if (event.button === 0 && event.y === logs.y && event.x >= logs.x + 2 && event.x < logs.x + 5) {
+        event.stopPropagation(); event.preventDefault(); toggleFullscreen();
+      }
+    },
     onMouseScroll(event) {
       if (!event.scroll) return;
       event.stopPropagation(); logs.focus();
@@ -142,20 +196,37 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
       const record = items[offset + i];
       const line = rows[i]!;
       line.bg = record && (record.key === selected?.key || offset + i === cursor) ? colors.selected : colors.background;
-      line.fg = record?.level === 'ERROR' || record?.level === 'FATAL' ? '#ff9f99' : record?.level === 'WARN' ? '#f1ce7a' : colors.text;
-      line.content = record ? terminalText(`${record.key === selected?.key ? '●' : ' '} ${record.timestamp.slice(11, 23)} ${(record.level ?? '-').padEnd(5)} ${record.tag ?? ''} ${record.message.replace(/\n/g, ' ↵ ')}`)
-        : i === 0 ? t(model.query ? 'noMatches' : 'waiting') : '';
+      line.fg = colors.text;
+      if (record) {
+        const normalizedLevel = logLevel(record.level);
+        const severity = normalizedLevel === 'ERROR' || normalizedLevel === 'FATAL' ? colors.error
+          : normalizedLevel === 'WARN' ? colors.warn : normalizedLevel === 'DEBUG' || normalizedLevel === 'VERBOSE' ? colors.muted : colors.text;
+        const level = fg(severity)(terminalText(record.level ?? '-').padEnd(7));
+        line.content = new StyledText([
+          fg(colors.text)(record.key === selected?.key ? '● ' : '  '),
+          fg(colors.muted)(terminalText(record.timestamp.slice(11, 23)) + ' '),
+          ['WARN', 'ERROR', 'FATAL'].includes(normalizedLevel) ? bold(level) : level,
+          fg(colors.source)(' ' + terminalText(record.source?.name ?? record.tag ?? '') + ' '),
+          fg(colors.text)(terminalText(record.message.replace(/\n/g, ' ↵ '))),
+        ]);
+      } else line.content = i === 0 ? t(model.query ? 'noMatches' : 'waiting') : '';
     }
-    logs.title = `${t('logStream')} · ${translate(locale, 'messageCount', { count: items.length })}`;
+    logs.title = `[${fullscreen ? '↙' : '⛶'}] ${t('logStream')} · ${translate(locale, 'messageCount', { count: items.length })}`;
   }
   function refresh() {
     if (disposed) return;
     for (const label of labels) label.text.content = t(label.key);
-    heading.content = `Über Device Log · ${t('tuiPrototype')}`;
+    heading.content = terminalText(`Über Device Log${options.project ? ' · ' + options.project : ''}${options.demo !== false ? ' · ' + t('tuiDemo') : ''}`);
+    consoleButton.text.content = t('consoleTitle') + (featureStatuses.javascriptConsole ? ' · ' + t(featureStatusCopy[featureStatuses.javascriptConsole].label) : '');
+    sidebar.title = `[-] ${t('tuiSources')}`;
+    collapsedSources.title = renderer.width >= 100 ? '[+]' : `[+] ${t('tuiSources')}`;
     sources.text.content = t(options.demo === false ? 'tuiSources' : 'tuiDemo');
     pause.text.content = t(model.paused ? 'backToLive' : 'pause');
     searchBox.title = t('literalSearch'); search.placeholder = t('searchPlaceholder');
     details.title = t('message');
+    details.visible = !fullscreen && (!options.syncSources || renderer.width >= 100 || !!model.selected);
+    themeButton.text.content = t(({ auto: 'tuiThemeAuto', light: 'tuiThemeLight', dark: 'tuiThemeDark', mono: 'tuiThemeMono' } as const)[themeMode]);
+    collapse.text.content = t(sourcesCollapsed ? 'tuiShowSources' : 'tuiHideSources');
     const selected = model.selected;
     detailText.content = selected ? terminalText(JSON.stringify({ timestamp: selected.timestamp, level: selected.level, tag: selected.tag, pid: selected.pid, source: selected.source, truncated: selected.truncated }, null, 2) + '\n\n' + selected.message) : t('tuiInspectHint');
     stateLine.content = `${t(model.paused ? capturing ? 'pausedActive' : 'pausedStopped' : capturing ? 'liveCapture' : 'notCapturing')} · ${translate(locale, 'messageCount', { count: model.liveCount })}`;
@@ -163,12 +234,138 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     help.content = t('tuiHelp');
     refreshRows();
   }
+  function applyTheme(node: Renderable) {
+    if (node instanceof BoxRenderable) {
+      node.backgroundColor = colors.background;
+      if (node.border === true || (Array.isArray(node.border) && node.border.length)) { node.borderColor = colors.border; node.focusedBorderColor = colors.accent; }
+    }
+    const bars = node instanceof ScrollBoxRenderable ? [node.verticalScrollBar, node.horizontalScrollBar] : node instanceof ScrollBarRenderable ? [node] : [];
+    for (const bar of bars) {
+      bar.trackOptions = { foregroundColor: colors.muted, backgroundColor: colors.background };
+      bar.arrowOptions = { foregroundColor: colors.text, backgroundColor: colors.background };
+    }
+    if (node instanceof TextRenderable) node.fg = colors.text;
+    for (const child of node.getChildren()) applyTheme(child);
+  }
+  function setTheme(mode: TuiThemeMode) {
+    if (disposed) return;
+    themeMode = mode; colors = createTuiTheme(mode, terminalColors);
+    applyTheme(root); if (modal) applyTheme(modal);
+    search.textColor = colors.text; search.focusedTextColor = colors.text; search.placeholderColor = colors.muted; search.cursorColor = colors.text; search.backgroundColor = colors.panel; search.focusedBackgroundColor = colors.selected;
+    heading.fg = stateLine.fg = colors.accent; statusLine.fg = help.fg = colors.muted;
+    available.forEach((device, index) => {
+      const node = sourceNodes[index];
+      if (node instanceof BoxRenderable) node.backgroundColor = selectedSources.some(item => sourceKey(item) === sourceKey(device)) ? colors.selected : colors.panel;
+    });
+    refresh(); consolePanel?.update();
+  }
+  function onPalette(value: TerminalThemeColors) {
+    if (disposed) return;
+    terminalColors = value;
+    if (themeMode === 'auto') setTheme(themeMode);
+  }
+  let paletteRequest = 0;
+  async function detectPalette() {
+    const request = ++paletteRequest;
+    try {
+      const result = await renderer.getPalette({ size: 16, timeout: 700 });
+      if (!disposed && request === paletteRequest) onPalette(result);
+    } catch { /* Keep the readable fallback when queries are unsupported. */ }
+  }
   function layout() {
     const wide = renderer.width >= 100;
+    sidebar.visible = !!options.syncSources && !sourcesCollapsed && !fullscreen;
+    collapsedSources.visible = !!options.syncSources && sourcesCollapsed && !fullscreen;
+    collapsedSources.width = wide ? 6 : '100%';
+    heading.visible = toolbar.visible = searchBox.visible = help.visible = !fullscreen;
+    fullscreenBar.visible = fullscreen;
     content.flexDirection = wide ? 'row' : 'column';
-    logs.width = wide ? '60%' : '100%'; logs.height = wide ? '100%' : '55%';
-    details.width = wide ? 0 : '100%'; details.height = wide ? '100%' : 'auto'; details.flexBasis = 0;
+    logs.width = wide ? sidebar.visible ? '45%' : '60%' : '100%';
+    sidebar.width = wide ? 24 : '100%'; sidebar.height = wide ? '100%' : 6; logs.height = wide ? '100%' : '55%';
+    if (options.syncSources && !wide) { logs.height = 'auto'; logs.flexBasis = 0; logs.flexShrink = 1; logs.flexGrow = 1; logs.minHeight = 3; details.height = 5; details.flexGrow = 0; }
+    else { logs.flexBasis = 'auto'; logs.flexShrink = 0; logs.flexGrow = 0; details.flexGrow = 1; }
+    details.width = wide ? 0 : '100%'; details.height = wide ? '100%' : options.syncSources ? 5 : 'auto'; details.flexBasis = 0;
+    if (fullscreen) { content.flexDirection = 'row'; logs.width = '100%'; logs.height = '100%'; logs.flexGrow = 1; logs.flexBasis = 0; }
     refresh();
+  }
+  function toggleSources() {
+    sourcesCollapsed = !sourcesCollapsed; layout();
+    if (!sidebar.visible && sourceNodes.includes(renderer.currentFocusedRenderable!)) logs.focus();
+  }
+  function toggleFullscreen() { fullscreen = !fullscreen; layout(); logs.focus(); }
+  function isVisible(node: Renderable) {
+    let current: Renderable | null = node;
+    while (current) { if (!current.visible) return false; current = current.parent as Renderable | null; }
+    return true;
+  }
+  function renderSources() {
+    for (const node of sourceNodes) { actions.delete(node); mainFocus = mainFocus.filter(item => item !== node); node.destroyRecursively(); }
+    sourceNodes = [];
+    available.forEach((device, index) => {
+      const checked = selectedSources.some(item => sourceKey(item) === sourceKey(device));
+      const node = new BoxRenderable(renderer, { id: `sidebar-source-${index}`, height: 3, border: true, borderColor: colors.border, focusedBorderColor: colors.accent, flexShrink: 0, focusable: true,
+        backgroundColor: checked ? colors.selected : colors.panel,
+        onMouseDown(event) { if (event.button !== 0) return; event.preventDefault(); node.focus(); toggleSource(device); } });
+      node.add(new TextRenderable(renderer, { height: 1, selectable: false, fg: colors.text,
+        content: terminalText(`${device.webview ? '  ' : ''}[${checked ? 'x' : ' '}] ${device.webview?.title || device.name}`) }));
+      sidebar.add(node); sourceNodes.push(node); mainFocus.push(node); actions.set(node, () => toggleSource(device));
+    });
+  }
+  function toggleSource(device: Device) {
+    const key = sourceKey(device);
+    const differentParent = viewParent && (viewParent.id !== device.id || viewParent.platform !== device.platform);
+    viewParent = device;
+    if (differentParent) { selectedSources = []; model.clear(); model.resume(); }
+    const included = selectedSources.some(item => sourceKey(item) === key);
+    selectedSources = included ? selectedSources.filter(item => sourceKey(item) !== key) : [...selectedSources, device];
+    model.removeSource(key);
+    if (!included) {
+      model.resume(); renderer.clearSelection(); offset = 0; cursor = 0;
+    }
+    options.syncSources?.(selectedSources);
+    sourceName = selectedSources.map(item => item.webview?.title || item.name).join(' + ');
+    const index = available.findIndex(item => sourceKey(item) === key);
+    renderSources(); sourceNodes[index]?.focus(); refresh();
+  }
+  function refreshSources(): Promise<void> {
+    if (disposed || !options.sources) return Promise.resolve();
+    if (pendingDiscovery) return pendingDiscovery;
+    clearTimeout(discoveryTimer);
+    const request = ++discovery;
+    pendingDiscovery = Promise.resolve().then(async () => {
+      try {
+        const result = await options.sources!();
+        if (disposed || request !== discovery) return;
+        consolePanel?.updateSources(result);
+        const keys = new Set(result.map(sourceKey));
+        const remaining = selectedSources.filter(device => keys.has(sourceKey(device)));
+        if (remaining.length !== selectedSources.length) {
+          selectedSources = remaining;
+          options.syncSources?.(remaining);
+          sourceName = remaining.map(item => item.webview?.title || item.name).join(' + ');
+        }
+        if (JSON.stringify(result) !== JSON.stringify(available)) {
+          const focusedIndex = sourceNodes.indexOf(renderer.currentFocusedRenderable!);
+          const focusedKey = focusedIndex < 0 ? undefined : sourceKey(available[focusedIndex]!);
+          const scrollTop = sidebar.scrollTop;
+          available = result; renderSources(); sidebar.scrollTo(scrollTop);
+          if (focusedKey !== undefined && isVisible(sidebar)) {
+            const next = result.findIndex(device => sourceKey(device) === focusedKey);
+            (next >= 0 ? sourceNodes[next] : sources.box)?.focus();
+            // Source controls have a fixed three-row height; new coordinates are not laid out yet.
+            if (next >= 0) sidebar.scrollTo(next * 3);
+          }
+        }
+        if (!available.length) status = { code: 'noDevices' };
+      } catch (error) { if (!disposed && request === discovery) status = { code: 'tuiFailure', params: { detail: String(error) } }; }
+      finally {
+        pendingDiscovery = undefined;
+        const delay = options.sourceRefreshMs ?? 2000;
+        if (!disposed && options.syncSources && delay > 0) discoveryTimer = setTimeout(() => { void refreshSources(); }, delay);
+      }
+      refresh();
+    });
+    return pendingDiscovery;
   }
   function setQuery(query: string) { model.setQuery(query); offset = 0; cursor = 0; refresh(); }
   async function save() {
@@ -178,6 +375,14 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     try { status = { code: 'tuiSaved', params: { path: await options.save(selected ? [selected] : model.rows()) } }; }
     catch (error) { status = { code: 'tuiFailure', params: { detail: String(error) } }; }
     finally { saving = false; refresh(); }
+  }
+  function openConsole() {
+    if (!options.acquireConsole || !options.sources || consolePanel || modal) return;
+    root.visible = false;
+    consolePanel = createConsolePanel(renderer, { acquire: options.acquireConsole, sources: options.sources,
+      locale: () => locale, colors: () => colors, close() {
+        consolePanel?.dispose(); consolePanel = undefined; root.visible = true; consoleButton.box.focus();
+      } });
   }
   function closeModal() {
     sourceRequest++;
@@ -222,14 +427,21 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     }
   }
   function onKey(key: KeyEvent) {
+    if (consolePanel) return;
+    if (!modal && (key.name === 'f11' || (fullscreen && key.name === 'escape'))) { key.preventDefault(); toggleFullscreen(); return; }
+    if (!modal && !fullscreen && key.name === 'f6' && options.syncSources) { key.preventDefault(); toggleSources(); return; }
     if (key.name === 'tab') {
       key.preventDefault(); key.stopPropagation();
-      const focus = modal ? modalFocus : mainFocus;
+      const focus = (modal ? modalFocus : mainFocus).filter(isVisible);
       let active = renderer.currentFocusedRenderable;
       while (active && !focus.includes(active)) active = active.parent as Renderable | null;
       const current = focus.indexOf(active!);
       const next = focus[(current + (key.shift ? -1 : 1) + focus.length) % focus.length];
       next?.focus();
+      if (next && sourceNodes.includes(next)) {
+        if (next.y < sidebar.y + 1) sidebar.scrollBy(next.y - sidebar.y - 1);
+        else if (next.y + next.height > sidebar.y + sidebar.height - 1) sidebar.scrollBy(next.y + next.height - sidebar.y - sidebar.height + 1);
+      }
       if (modalScroller && next && next.id !== 'close-sources') {
         const top = modalScroller.y;
         const bottom = top + modalScroller.height;
@@ -256,13 +468,15 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   }
   renderer.keyInput.on('keypress', onKey);
   renderer.on('resize', layout);
-  layout(); mainFocus[0]!.focus();
+  if (options.detectTerminalTheme !== false) { renderer.on('palette', onPalette); renderer.on('theme_mode', detectPalette); void detectPalette(); }
+  layout(); setTheme(themeMode); mainFocus[0]!.focus();
+  if (options.syncSources) void refreshSources();
   return {
-    model, controls: { search, logs, pause: pause.box, sources: sources.box, details, rows, scrollbar }, setQuery,
+    model, openConsole, get consolePanel() { return consolePanel; }, setTheme, get theme() { return colors; }, refreshSources, toggleSource, toggleSources, toggleFullscreen, controls: { theme: themeButton.box, sidebar, collapsedSources, collapse: collapse.box, maximize: maximize.box, search, logs, pause: pause.box, sources: sources.box, details, rows, scrollbar }, setQuery,
     ingest(messages: LogMessage[]) { if (!disposed) { model.ingest(messages); refresh(); } },
     setStatus(value: UiMessage | string, live = capturing) { status = value; capturing = live; refresh(); },
     dispose() {
-      disposed = true; closeModal(); renderer.keyInput.off('keypress', onKey); renderer.off('resize', layout); root.destroyRecursively(); mainFocus = [];
+      consolePanel?.dispose(); consolePanel = undefined; disposed = true; discovery++; clearTimeout(discoveryTimer); renderer.off('palette', onPalette); renderer.off('theme_mode', detectPalette); closeModal(); renderer.keyInput.off('keypress', onKey); renderer.off('resize', layout); root.destroyRecursively(); mainFocus = [];
     },
   };
 }

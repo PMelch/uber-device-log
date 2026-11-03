@@ -77,7 +77,8 @@ export async function webViewTunnel(device: WebViewDevice, socket: string) {
   if (!/^webview_devtools_remote(?:_[\w.-]+)?$/.test(socket)) throw new Error('Invalid WebView socket');
   let closed = false;
   const streams = new Set<Duplex>();
-  const server = createServer(local => {
+  // Keep early HTTP/WebSocket bytes buffered until the asynchronous ADB leg is ready.
+  const server = createServer({ pauseOnConnect: true }, local => {
     streams.add(local);
     local.on('error', () => local.destroy());
     const timer = setTimeout(() => local.destroy(), discoveryTimeout);
@@ -90,6 +91,7 @@ export async function webViewTunnel(device: WebViewDevice, socket: string) {
       remote.once('close', () => { streams.delete(remote); local.destroy(); });
       local.once('close', () => remote.destroy());
       local.pipe(remote).pipe(local);
+      local.resume();
     }).catch(() => local.destroy());
   });
   await new Promise<void>((resolve, reject) => {

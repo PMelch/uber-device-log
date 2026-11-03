@@ -470,6 +470,14 @@ export const en = {
   detailPower: "The message reports failure to set an internal power state. The cause and practical impact cannot be determined from this entry.",
   detailInvalidType: "A value does not match the expected type. This entry alone does not identify the affected asset or the upstream cause.",
   detailStack: "The text contains a recognized exception, stack-frame or diagnostic pattern. It may be a fragment; this is not a complete crash diagnosis.",
+  tuiHideSources: "Hide sources · F6",
+  tuiShowSources: "Show sources · F6",
+  tuiFullscreen: "Fullscreen · F11",
+  tuiExitFullscreen: "Exit fullscreen · F11",
+  tuiThemeAuto: "Colors: Auto",
+  tuiThemeLight: "Colors: Light",
+  tuiThemeDark: "Colors: Dark",
+  tuiThemeMono: "Colors: Off",
 } as const;
 export type MessageKey = keyof typeof en;
 export type Messages = Record<MessageKey, string>;

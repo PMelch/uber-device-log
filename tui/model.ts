@@ -38,6 +38,11 @@ export function createLogModel(capacity = 2000) {
     },
     pause() { snapshot ??= live; },
     resume() { snapshot = undefined; selectedKey = undefined; },
+    removeSource(key: string) {
+      live = live.filter(row => row.source?.key !== key);
+      if (snapshot) snapshot = snapshot.filter(row => row.source?.key !== key);
+      if (selectedKey !== undefined && !rows().some(row => row.key === selectedKey)) selectedKey = undefined;
+    },
     clear() { live = []; if (snapshot) snapshot = []; selectedKey = undefined; },
     select(key: number) {
       if (!rows().some(row => row.key === key)) return;

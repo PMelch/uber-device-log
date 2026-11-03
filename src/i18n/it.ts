@@ -485,4 +485,12 @@ export const it = {
   detailPower: "Il messaggio segnala un errore nell’impostare uno stato energetico interno. Causa e impatto non sono determinabili da questa voce.",
   detailInvalidType: "Un valore non corrisponde al tipo atteso. Questa voce da sola non identifica la risorsa interessata né la causa iniziale.",
   detailStack: "Il testo contiene un pattern riconosciuto di eccezione, stack o diagnostica. Può essere un frammento; non è una diagnosi completa di arresto anomalo.",
+  tuiHideSources: "Nascondi sorgenti · F6",
+  tuiShowSources: "Mostra sorgenti · F6",
+  tuiFullscreen: "Schermo intero · F11",
+  tuiExitFullscreen: "Esci da schermo intero · F11",
+  tuiThemeAuto: "Colori: Auto",
+  tuiThemeLight: "Colori: Chiaro",
+  tuiThemeDark: "Colori: Scuro",
+  tuiThemeMono: "Colori: Disattivati",
 } satisfies Messages;

@@ -32,3 +32,8 @@ test('project and flows are equivalent single-use project directory flags', () =
   for (const args of [['--project','./demo'],['--project=./demo'],['--flows','./demo'],['--flows=./demo']]) assert.equal(parseCliOptions(args).project,resolve('./demo'));
   for (const args of [['--project'],['--flows='],['--project=a','--flows=b'],['--project','--port=5000']]) assert.throws(() => parseCliOptions(args));
 });
+test('TUI accepts project and port without enabling HTTP', () => {
+  const options = parseCliOptions(['--tui', '--project', '.', '--port', '4321']);
+  assert.equal(options.tui, true);
+  assert.equal(options.project, resolve('.'));
+});

@@ -485,4 +485,12 @@ export const ja = {
   detailPower: '内部の電源状態の設定に失敗したことを示しています。このログだけでは、原因や実際の影響は判断できません。',
   detailInvalidType: '値が期待される型と一致していません。このログだけでは、影響を受けるアセットや、問題の発生元は特定できません。',
   detailStack: '例外、スタックフレーム、または診断情報の既知のパターンが含まれています。断片的な記録の可能性があり、完全なクラッシュ診断ではありません。',
+  tuiHideSources: "ソースを隠す · F6",
+  tuiShowSources: "ソースを表示 · F6",
+  tuiFullscreen: "全画面表示 · F11",
+  tuiExitFullscreen: "全画面表示を終了 · F11",
+  tuiThemeAuto: "配色: 自動",
+  tuiThemeLight: "配色: ライト",
+  tuiThemeDark: "配色: ダーク",
+  tuiThemeMono: "配色: モノクロ",
 } satisfies Messages;

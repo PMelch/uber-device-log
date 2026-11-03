@@ -485,4 +485,12 @@ export const fr = {
   detailPower: "Le message signale un échec de réglage d’un état d’alimentation interne. Cette entrée ne permet pas d’en déterminer la cause ni l’impact.",
   detailInvalidType: "Une valeur ne correspond pas au type attendu. Cette entrée seule n’identifie ni la ressource concernée ni la cause initiale.",
   detailStack: "Le texte contient un motif reconnu d’exception, de pile ou de diagnostic. Il peut être fragmentaire ; ce n’est pas un diagnostic complet de plantage.",
+  tuiHideSources: "Masquer les sources · F6",
+  tuiShowSources: "Afficher les sources · F6",
+  tuiFullscreen: "Plein écran · F11",
+  tuiExitFullscreen: "Quitter le plein écran · F11",
+  tuiThemeAuto: "Couleurs : Auto",
+  tuiThemeLight: "Couleurs : Clair",
+  tuiThemeDark: "Couleurs : Sombre",
+  tuiThemeMono: "Couleurs : Sans couleur",
 } satisfies Messages;

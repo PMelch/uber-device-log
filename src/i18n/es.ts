@@ -485,4 +485,12 @@ export const es = {
   detailPower: "El mensaje indica un fallo al establecer un estado interno de energía. No se pueden determinar la causa ni el impacto a partir de esta entrada.",
   detailInvalidType: "Un valor no coincide con el tipo esperado. Esta entrada no identifica por sí sola el recurso afectado ni la causa original.",
   detailStack: "El texto contiene un patrón de excepción, traza o diagnóstico reconocido. Puede ser un fragmento; no es un diagnóstico completo de un fallo.",
+  tuiHideSources: "Ocultar fuentes · F6",
+  tuiShowSources: "Mostrar fuentes · F6",
+  tuiFullscreen: "Pantalla completa · F11",
+  tuiExitFullscreen: "Salir de pantalla completa · F11",
+  tuiThemeAuto: "Colores: Auto",
+  tuiThemeLight: "Colores: Claro",
+  tuiThemeDark: "Colores: Oscuro",
+  tuiThemeMono: "Colores: Sin color",
 } satisfies Messages;

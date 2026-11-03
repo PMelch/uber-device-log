@@ -10,9 +10,27 @@ Unreleased
 ----------
 
 Added
-- Add an optional OpenTUI proof of concept with a live demo, single-source device
-  capture, mouse and Tab navigation, literal search, paused inspection and JSON
-  export. A standalone TUI build can bundle its runtime.
+- Add an optional terminal log viewer via `udl --tui` with direct device capture
+  without a web server, combined native/WebView sources, mouse and Tab navigation,
+  literal search, paused inspection and JSON export. Project options remain usable;
+  a host-specific TUI build is required. The synthetic demo remains available.
+  Collapse the Sources panel with F6 or expand the log stream with F11; leaving
+  fullscreen restores the previous panel state without interrupting capture.
+  Click the controls in the Sources and Log stream borders to change their layout.
+  Adapt terminal colors automatically or choose light, dark or monochrome display;
+  severity and source accents preserve readable contrast, including selected rows.
+- Add a terminal WebView JavaScript console with explicit target/context selection,
+  command history and expandable result properties while log capture continues.
+
+Fixed
+- Return the terminal viewer to live mode when a source is enabled again, instead
+  of keeping an empty frozen view while new events are captured in the background.
+- Refresh terminal device and WebView choices automatically, remove closed targets
+  and stop only their capture while keeping remaining sources and captured logs.
+- Start the terminal interface directly from source with `npm run dev -- --tui`,
+  including project options, without launching the web server or requiring a build.
+- Discover Android WebViews reliably in the terminal interface when the ADB tunnel
+  opens asynchronously; support both source and bundled Bun adapter imports.
 
 0.10.0 - 2026-11-03
 -------------------

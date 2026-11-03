@@ -4,6 +4,7 @@ export function parseCliOptions(args: string[], environmentPort?: string) {
   let portText = environmentPort ?? '4310';
   let project: string | undefined;
   let help = false;
+  let tui = false;
   let version = false;
   const installing = args[0] === 'install-blueprint';
   let installSource: string | undefined, global = false;
@@ -11,7 +12,8 @@ export function parseCliOptions(args: string[], environmentPort?: string) {
     const arg = args[index]!;
     if (installing && !arg.startsWith('-') && installSource === undefined) { installSource = arg; continue; }
     if (installing && arg === '--global') { if (global) throw new Error('Use --global only once.'); global = true; continue; }
-    if (arg === '--help' || arg === '-h') help = true;
+    if (arg === '--tui' && !installing) tui = true;
+    else if (arg === '--help' || arg === '-h') help = true;
     else if (arg === '--version' || arg === '-v') version = true;
     else if (arg === '--project' || arg === '--flows' || arg.startsWith('--project=') || arg.startsWith('--flows=')) {
       if (project !== undefined) throw new Error('Use --project or --flows only once.');
@@ -33,5 +35,5 @@ export function parseCliOptions(args: string[], environmentPort?: string) {
   if (!/^\d+$/.test(portText) || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('Port must be an integer between 1 and 65535.');
   }
-  return { port, help, version, ...(install ? { install } : {}), ...(project !== undefined ? { project } : {}) };
+  return { port, help, version, ...(tui ? { tui } : {}), ...(install ? { install } : {}), ...(project !== undefined ? { project } : {}) };
 }

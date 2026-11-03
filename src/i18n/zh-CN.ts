@@ -485,4 +485,12 @@ export const zhCN = {
   detailPower: "消息报告设置内部电源状态失败。无法从此条目确定原因及实际影响。",
   detailInvalidType: "某个值不符合预期类型。仅凭此条目无法识别受影响的资源或上游原因。",
   detailStack: "文本包含已识别的异常、堆栈帧或诊断模式。这可能只是片段，并非完整的崩溃诊断。",
+  tuiHideSources: "隐藏来源 · F6",
+  tuiShowSources: "显示来源 · F6",
+  tuiFullscreen: "全屏 · F11",
+  tuiExitFullscreen: "退出全屏 · F11",
+  tuiThemeAuto: "颜色：自动",
+  tuiThemeLight: "颜色：浅色",
+  tuiThemeDark: "颜色：深色",
+  tuiThemeMono: "颜色：关闭",
 } satisfies Messages;

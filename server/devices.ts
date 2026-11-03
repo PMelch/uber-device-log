@@ -1,6 +1,6 @@
 import { openAndroidInspector } from './android-inspector.js';
 import { createWebViewHub } from './webview-hub.js';
-import { createRequire } from 'node:module';
+import * as adbkit from '@devicefarmer/adbkit';
 import type { DeviceWithPath } from '@devicefarmer/adbkit';
 import logcat from '@devicefarmer/adbkit-logcat';
 import { services, utilities } from 'appium-ios-device';
@@ -13,9 +13,9 @@ import { discoverWebViews, openWebViewLogs } from './webviews.js';
 import { notification, type Notification } from '../shared/notifications.js';
 import { deviceSetup } from './device-setup.js';
 
-// Load CJS explicitly: Node 22 cannot infer Adb as an ESM named export,
-// and adbkit's default-export typings differ from its runtime exports object.
-const { Adb } = createRequire(import.meta.url)('@devicefarmer/adbkit') as typeof import('@devicefarmer/adbkit');
+// Node exposes the CJS exports object as default; Bun also exposes named exports.
+// Keep the import static so the standalone TUI includes the adapter.
+const Adb = adbkit.Adb ?? (adbkit.default as unknown as typeof import('@devicefarmer/adbkit')).Adb;
 const adb = Adb.createClient({ bin: process.env.ADB_PATH || 'adb', timeout: 5000 });
 export const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
