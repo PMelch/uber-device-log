@@ -10,6 +10,8 @@ Unreleased
 ----------
 
 Changed
+- Provide reproducible Flow formatting, lint and browser checks for contributors,
+  and run product tests/builds on pull requests including the minimum Node version.
 - Manage Blueprint sources in a toolbar-opened dialog with a searchable global/project
   list and a selected-source inspector for descriptions, metadata, definitions and
   diagnostics. Keep bundle installation collapsed, retain drafts when closing, and
@@ -51,6 +53,12 @@ Added
   Identify active flows with progress text and a reduced-motion-aware spinner.
 
 Fixed
+- Preserve Flow ambiguity and missing-start evidence across capture gaps and
+  truncated records. Close timed-out recognition after its first late terminal
+  result, allowing a fresh operation without reusing old buffered evidence.
+- Keep Semantic Flow analysis running when a captured JSON error code cannot be
+  converted to text. Use the rule's unknown outcome, preserve sensitive original
+  evidence, and distinguish missing codes from the literal string "undefined".
 - Keep reordered events with their original operation, enforce deadlines without
   depending on timer ticks, and prevent stale progress or rejected branch evidence
   from changing later flow state. Bound deep JSON analysis and finite timeouts.

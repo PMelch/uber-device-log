@@ -101,7 +101,7 @@ try {
   await page.waitForTimeout(2300);
   assert.equal(await page.locator('.flow-card').count(), 1, 'late progress never starts an orphan');
   assert.ok((await card.locator('h2').innerText()).includes('successful'));
-  const search = page.locator('.flow-toolbar input');
+  const search = page.getByRole('searchbox', { name: 'Search flows…', exact: true });
   await search.fill('PRIVATE-BANK-ACCOUNT'); assert.equal(await page.locator('.flow-card').count(), 0, 'hidden values cannot be searched');
   await search.fill('successful'); assert.equal(await page.locator('.flow-card').count(), 1);
   await search.fill('');

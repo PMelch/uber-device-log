@@ -17,7 +17,11 @@
     "blueprints:build": "node --import tsx scripts/build-blueprint-bundles.mjs",
     "blueprints:check": "node --import tsx scripts/build-blueprint-bundles.mjs --check",
     "skill:sync": "node scripts/sync-flow-skill.mjs",
-    "skill:check": "node scripts/sync-flow-skill.mjs --check"
+    "skill:check": "node scripts/sync-flow-skill.mjs --check",
+    "format:check": "node scripts/check-style.mjs check",
+    "format": "node scripts/check-style.mjs write",
+    "lint": "node scripts/check-style.mjs lint",
+    "test:flows:browser": "node --import tsx scripts/test-semantic-flows.mjs && node --import tsx scripts/test-flow-labels.mjs && node --import tsx scripts/test-flow-bundles.mjs"
   },
   "dependencies": {
     "@devicefarmer/adbkit": "^3.3.9",
@@ -33,14 +37,22 @@
     "source-map-js": "1.2.2"
   },
   "devDependencies": {
+    "@eslint/js": "9.39.5",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.3",
+    "@typescript-eslint/parser": "8.55.0",
     "@vitejs/plugin-vue": "^6.0.9",
+    "eslint": "9.39.5",
+    "eslint-plugin-vue": "10.6.2",
     "fuse.js": "^7.5.0",
+    "playwright": "1.62.1",
+    "prettier": "3.9.10",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",
+    "typescript-eslint": "8.55.0",
     "vite": "^8.3.5",
     "vue": "^3.5.43",
+    "vue-eslint-parser": "10.2.0",
     "vue-tsc": "^3.3.11"
   },
   "description": "Local Android and iOS device log viewer with search, severity filters and export.",

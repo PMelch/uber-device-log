@@ -38,7 +38,7 @@ output.set('references/authoring-guide.md', portableLinks(guide));
 const api = await read('docs/api.md');
 const access = api.slice(api.indexOf('## Local access'), api.indexOf('Examples below use'));
 const flowApi = api.slice(api.indexOf('## Semantic Flows'), api.indexOf('## Limits and timeouts'));
-output.set('references/api.md', '# Local Flow validation API\n\n' + portableLinks(access + flowApi).replace('[browser regression guide]', '[validation guide]'));
+output.set('references/api.md', '# Local Flow validation API\n\n' + portableLinks(access + flowApi).replace('[browser regression guide]', '[validation guide]').trimEnd() + '\n');
 for (const filename of ['purchase.yaml', 'login.yaml', 'asset-download.yaml', 'bank-transaction.yaml', 'loading-progress.yaml', 'entry-routes.yaml']) {
   output.set(`assets/flows/${filename}`, await read(`test_flow_project/.udl/flows/${filename}`));
 }
@@ -46,7 +46,7 @@ for (const filename of ['sample-events.jsonl', 'bank-transaction-events.jsonl', 
 output.set('assets/config.yaml', await read('test_flow_project/.udl/config.yaml'));
 output.set('LICENSE', await read('LICENSE'));
 output.set('INSTALL.md', (await read('docs/flow-authoring-skill.md')).replaceAll('../skills/udl-semantic-flows/SKILL.md', 'SKILL.md'));
-const contractSources = ['shared/flow-types.ts', 'shared/flow-blueprints.ts', 'shared/flow-engine.ts', 'shared/flow-presentation.ts', 'shared/flow-variables.ts', 'server/flow-bundles.ts', 'server/flow-storage.ts', 'server/flow-project.ts'];
+const contractSources = ['shared/flow-types.ts', 'shared/flow-blueprints.ts', 'shared/flow-engine.ts', 'shared/flow-presentation.ts', 'shared/flow-variables.ts', 'shared/flow-error-code.ts', 'server/flow-bundles.ts', 'server/flow-storage.ts', 'server/flow-project.ts'];
 const sourceFingerprints = Object.fromEntries(await Promise.all(contractSources.map(async path => [path, hash(await read(path))])));
 const packageMetadata = JSON.parse(await read('package.json'));
 output.set('references/contract.json', JSON.stringify({

@@ -68,3 +68,9 @@ test('flow authoring skill works as a copied folder without links to the viewer 
 test('portable flow references and fixtures stay in sync with the canonical contract', async () => {
   await promisify(execFile)(process.execPath, ['scripts/sync-flow-skill.mjs', '--check'], { cwd: repository });
 });
+
+
+test('generated portable API reference ends with exactly one newline', async () => {
+  const source = await readFile(join(repository, 'skills/udl-semantic-flows/references/api.md'), 'utf8');
+  assert.equal(source, source.trimEnd() + '\n');
+});

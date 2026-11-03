@@ -123,7 +123,13 @@ a local project. `.udl/config.yaml` supports `blueprints: <relative directory>`;
 an empty configuration defaults to `.udl/flows`. Files are non-recursive `.yaml` or
 `.yml` definitions inside the project. Invalid startup configuration fails launch;
 invalid blueprint reloads report diagnostics while keeping the last valid active
-set. Without a project, the snapshot has `enabled: false` and no active blueprints.
+set. Without a project, Semantic Flows remains enabled and loads global loose
+files and enabled bundles from the user's home. With a project, recognition combines
+global and project sources. The snapshot's `context` identifies `global` or `project`;
+`files` and `directory` refer to the editable loose-file scope. Create/update operations
+write to the project when selected, otherwise to the global directory. Installed
+bundle contents are not editable through those operations. See
+[Blueprint bundles](blueprint-bundles.md) for storage and activation rules.
 
 | Method and path | Request | Result |
 | --- | --- | --- |

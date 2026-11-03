@@ -244,10 +244,14 @@ node bin/uber-device-log.mjs --flows=./test_flow_project
 to your shell's working directory. Use either once. For your own project, create
 `.udl/config.yaml` containing `blueprints: .udl/flows` and put `.yaml` or `.yml` definitions in
 `.udl/flows`. An empty configuration also defaults to `.udl/flows`. Without a project,
-Logs remains available and Flows explains how to enable it.
+Flows loads global definitions from `~/.udl/flows` and enabled global bundles from
+`~/.udl/bundles`. With a project, global and project sources are available together.
+Manage bundle installation and activation through **Flows → Blueprint sources**;
+see [Blueprint bundles](docs/blueprint-bundles.md) for configuration and scope rules.
 
-The **Blueprints** editor loads project files, validates drafts and saves them to
-disk. Existing flows retain their original blueprint version. Captured application
+The **Blueprints** editor validates drafts and saves loose YAML files in the selected
+project, or in the global directory when no project is selected. It does not edit
+files inside installed bundles. Existing flows retain their original blueprint version. Captured application
 logs must actually match your definitions; selecting a project does not inject
 sample events. See [the test project](test_flow_project/README.md) for emitting the
 examples through a real inspected WebView, or explicitly start the isolated

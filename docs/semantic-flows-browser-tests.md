@@ -7,9 +7,11 @@ npm run build
 node --import tsx scripts/test-semantic-flows.mjs
 ```
 
-Playwright must be available. Set `PLAYWRIGHT_MODULE` to an absolute installed Playwright `index.mjs` path if it is not in this checkout. Set `CHROME_EXECUTABLE` to an installed browser executable when needed. `SEMANTIC_FLOWS_SCREENSHOTS` optionally names an output directory. `SEMANTIC_FLOWS_DIST` selects a different build directory.
+Playwright is pinned in the development dependencies. `npm run test:flows:browser`
+runs the Semantic Flows, labels and bundle/source suites together; install its
+Chromium with `npx --no-install playwright install chromium`. Set `PLAYWRIGHT_MODULE` to an absolute installed Playwright `index.mjs` path if it is not in this checkout. Set `CHROME_EXECUTABLE` to an installed browser executable when needed. `SEMANTIC_FLOWS_SCREENSHOTS` optionally names an output directory. `SEMANTIC_FLOWS_DIST` selects a different build directory.
 
-The regression checks concurrent receipt identifier correlation, completion/error/timeout outcomes, sensitive evidence reveal, blueprint info, validation and filesystem saves, preservation of local drafts on revision conflicts, search, clear, and desktop/mobile overflow. Runtime browser errors fail the test.
+The regression checks concurrent receipt identifier correlation, completion/error/timeout outcomes, sensitive evidence reveal, blueprint info, validation and filesystem saves, preservation of local drafts on revision conflicts, editor remounts and file switching, editor heading focus, search, clear, and desktop/mobile overflow. Runtime browser errors fail the test.
 
 For manual inspection:
 

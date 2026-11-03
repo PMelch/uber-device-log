@@ -305,13 +305,20 @@ Regex matching uses the JavaScript engine. The validator checks syntax and named
 | `extract` | Yes in practice | Extraction mapping; must declare the field named by `codeField`. Also extract a known primary/alias ID to identify the instance. |
 | `label` | No | New instance summary when this error rule is accepted. Known-code `label` takes precedence. |
 | `codeField` | Yes | Exact extracted field name containing the error code. |
-| `codes` | Yes | Mapping from code strings to objects with `description` and `outcome`. May be empty. The extracted value is converted to a string for lookup. |
+| `codes` | Yes | Mapping from code strings to objects with `description` and `outcome`. May be empty. String-convertible values retain their JavaScript string representation for lookup. Missing or non-convertible values use `unknownOutcome` without a displayed code. |
 | `codes.<code>.description` | Yes | Nonempty description displayed with the error. |
 | `codes.<code>.outcome` | Yes | `failed` or `cancelled`. |
 | `codes.<code>.label` | No | Summary specific to this code, overriding the rule label when available. |
 | `unknownOutcome` | Yes | `failed` or `cancelled`, used for unmapped codes. |
 
 Error rules are evaluated before ordinary expected steps. A unique matching, correlated rule ends the instance and clears expected steps. Multiple matching candidates cause ambiguity, not first-rule-wins behavior. Scoped rules use expected steps or the latest **accepted** step; rejected evidence from an unchosen route cannot enable its error rules. Errors do not independently start instances and have no keyless fallback. They need a known matching correlation binding. If `codeField` is not `required`, a missing code also takes `unknownOutcome`; use `required: true` when missing codes should reject the candidate.
+
+JSON error codes can contain objects or arrays. If their string conversion fails
+(for example, an object with `toString: null`), the correlated error still ends the
+instance using `unknownOutcome`; analysis continues for subsequent records. The
+original extracted value remains in the evidence with its sensitivity setting.
+A missing or non-convertible value never matches a literal `"undefined"` key in
+`codes`; the string `"undefined"` itself can match that key.
 
 ## Labels and result fields
 
@@ -471,11 +478,12 @@ The regex extractor and matcher are separate checks. Here a partial `contains` m
 Only `completed`, `failed` and `cancelled` are writable YAML outcomes. `running`, `timed_out` and `interrupted` are runtime states.
 
 - The deadline uses the engine's receipt clock, not timestamps embedded in log text. Receipt enforces deadlines before matching, even when no timer tick has run; a late terminal cannot become an ordinary success merely because of timer scheduling. A timeout means the expected terminal evidence was not observed in time, not proof of an application failure.
-- Timed-out instances can still accept eligible late evidence in the same capture epoch. A later terminal result is stored as `lateOutcome`; it does not change `timed_out` to `completed`.
+- Timed-out instances can still accept eligible late evidence in the same capture epoch. The first accepted terminal result is stored as `lateOutcome` and closes recognition; it does not change `timed_out` to `completed`. Later records cannot change that closed instance. A new start may reuse its identity, but cannot inherit its buffered evidence.
 - Unresolved relevant records are buffered for at most two seconds. Expired rows are classified as missing/unaccepted evidence before new matching and cannot advance a graph. Retries run between incoming records so older buffered progress is accepted before later updates in the same batch. A genuinely later lower percentage still replaces an earlier higher one. This window is bounded by queue limits and is not configurable in YAML.
 - Buffered ordinary steps, errors and repeats retain their eligible instance owners. A positively identified primary/alias owner takes precedence over speculative owners whose alias is not yet bound. Explicitly correlated pre-start evidence can be claimed by its first matching instance, but closed instances never release their old evidence to a later incarnation reusing an ID. Repeatable evidence still requires an existing eligible running instance and never creates an orphan.
 - Reordered observations retain their original receipt times and can have negative offsets relative to the start event. Instance update/end times never run backwards; elapsed duration is nonnegative.
 - A recognizable non-start step with an identity may create a `missing_start` instance after that window. Reaching a `completed` terminal then yields `interrupted`, not a proven complete run. Ineligible steps on an existing instance may be retained as unaccepted evidence (`missing_steps`); their extracted values cannot satisfy later references.
+- Completeness reasons are cumulative: capture loss never resolves ambiguity or supplies a missing start. When reasons overlap, the displayed status uses this priority: `ambiguous`, `missing_start`, `capture_gap`, then `missing_steps`. Ambiguous instances remain quarantined; a missing-start instance cannot become a proven successful run after a gap or truncated record.
 - Source/session changes interrupt running instances. Capture gaps, truncated records and ambiguity affect completeness separately from the outcome. Missing or excluded sources cannot be inferred from a blueprint or automatically captured.
 
 ## Files, validation and limits

@@ -7,16 +7,39 @@ compatibility are separate checks; a simulated protocol test cannot establish th
 ## Standard checks
 
 ```sh
+npm run format:check
+npm run lint
 npm test
 npm run build
+npm run blueprints:check
+npm run skill:check
 git diff --check
 ```
 
 `npm test` uses Node's built-in test runner with the tsx import hook and discovers
 `server/*.test.ts`. That directory also holds tests for shared/browser modules;
 its name does not imply backend-only coverage. `npm run build` runs vue-tsc, Vite,
-and server TypeScript compilation, producing `dist/` and `build/`. There is no
-separate lint command or committed general-purpose browser test runner.
+and server TypeScript compilation, producing `dist/` and `build/`. The bounded Flow style rollout uses `npm run format:check` and `npm run lint`;
+see [Contributing](../CONTRIBUTING.md) for scope and intentional exceptions.
+
+The Product checks workflow runs those commands on pull requests, pushes to `main`
+and manual dispatch. The matrix includes the exact minimum Node 22.12.0 and Node
+26.12.0. A separate browser job runs the Semantic Flow, labels and bundle/source
+regressions against a production build with the locked Playwright/Chromium pair:
+
+```sh
+npm ci
+npx --no-install playwright install chromium
+npm run build
+npm run test:flows:browser
+```
+
+Linux CI installs browser system libraries with `playwright install --with-deps
+chromium`. `CHROME_EXECUTABLE` can select an existing browser locally, but that
+checks a different browser version from CI. All fixtures bind loopback and use
+temporary storage. The tests do not establish hardware compatibility, hosted CI
+success, or release readiness. Additional UI suites are listed in the
+[Flow browser guide](semantic-flows-browser-tests.md).
 
 For a focused test, pass files directly rather than appending them to the wildcard
 npm script:

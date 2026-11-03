@@ -57,6 +57,17 @@ try {
   await page.getByRole('button', { name: 'Edit YAML', exact: true }).click();
   await page.locator('.flow-filelist').getByRole('button', { name: 'purchase.yaml', exact: true }).click();
   const original = await page.locator('#flow-yaml').inputValue();
+  const retainedDraft = original + '\n# retained after editor remount\n';
+  await page.locator('#flow-yaml').fill(retainedDraft);
+  await page.getByRole('button', { name: 'All flows', exact: true }).click();
+  await page.getByRole('button', { name: /^Blueprints/ }).click();
+  assert.equal(await page.locator('#flow-yaml').inputValue(), retainedDraft, 'draft survives child remount');
+  assert.equal(await page.locator('#flow-filename').inputValue(), 'purchase.yaml');
+  assert.equal(await page.locator('.flow-workspace h2:focus').count(), 1, 'editor heading retains keyboard focus');
+  await page.locator('.flow-filelist').getByRole('button', { name: 'login.yaml', exact: true }).click();
+  await page.locator('.flow-filelist').getByRole('button', { name: 'purchase.yaml', exact: true }).click();
+  assert.equal(await page.locator('#flow-yaml').inputValue(), retainedDraft, 'draft survives file switches');
+
   await page.locator('#flow-yaml').fill('version: [broken');
   await page.getByRole('button', { name: 'Validate draft', exact: true }).click();
   await page.locator('.flow-validation').waitFor();
@@ -93,9 +104,9 @@ try {
   assert.ok((await readFile(join(fixture.projectDirectory, '.udl/flows', 'browser-created.yaml'), 'utf8')).includes('id: new-flow'));
 
   await page.getByRole('button', { name: 'All flows', exact: true }).click();
-  await page.locator('.flow-toolbar input').fill('CHECKSUM_MISMATCH');
+  await page.getByRole('searchbox', { name: 'Search flows…', exact: true }).fill('CHECKSUM_MISMATCH');
   assert.equal(await page.locator('.flow-card').count(), 1);
-  await page.locator('.flow-toolbar input').fill('');
+  await page.getByRole('searchbox', { name: 'Search flows…', exact: true }).fill('');
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1080 });
     for (const locale of ['en', 'es', 'de', 'fr', 'it', 'ja', 'zh-CN']) {
