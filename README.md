@@ -378,10 +378,11 @@ private information before sharing log excerpts.
 ### Global Blueprints and bundles
 
 Put reusable Flow definitions in `~/.udl/flows`, or install a `.blueprint` ZIP bundle
-from **Flows → Blueprint sources**. Bundles include a name, description and
+from **Flows → Blueprint sources**: expand **Install a bundle**, choose **Local file**
+and select the downloaded archive, or use **Bundle URL** for a direct HTTP(S) link. Bundles include a name, description and
 Blueprint specification version. Install from the terminal with
-`udl install-blueprint <url> --global` or
-`udl install-blueprint <url> --project <directory>`, then enable the bundle in the
+`udl install-blueprint <file-or-url> --global` or
+`udl install-blueprint <file-or-url> --project <directory>`, then enable the bundle in the
 interface. Selections are stored in the selected project when launched with
 `--project`/`--flows`, otherwise globally. See [the bundle guide](docs/blueprint-bundles.md)
 for the format, conflicts, limits and installation examples.

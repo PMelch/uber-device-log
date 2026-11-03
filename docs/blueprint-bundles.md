@@ -58,17 +58,21 @@ A reproducible fictional [example bundle](../test_flow_project/bundles/example.b
 
 ## Install from the interface
 
-Open **Flows → Blueprint sources** from the Flow toolbar. A modal dialog lists source scope, kind, bundle description, specification version and tracked-definition count. Close it with the header close action, Escape or footer Close; focus returns to the toolbar. Selection, search and installation drafts remain available on reopening. Closing does not cancel a pending request; reopen and use Cancel to stop an installation. Activation changes are saved when toggled, with no separate Apply step. Expand **Install a bundle**, enter an HTTP(S) `.blueprint` URL, choose Global or Project, and select **Validate and install**. Project installation requires a launch with an explicit project directory. Installation and activation use the same application service as the CLI.
+Open **Flows → Blueprint sources** from the Flow toolbar. A modal dialog lists source scope, kind, bundle description, specification version and tracked-definition count. Close it with the header close action, Escape or footer Close; focus returns to the toolbar. Selection, search and installation drafts remain available on reopening. Closing does not cancel a pending request; reopen and use Cancel to stop an installation. Activation changes are saved when toggled, with no separate Apply step. Expand **Install a bundle**. Under **Install from**, choose **Local file** and select a downloaded `.blueprint` archive, or choose **Bundle URL** and enter a direct HTTP(S) `.blueprint` URL. Choose Global or Project, then **Validate and install**. Local files are uploaded from the browser; no temporary file server is needed. Project installation requires a launch with an explicit project directory. Installation and activation use the same application service as the CLI.
 
-The entire download, archive, manifest and Blueprint set must validate before the final file is created. A bundle is installed disabled; enable it explicitly in the panel to start tracking. An existing installation is never overwritten. Cancellation, invalid content and failed downloads leave existing installations and selections intact. The panel's selection explanation tells you whether changes apply to this project or globally. The original bundle name and description are not translated; controls, statuses and accessible labels are localized in seven languages.
+The entire file or download, archive, manifest and Blueprint set must validate before the final file is created. A bundle is installed disabled; enable it explicitly in the panel to start tracking. An existing installation is never overwritten. Cancellation, invalid content and failed downloads leave existing installations and selections intact. The panel's selection explanation tells you whether changes apply to this project or globally. The original bundle name and description are not translated; controls, statuses and accessible labels are localized in seven languages.
 
 ## Install from the CLI
 
 ```sh
+udl install-blueprint "./downloads/my bundle.blueprint" --global
+udl install-blueprint ./example.blueprint --project /path/to/application
 udl install-blueprint https://example.com/example.blueprint --global
 udl install-blueprint https://example.com/example.blueprint --project /path/to/application
 npx uber-device-log install-blueprint https://example.com/example.blueprint --flows /path/to/application
 ```
+
+The source can be a local `.blueprint` file path or an HTTP(S) URL. Relative paths are resolved from the current working directory; quote paths containing spaces. Local files must be regular files, not symlinks, and must fit the same 4 MiB compressed limit. File URLs (`file://`) are not supported; pass a filesystem path instead.
 
 Choose exactly one destination. The command exits after installation; it does not start the web server or capture devices. Success reports bundle identity, storage scope and activation guidance. Invalid requests or failed installation exit nonzero. CLI help and output remain English.
 

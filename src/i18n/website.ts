@@ -1,7 +1,7 @@
 // Website-only catalogs: deliberately not imported by the packaged application.
 const en = {
   "siteFlowsBundlesTitle": "Start with ready-made Android Blueprints.",
-  "siteFlowsBundlesBody": "Download bundles for Android UI performance, memory and stability from our GitHub repository. They recognize existing Logcat messages without changes to your app’s logging. Download links and installation instructions are in the English README.",
+  "siteFlowsBundlesBody": "Download bundles for Android UI performance, memory and stability from our GitHub repository. They recognize existing Logcat messages without changes to your app’s logging. Download links and installation instructions are in the English README. Install the downloaded file in Flows → Blueprint sources, then enable the bundle.",
   "siteFlowsBundlesLink": "Android Blueprints on GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "See the operation behind the logs.",
@@ -80,7 +80,7 @@ const en = {
 } as const;
 const de = {
   "siteFlowsBundlesTitle": "Starte mit fertigen Android-Blueprints.",
-  "siteFlowsBundlesBody": "In unserem GitHub-Repository findest du Bundles für Android-UI-Performance, Speicher und Stabilität zum Herunterladen. Sie erkennen vorhandene Logcat-Meldungen, ohne dass du das Logging deiner App ändern musst. Downloadlinks und Installationsanleitung stehen in der englischen README.",
+  "siteFlowsBundlesBody": "In unserem GitHub-Repository findest du Bundles für Android-UI-Performance, Speicher und Stabilität zum Herunterladen. Sie erkennen vorhandene Logcat-Meldungen, ohne dass du das Logging deiner App ändern musst. Downloadlinks und Installationsanleitung stehen in der englischen README. Installiere die heruntergeladene Datei unter Flows → Blueprint-Quellen und aktiviere anschließend das Bundle.",
   "siteFlowsBundlesLink": "Android-Blueprints auf GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "Die Abläufe hinter den Logs verstehen.",
@@ -159,7 +159,7 @@ const de = {
 } as const;
 const es = {
   "siteFlowsBundlesTitle": "Empieza con Blueprints de Android listos para usar.",
-  "siteFlowsBundlesBody": "Descarga paquetes para el rendimiento de la interfaz, la memoria y la estabilidad de Android desde nuestro repositorio de GitHub. Reconocen mensajes de Logcat existentes sin modificar los logs de tu app. Los enlaces de descarga y las instrucciones de instalación están en el README en inglés.",
+  "siteFlowsBundlesBody": "Descarga paquetes para el rendimiento de la interfaz, la memoria y la estabilidad de Android desde nuestro repositorio de GitHub. Reconocen mensajes de Logcat existentes sin modificar los logs de tu app. Los enlaces de descarga y las instrucciones de instalación están en el README en inglés. Instala el archivo descargado en Flujos → Fuentes de blueprints y después activa el paquete.",
   "siteFlowsBundlesLink": "Blueprints de Android en GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "Entiende la operación detrás de los logs.",
@@ -238,7 +238,7 @@ const es = {
 } as const;
 const fr = {
   "siteFlowsBundlesTitle": "Commencez avec des Blueprints Android prêts à l’emploi.",
-  "siteFlowsBundlesBody": "Téléchargez des packs pour les performances de l’interface, la mémoire et la stabilité Android depuis notre dépôt GitHub. Ils reconnaissent les messages Logcat existants sans modifier la journalisation de votre application. Les liens de téléchargement et les instructions d’installation figurent dans le README en anglais.",
+  "siteFlowsBundlesBody": "Téléchargez des packs pour les performances de l’interface, la mémoire et la stabilité Android depuis notre dépôt GitHub. Ils reconnaissent les messages Logcat existants sans modifier la journalisation de votre application. Les liens de téléchargement et les instructions d’installation figurent dans le README en anglais. Installez le fichier téléchargé dans Flux → Sources de blueprints, puis activez le pack.",
   "siteFlowsBundlesLink": "Blueprints Android sur GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "Comprenez les opérations derrière les logs.",
@@ -317,7 +317,7 @@ const fr = {
 } as const;
 const it = {
   "siteFlowsBundlesTitle": "Inizia con i Blueprint Android già pronti.",
-  "siteFlowsBundlesBody": "Scarica i pacchetti per prestazioni dell’interfaccia, memoria e stabilità di Android dal nostro repository GitHub. Riconoscono i messaggi Logcat esistenti senza modificare la registrazione dei log della tua app. I link per il download e le istruzioni di installazione sono nel README in inglese.",
+  "siteFlowsBundlesBody": "Scarica i pacchetti per prestazioni dell’interfaccia, memoria e stabilità di Android dal nostro repository GitHub. Riconoscono i messaggi Logcat esistenti senza modificare la registrazione dei log della tua app. I link per il download e le istruzioni di installazione sono nel README in inglese. Installa il file scaricato in Flussi → Origini dei blueprint, poi attiva il pacchetto.",
   "siteFlowsBundlesLink": "Blueprint Android su GitHub ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "Comprendi le operazioni dietro i log.",
@@ -396,7 +396,7 @@ const it = {
 } as const;
 const zhCN = {
   "siteFlowsBundlesTitle": "从现成的 Android Blueprint 开始。",
-  "siteFlowsBundlesBody": "从我们的 GitHub 仓库下载用于 Android 界面性能、内存和稳定性的包。它们识别现有的 Logcat 消息，无需修改应用的日志记录方式。下载链接和安装说明位于英文 README 中。",
+  "siteFlowsBundlesBody": "从我们的 GitHub 仓库下载用于 Android 界面性能、内存和稳定性的包。它们识别现有的 Logcat 消息，无需修改应用的日志记录方式。下载链接和安装说明位于英文 README 中。 在 流程 → Blueprint 来源中安装下载的文件，然后启用捆绑包。",
   "siteFlowsBundlesLink": "在 GitHub 查看 Android Blueprint ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "看懂日志背后的处理流程。",
@@ -475,7 +475,7 @@ const zhCN = {
 } as const;
 const ja = {
   "siteFlowsBundlesTitle": "すぐに使える Android Blueprint から始めよう。",
-  "siteFlowsBundlesBody": "Android の UI パフォーマンス、メモリ、安定性向けのバンドルを GitHub リポジトリからダウンロードできます。アプリのログ出力を変更せずに、既存の Logcat メッセージを認識します。ダウンロードリンクとインストール手順は英語の README にあります。",
+  "siteFlowsBundlesBody": "Android の UI パフォーマンス、メモリ、安定性向けのバンドルを GitHub リポジトリからダウンロードできます。アプリのログ出力を変更せずに、既存の Logcat メッセージを認識します。ダウンロードリンクとインストール手順は英語の README にあります。 フロー → Blueprint の読み込み元でダウンロードしたファイルをインストールし、バンドルを有効にしてください。",
   "siteFlowsBundlesLink": "GitHub で Android Blueprint を見る ↗",
   "siteFlowsNav": "Semantic Flows",
   "siteFlowsTitle": "ログから処理の流れを読み解く。",

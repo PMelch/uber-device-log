@@ -147,8 +147,40 @@ try {
   await manager.getByRole('button', { name: translate('en', 'flowsBundleCancel'), exact: true }).click();
   await manager.getByRole('status').filter({ hasText: translate('en', 'flowsBundleCancelled') }).waitFor();
   assert.equal(await toggle.getAttribute('aria-checked'), 'true');
+  // Local archives travel as bounded binary uploads, never as server filesystem paths.
+  await manager.locator('#flow-bundle-source').selectOption('file');
+  await manager.getByRole('button', { name: translate('en', 'flowsBundleInstall'), exact: true }).click();
+  await manager.getByRole('status').filter({ hasText: translate('en', 'flowsBundleInvalidFile') }).waitFor();
+  const localBytes = fixtureBundle('browser-local', 'local-event');
+  const localName = 'Downloaded bundle with a very long descriptive filename.blueprint';
+  const upload = async scope => {
+    await manager.locator('#flow-bundle-scope').selectOption(scope);
+    const pending = page.waitForResponse(response => response.url().includes('/bundles/upload?'));
+    await manager.getByRole('button', { name: translate('en', 'flowsBundleInstall'), exact: true }).click();
+    return (await pending).status();
+  };
+  await manager.locator('#flow-bundle-file').setInputFiles({ name: localName, mimeType: 'application/octet-stream', buffer: localBytes });
+  await page.keyboard.press('Escape'); await openManager();
+  assert.equal(await manager.locator('#flow-bundle-filename').innerText(), localName, 'file draft survives closing');
+  for (const scope of ['global', 'project']) {
+    assert.equal(await upload(scope), 200);
+    await source(`${scope}:bundle:browser-local`).waitFor();
+    assert.equal(await source(`${scope}:bundle:browser-local`).getByRole('switch').getAttribute('aria-checked'), 'false');
+    assert.deepEqual(await readFile(join(scope === 'global' ? fixture.homeDirectory : fixture.projectDirectory, '.udl/bundles/browser-local.blueprint')), localBytes);
+    assert.equal(await upload(scope), 409);
+  }
+  await manager.locator('#flow-bundle-file').setInputFiles({ name: 'broken.blueprint', mimeType: 'application/octet-stream', buffer: Buffer.from('invalid ZIP') });
+  assert.equal(await upload('global'), 400);
+  for (const invalid of [{ name: 'wrong.zip', buffer: localBytes }, { name: 'large.blueprint', buffer: Buffer.alloc(4 * 1024 * 1024 + 1) }]) {
+    await manager.locator('#flow-bundle-file').setInputFiles({ ...invalid, mimeType: 'application/octet-stream' });
+    await manager.getByRole('button', { name: translate('en', 'flowsBundleInstall'), exact: true }).click();
+    await manager.getByRole('status').filter({ hasText: translate('en', 'flowsBundleInvalidFile') }).waitFor();
+  }
+  await manager.locator('#flow-bundle-file').setInputFiles({ name: localName, mimeType: 'application/octet-stream', buffer: localBytes });
+  await manager.locator('#flow-bundle-source').selectOption('url');
   // Keep a validation status visible while switching languages; technical details remain verbatim.
   assert.equal(await install('broken', 'global'), 400);
+  await manager.locator('#flow-bundle-source').selectOption('file');
   for (const width of [1440, 390, 320]) for (const locale of ['en', 'de', 'es', 'fr', 'it', 'ja', 'zh-CN']) {
     await page.keyboard.press('Escape');
     await page.setViewportSize({ width, height: width <= 390 ? 740 : 1080 });
@@ -183,6 +215,9 @@ try {
       return (values[0] + .05) / (values[1] + .05);
     });
     assert.ok(contrast >= 4.5, `install action text contrast ${contrast.toFixed(2)} in ${locale} ${width}px`);
+    assert.equal(await manager.locator('#flow-bundle-file-button').innerText(), translate(locale, 'flowsBundleChooseFile'));
+    await manager.locator('#flow-bundle-file-button').focus();
+    assert.equal(await manager.locator('#flow-bundle-file-button').evaluate(node => document.activeElement === node), true);
     await toggle.focus(); assert.equal(await toggle.evaluate(node => document.activeElement === node), true);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${locale} ${width}px`);
     if (width <= 390) {
@@ -197,10 +232,8 @@ try {
     }
     if (process.env.SEMANTIC_FLOWS_SCREENSHOTS && locale === 'de') {
       await mkdir(process.env.SEMANTIC_FLOWS_SCREENSHOTS, { recursive: true });
-      await installation.locator('summary').click();
-      await manager.scrollIntoViewIfNeeded();
+      await manager.locator('#flow-bundle-file-button').scrollIntoViewIfNeeded();
       await page.screenshot({ path: join(process.env.SEMANTIC_FLOWS_SCREENSHOTS, `bundles-${width}.png`) });
-      await installation.locator('summary').click();
     }
   }
   // Compact landscape still keeps close controls inside the viewport while body scrolls.

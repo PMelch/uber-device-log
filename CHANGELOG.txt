@@ -21,7 +21,8 @@ Added
   Automatically migrate legacy .flowsrc settings and the default .flows directory
   without overwriting existing configuration or conflicting destination files.
 - Load global Semantic Flows from ~/.udl alongside project definitions. Install
-  validated .blueprint ZIP bundles from a URL through the interface or CLI, inspect
+  validated .blueprint ZIP bundles from local files or URLs through the interface
+  or CLI, without a temporary file server. Inspect
   their names, descriptions and specification versions, and enable or disable them
   independently per project or globally without a project. Report duplicate IDs
   with their origins and stop recognition for disabled bundles while retaining logs.

@@ -6,10 +6,10 @@ export function parseCliOptions(args: string[], environmentPort?: string) {
   let help = false;
   let version = false;
   const installing = args[0] === 'install-blueprint';
-  let installUrl: string | undefined, global = false;
+  let installSource: string | undefined, global = false;
   for (let index = installing ? 1 : 0; index < args.length; index++) {
     const arg = args[index]!;
-    if (installing && !arg.startsWith('-') && installUrl === undefined) { installUrl = arg; continue; }
+    if (installing && !arg.startsWith('-') && installSource === undefined) { installSource = arg; continue; }
     if (installing && arg === '--global') { if (global) throw new Error('Use --global only once.'); global = true; continue; }
     if (arg === '--help' || arg === '-h') help = true;
     else if (arg === '--version' || arg === '-v') version = true;
@@ -27,8 +27,8 @@ export function parseCliOptions(args: string[], environmentPort?: string) {
     else throw new Error(`Unknown argument: ${arg}. Use --help for usage.`);
   }
   if (help || version) return { port: 4310, help, version, ...(project === undefined ? {} : { project }) };
-  if (installing && (!installUrl || global === (project !== undefined))) throw new Error('Usage: udl install-blueprint <url> --global | --project <dir>');
-  const install = installing ? { url: installUrl!, scope: global ? 'global' as const : 'project' as const } : undefined;
+  if (installing && (!installSource || global === (project !== undefined))) throw new Error('Usage: udl install-blueprint <file-or-url> --global | --project <dir>');
+  const install = installing ? { source: installSource!, scope: global ? 'global' as const : 'project' as const } : undefined;
   const port = Number(portText);
   if (!/^\d+$/.test(portText) || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('Port must be an integer between 1 and 65535.');

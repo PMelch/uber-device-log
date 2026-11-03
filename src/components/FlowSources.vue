@@ -7,6 +7,10 @@ import type { MessageParams } from '../../shared/notifications';
 const props = defineProps<{ snapshot: FlowSnapshot; locale: Locale }>();
 const emit = defineEmits<{ changed: [] }>();
 const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, key, params);
+const installSource = ref<'url' | 'file'>('url');
+const bundleFile = ref<File>();
+const fileInput = ref<HTMLInputElement>(),
+  fileButton = ref<HTMLButtonElement>();
 const url = ref(''),
   scope = ref<'global' | 'project'>(props.snapshot.context === 'project' ? 'project' : 'global');
 const busy = ref<'install' | 'activation'>(),
@@ -130,23 +134,29 @@ function count(value: number) {
 async function openInstall() {
   installOpen.value = true;
   await nextTick();
-  urlInput.value?.focus();
+  (installSource.value === 'file' ? fileButton.value : urlInput.value)?.focus();
 }
 let controller: AbortController | undefined;
 onBeforeUnmount(() => controller?.abort());
-async function request(action: 'install' | 'activation', body: object) {
+async function request(action: 'install' | 'activation', body: object, file?: File) {
   if (busy.value) return;
   busy.value = action;
   diagnostics.value = [];
   status.value = action === 'install' ? 'flowsBundleInstalling' : undefined;
   controller = new AbortController();
   try {
-    const response = await fetch(`/api/flows/bundles/${action}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Flow-Token': props.snapshot.token ?? '' },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+    const response = await fetch(
+      `/api/flows/bundles/${file ? `upload?scope=${scope.value}` : action}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': file ? 'application/octet-stream' : 'application/json',
+          'X-Flow-Token': props.snapshot.token ?? '',
+        },
+        body: file ?? JSON.stringify(body),
+        signal: controller.signal,
+      },
+    );
     const result = await response.json();
     if (!response.ok) {
       diagnostics.value = result.diagnostics ?? [];
@@ -161,6 +171,21 @@ async function request(action: 'install' | 'activation', body: object) {
     busy.value = undefined;
     controller = undefined;
   }
+}
+function chooseFile(event: Event) {
+  const selected = (event.target as HTMLInputElement).files?.[0];
+  if (selected) bundleFile.value = selected;
+}
+function install() {
+  if (installSource.value === 'file') {
+    const file = bundleFile.value;
+    if (!file || !/\.blueprint$/i.test(file.name) || file.size > 4 * 1024 * 1024) {
+      diagnostics.value = [];
+      status.value = 'flowsBundleInvalidFile';
+      return;
+    }
+    void request('install', {}, file);
+  } else void request('install', { url: url.value, scope: scope.value });
 }
 function toggle(source: FlowSource) {
   void request('activation', {
@@ -456,18 +481,56 @@ function toggle(source: FlowSource) {
         <form
           class="flow-bundle-install"
           :aria-busy="busy === 'install'"
-          @submit.prevent="request('install', { url, scope })"
+          @submit.prevent="install"
         >
-          <label for="flow-bundle-url">{{ t('flowsBundleUrl') }}</label
-          ><input
-            id="flow-bundle-url"
-            ref="urlInput"
-            v-model="url"
-            type="url"
-            required
+          <label for="flow-bundle-source">{{ t('flowsBundleSource') }}</label>
+          <select
+            id="flow-bundle-source"
+            v-model="installSource"
             :disabled="!!busy"
-            aria-describedby="flow-bundle-help"
-          />
+          >
+            <option value="url">{{ t('flowsBundleUrl') }}</option>
+            <option value="file">{{ t('flowsBundleLocalFile') }}</option>
+          </select>
+          <template v-if="installSource === 'url'">
+            <label for="flow-bundle-url">{{ t('flowsBundleUrl') }}</label>
+            <input
+              id="flow-bundle-url"
+              ref="urlInput"
+              v-model="url"
+              type="url"
+              required
+              :disabled="!!busy"
+              aria-describedby="flow-bundle-help"
+            />
+          </template>
+          <template v-else>
+            <label for="flow-bundle-file-button">{{ t('flowsBundleLocalFile') }}</label>
+            <div class="flow-bundle-file-picker">
+              <input
+                id="flow-bundle-file"
+                ref="fileInput"
+                type="file"
+                accept=".blueprint"
+                hidden
+                :disabled="!!busy"
+                @change="chooseFile"
+              />
+              <button
+                id="flow-bundle-file-button"
+                ref="fileButton"
+                type="button"
+                :disabled="!!busy"
+                aria-describedby="flow-bundle-filename flow-bundle-help"
+                @click="fileInput?.click()"
+              >
+                {{ t('flowsBundleChooseFile') }}
+              </button>
+              <span id="flow-bundle-filename">{{
+                bundleFile?.name ?? t('flowsBundleNoFile')
+              }}</span>
+            </div>
+          </template>
           <label for="flow-bundle-scope">{{ t('flowsBundleTarget') }}</label
           ><select
             id="flow-bundle-scope"
@@ -929,6 +992,15 @@ function toggle(source: FlowSource) {
 }
 .flow-bundle-disclosure {
   border-top: 1px solid var(--pl-line);
+}
+.flow-bundle-file-picker {
+  min-width: 0;
+  display: grid;
+  gap: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.flow-bundle-file-picker button {
+  justify-self: start;
 }
 .flow-bundle-install {
   display: grid;

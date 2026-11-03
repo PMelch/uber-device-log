@@ -37,3 +37,27 @@ test('successful loose save stays HTTP 200 with correct revision despite an unre
     assert.equal(await readFile(join(root,'.udl/flows/new.yaml'),'utf8'),fixtureBlueprint('saved'));
   }finally{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await rm(root,{recursive:true,force:true});}
 });
+
+test('binary bundle uploads require authentication, enforce limits and preserve installed files', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'udl-upload-'));
+  const project = await FlowProject.create(root, { home: root });
+  const app = express(); app.use('/api/flows', project.router());
+  const server = app.listen(0, '127.0.0.1');
+  await new Promise<void>(resolve => server.once('listening', resolve));
+  const base = `http://127.0.0.1:${(server.address() as { port: number }).port}/api/flows`;
+  try {
+    const { token } = await (await fetch(`${base}/snapshot`)).json();
+    const upload = (body: Buffer, headers: Record<string,string> = { 'x-flow-token': token, 'content-type': 'application/octet-stream' }, scope = 'project') => fetch(`${base}/bundles/upload?scope=${scope}`, { method: 'POST', headers, body: new Uint8Array(body) });
+    assert.equal((await upload(fixtureBundle(), { 'content-type': 'application/octet-stream' })).status, 403);
+    assert.equal((await upload(fixtureBundle(), { 'x-flow-token': token, 'content-type': 'application/json' })).status, 403);
+    assert.equal((await upload(Buffer.alloc(4 * 1024 * 1024 + 1))).status, 413);
+    assert.equal((await upload(Buffer.from('invalid'))).status, 400);
+    assert.equal((await upload(fixtureBundle(), undefined, 'invalid')).status, 400);
+    const response = await upload(fixtureBundle());
+    assert.equal(response.status, 200);
+    const snapshot = await response.json();
+    assert.equal(snapshot.sources.find((source: any) => source.id === 'project:bundle:sample').enabled, false);
+    assert.equal((await upload(fixtureBundle())).status, 409);
+    assert.deepEqual(await readFile(join(root, '.udl/bundles/sample.blueprint')), fixtureBundle());
+  } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await rm(root, { recursive: true, force: true }); }
+});

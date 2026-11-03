@@ -146,7 +146,7 @@ only after the analysis worker acknowledges activation. An invalid reload may
 therefore expose current file diagnostics while the active definitions and their
 revision remain the previous valid set.
 
-All POST/PUT requests require `Content-Type: application/json` and
+The editor POST/PUT requests listed above require `Content-Type: application/json` and
 `X-Flow-Token: <snapshot.token>`. Missing capability or content type returns 403.
 The token authorizes local editor operations; it is not a remote login credential.
 Save returns 422 for definition validation failures and 409 for a revision conflict
@@ -341,6 +341,8 @@ Like existing mutations, the following require JSON and `X-Flow-Token`:
 
 - `POST /api/flows/bundles/install`: `{ "url": "https://example.com/example.blueprint", "scope": "global" }`. Scope may be `project` only with explicit project context. Downloads and validates before an exclusive install; successful responses are updated snapshots. Existing installs return 409.
 - `POST /api/flows/bundles/activation`: `{ "sourceId": "global:bundle:example", "enabled": true, "revision": "<configRevision>" }`. Selection is saved in the current launch context; stale configuration returns 409. Successful responses include the effective recognition policy.
+
+`POST /api/flows/bundles/upload?scope=global` (or `scope=project` with explicit project context) accepts the raw archive bytes with `Content-Type: application/octet-stream` and `X-Flow-Token`. The request body is limited to 4 MiB; larger bodies return 413. Encoded/compressed HTTP bodies are not accepted. The token and content type are checked before reading the body. This endpoint accepts no filesystem path or destination filename: installation uses the validated manifest ID and the same archive checks, exclusive writes, disabled initial state and snapshot response as URL installation. Invalid uploads return 400; existing installations return 409. Disconnecting before publication cancels the install. The normal localhost Host/Origin restrictions also apply.
 
 Validation failures return diagnostics with stable codes/parameters and English
 fallbacks; `flowsBundleError` carries original technical `detail`, and

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "viewerPackageVersion": "0.9.0",
   "compatibility": "Snapshot of the source contract, including unreleased changes. This package version is provenance, not a minimum supported release. Validate with a viewer that implements these features.",
-  "contractDigest": "e9d011ea9f48024002c473dd127a4923c7e8d1bd43d24e536d8a9dc053450dff",
+  "contractDigest": "c2835177b92c24da90945c6f96fb69f021576c49bb334542958ca09350660507",
   "sourceFingerprints": {
     "shared/flow-types.ts": "a6d2477e020d970f676559dcde060b889ead9021f2205e21525d4a07ebfaf706",
     "shared/flow-blueprints.ts": "bddb6d5e6c8153fb7c9f5ea55de2771438ef1f16f3a612b18724bb1c72cd9fb8",
@@ -12,16 +12,16 @@
     "shared/flow-error-code.ts": "84f70f83b2a8a742d2caf959d7eed5fc49b458253745337a4e016339a3a79eed",
     "server/flow-bundles.ts": "103f788ac95923cb86657a8c88b23815b0b902d98d9ee03526cdc85700ce88d3",
     "server/flow-storage.ts": "2c442417fe95adf82ac9fee4bfbe7d8fbaaed9669dab58b3eefdc19af904b95e",
-    "server/flow-project.ts": "504d9e448917f35ebdf2e0f129d8e6a918596f22ba366bb3f5ac294932c3a9b1"
+    "server/flow-project.ts": "fc0e615bf4ae0133a8b7671a63d932d7d980ce7817bba4dd1f18ee4a5e383fcf"
   },
   "resources": {
     "scripts/blueprint_bundle.py": "2f7d033c74dbcd74077b3b50fbf4fc43a8261d1dc1ab487ec5decc560c4504ff",
-    "references/blueprint-bundles.md": "6e27e724e3ceca447d15cea26908981a5fcabdbdea79ac7080a4531ba7dd6757",
+    "references/blueprint-bundles.md": "7e6b9e60fd076cca6e1596e9e75345b7fc916455e810c9f6c78cca346f20d83b",
     "references/bundle-authoring.md": "484ec0434569f7998f188fe117f97c0ab05d02693123e9b90916440a51668f9d",
     "assets/bundles/example.blueprint": "c8b7b48276bde5edfc3fdbfdddd7aa4514172e3bc75db97c6bb94d872efbb5ca",
     "references/flow-format.md": "8f2658ca0c2285d32faa406fe6a9d722c977f1909b5fcfa3f16918583e4ddc00",
     "references/authoring-guide.md": "1f95101f9499469622e7ab0e1da9b3d9fc77886b4702bf3ccff7742b1d2048d0",
-    "references/api.md": "f26654d1c24780b00543a44b20d78f5766b4e0a81e6640f377ec789e07ab0e90",
+    "references/api.md": "a001079f278ea318bbe1a9f579b413911616d916cfecd1bd6ac16d462d696cbe",
     "assets/flows/purchase.yaml": "72023dc3f641c1cdff4ca313c621ba2409713c4da972a3eb395d650687488f4b",
     "assets/flows/login.yaml": "dff6f8169206af49529b52aabb7822bfde86f59e319a94121c4af9df2f32dc1b",
     "assets/flows/asset-download.yaml": "c394faa72b2a7a109a9b4340ec13b9ea65ba28dcf1e1e7921989d7d7abf63539",

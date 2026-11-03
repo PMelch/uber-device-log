@@ -40,7 +40,7 @@ only after the analysis worker acknowledges activation. An invalid reload may
 therefore expose current file diagnostics while the active definitions and their
 revision remain the previous valid set.
 
-All POST/PUT requests require `Content-Type: application/json` and
+The editor POST/PUT requests listed above require `Content-Type: application/json` and
 `X-Flow-Token: <snapshot.token>`. Missing capability or content type returns 403.
 The token authorizes local editor operations; it is not a remote login credential.
 Save returns 422 for definition validation failures and 409 for a revision conflict

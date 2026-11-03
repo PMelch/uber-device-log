@@ -297,12 +297,34 @@ export class FlowProject {
     });
   }
   installBundle(url: unknown, scope: unknown, signal?: AbortSignal) {
+    return this.installBundleSource(
+      () => downloadFlowBundle(url, this.options.fetch, signal),
+      scope,
+      signal,
+    );
+  }
+  installBundleBytes(bytes: Buffer, scope: unknown, signal?: AbortSignal) {
+    return this.installBundleSource(async () => bytes, scope, signal);
+  }
+  installBundleFile(path: string, scope: unknown, signal?: AbortSignal) {
+    return this.installBundleSource(
+      async () => {
+        if (!/\.blueprint$/i.test(path))
+          throw new FlowProjectError('Bundle file must have a .blueprint extension.');
+        return readBoundedBytes(resolve(path), 'Bundle', BUNDLE_FILE_LIMIT);
+      },
+      scope,
+      signal,
+    );
+  }
+  private installBundleSource(load: () => Promise<Buffer>, scope: unknown, signal?: AbortSignal) {
     return this.queue(async () => {
+      signal?.throwIfAborted();
       if (scope !== 'global' && scope !== 'project')
         throw new FlowProjectError('Select global or project installation scope.');
       if (scope === 'project' && !this.root)
         throw new FlowProjectError('Project installation requires an explicit project directory.');
-      const bytes = await downloadFlowBundle(url, this.options.fetch, signal);
+      const bytes = await load();
       const parsed: ValidatedFlowBundle = await validateFlowBundle(bytes);
       signal?.throwIfAborted();
       const root = scope === 'global' ? this.home : this.root!;
@@ -396,6 +418,39 @@ export class FlowProject {
         next(error);
       }
     });
+    router.post(
+      '/bundles/upload',
+      (request, response, next) => {
+        if (
+          request.headers['x-flow-token'] !== this.token ||
+          !request.is('application/octet-stream')
+        ) {
+          response.status(403).json({
+            diagnostics: [
+              flowDiagnostic('Flow capability token and binary content type are required.'),
+            ],
+          });
+          return;
+        }
+        next();
+      },
+      express.raw({ type: 'application/octet-stream', limit: BUNDLE_FILE_LIMIT, inflate: false }),
+      async (request, response, next) => {
+        const controller = new AbortController();
+        response.once('close', () => {
+          if (!response.writableEnded) controller.abort();
+        });
+        try {
+          if (!Buffer.isBuffer(request.body))
+            throw new FlowProjectError('A bundle file is required.');
+          response.json(
+            await this.installBundleBytes(request.body, request.query.scope, controller.signal),
+          );
+        } catch (error) {
+          next(error);
+        }
+      },
+    );
     router.use((request, response, next) => {
       if (request.headers['x-flow-token'] !== this.token || !request.is('application/json')) {
         response.status(403).json({
@@ -470,15 +525,23 @@ export class FlowProject {
         response: express.Response,
         _next: express.NextFunction,
       ) => {
-        response.status(error instanceof FlowProjectError ? error.status : 400).json({
-          diagnostics: [
-            {
-              code: 'flowsBundleError',
-              params: { detail: error instanceof Error ? error.message : String(error) },
-              message: error instanceof Error ? error.message : String(error),
-            },
-          ],
-        });
+        response
+          .status(
+            error instanceof FlowProjectError
+              ? error.status
+              : (error as { type?: string })?.type === 'entity.too.large'
+                ? 413
+                : 400,
+          )
+          .json({
+            diagnostics: [
+              {
+                code: 'flowsBundleError',
+                params: { detail: error instanceof Error ? error.message : String(error) },
+                message: error instanceof Error ? error.message : String(error),
+              },
+            ],
+          });
       },
     );
     return router;

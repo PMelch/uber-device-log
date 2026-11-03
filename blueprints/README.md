@@ -12,23 +12,24 @@ Source YAML is stored in the corresponding directories; their required `config.y
 
 ## Install and enable
 
-From a source checkout, serve the checked-in archives locally in a separate terminal:
+1. Download a `.blueprint` archive from the table above. On GitHub's file page, use **Download raw file**, or use the [direct Android UI performance download](https://raw.githubusercontent.com/PMelch/uber-device-log/main/blueprints/bundles/android-ui-performance.blueprint).
+2. In **Flows → Blueprint sources**, expand **Install a bundle**, set **Install from** to **Local file**, and choose the downloaded archive.
+3. Choose **Global** or **Project**, then **Validate and install**. Project installation requires launching the viewer with `--project` or `--flows`.
+4. Enable the installed bundle to start recognition. Installation alone leaves it disabled. Repeat for the memory or stability bundle as needed.
+
+You can also select **Bundle URL** and paste a direct HTTP(S) URL to an archive. A GitHub file-view page is not a raw archive URL. No temporary server is needed for local files.
+
+From a source checkout, after `npm run build`, install an archive directly:
 
 ```sh
-python3 -m http.server 8321 --bind 127.0.0.1 --directory blueprints/bundles
-```
-
-In **Flows → Blueprint sources**, enter `http://127.0.0.1:8321/android-ui-performance.blueprint`, choose Global or Project, validate/install, then enable the installed bundle. Repeat for the memory/stability archive if desired. Installation alone leaves it disabled. Project installation requires launching the viewer with `--project` or `--flows`.
-
-The same installation works through the compiled source-checkout CLI after `npm run build`:
-
-```sh
-node bin/uber-device-log.mjs install-blueprint http://127.0.0.1:8321/android-ui-performance.blueprint --project /path/to/application
+node bin/uber-device-log.mjs install-blueprint ./blueprints/bundles/android-ui-performance.blueprint --project /path/to/application
 # Alternatively, install for the user home:
-node bin/uber-device-log.mjs install-blueprint http://127.0.0.1:8321/android-ui-performance.blueprint --global
+node bin/uber-device-log.mjs install-blueprint ./blueprints/bundles/android-ui-performance.blueprint --global
 ```
 
-A hosted raw-file URL can be used once the archives have been uploaded; these commands do not publish or upload them. Stop the local file server when finished. Include the native **Device logs** source when capturing Android. Global/project activation and conflicting Blueprint IDs follow the [bundle guide](../docs/blueprint-bundles.md). System-service records concern whichever process/component their text identifies, potentially another app on the device.
+With an installed CLI that supports bundle files, use `udl install-blueprint "/path/to/downloads/android-ui-performance.blueprint" --global`. Quote paths containing spaces. The CLI exits after installation; enable the bundle in the viewer afterward.
+
+Include the native **Device logs** source when capturing Android. Global/project activation and conflicting Blueprint IDs follow the [bundle guide](../docs/blueprint-bundles.md). System-service records concern whichever process/component their text identifies, potentially another app on the device.
 
 ## Meaning and limits
 

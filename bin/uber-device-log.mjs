@@ -9,8 +9,8 @@ try {
 
 Usage: udl [options]
        uber-device-log [options]
-       udl install-blueprint <url> --global
-       udl install-blueprint <url> --project <dir>
+       udl install-blueprint <file-or-url> --global
+       udl install-blueprint <file-or-url> --project <dir>
        npx uber-device-log --port 4311
        bunx uber-device-log --port 4311
 
