@@ -1,0 +1,4 @@
+{"event":"checkout.started","requestId":"order-1"}
+{"event":"checkout.started","requestId":"order-2"}
+{"event":"checkout.rejected","requestId":"order-2"}
+{"event":"checkout.accepted","requestId":"order-1"}

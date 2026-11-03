@@ -18,6 +18,9 @@ Changed
   support keyboard focus, Escape dismissal and smaller screens.
 
 Added
+- Introduce Semantic Flows on the website in all seven interface languages, with
+  guided README tutorials for single events, correlated multipart operations and
+  branching routes, including complete Blueprints and reproducible example logs.
 - Provide opt-in Android diagnostic Blueprint bundles for frame scheduling,
   slow rendering, startup, ART garbage collection, allocation failures,
   low-memory kills, ANRs and fatal reports using existing Logcat signals.

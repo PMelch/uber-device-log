@@ -37,3 +37,14 @@ test('landing page offers Japanese and resolves saved and regional Japanese pref
   assert.equal(websiteLocale('ja', ['en-US']), 'ja');
   assert.equal(websiteLanguages.find(language => language.code === 'ja')?.name, '日本語');
 });
+
+test('Semantic Flows overview links all three tutorials and supplies English fallback copy', () => {
+  const html = readFileSync(new URL('../website/index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="semantic-flows"/);
+  for (const chapter of ['single-event', 'multipart', 'branching']) {
+    assert.ok(html.includes(`https://github.com/PMelch/uber-device-log/blob/main/tutorials/semantic-flows/${chapter}/README.md`));
+  }
+  for (const [, key, text] of html.matchAll(/data-t="(siteFlow[^"]+)"[^>]*>([^<]*)</g)) {
+    assert.equal(text.trim(), websiteCatalogs.en[key as keyof typeof websiteCatalogs.en]);
+  }
+});

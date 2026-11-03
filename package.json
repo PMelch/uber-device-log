@@ -21,6 +21,7 @@
     "format:check": "node scripts/check-style.mjs check",
     "format": "node scripts/check-style.mjs write",
     "lint": "node scripts/check-style.mjs lint",
+    "test:website:browser": "node scripts/build-site.mjs && node --import tsx scripts/test-website-flows.mjs",
     "test:flows:browser": "node --import tsx scripts/test-semantic-flows.mjs && node --import tsx scripts/test-flow-labels.mjs && node --import tsx scripts/test-flow-bundles.mjs"
   },
   "dependencies": {

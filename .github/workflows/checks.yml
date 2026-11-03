@@ -39,7 +39,7 @@ jobs:
       - run: npm run skill:check
 
   browser:
-    name: Synthetic Flow browser regressions
+    name: Flow and website browser regressions
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -54,3 +54,4 @@ jobs:
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run build
       - run: npm run test:flows:browser
+      - run: npm run test:website:browser

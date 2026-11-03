@@ -68,3 +68,22 @@ when using a separately installed Playwright runtime or Chrome. The script uses
 the real built UI with fictional device and log fixtures, and updates all four
 images in `docs/images/`. Inspect the images before committing, then rebuild the
 website so it copies the refreshed assets. No connected device is required.
+
+## Semantic Flows tutorials
+
+The landing page introduces Semantic Flows with an explicitly labeled illustration
+and three tutorial cards. The full English tutorials live in
+[`tutorials/semantic-flows`](../tutorials/semantic-flows/README.md), keeping complete
+Blueprints, sample logs and explanations together in the repository. Website links
+use the canonical `main` branch, like the existing documentation links; merge the
+README files with the landing page before deploying it.
+
+`server/flow-tutorials.test.ts` validates the tutorial project, checks that README
+code blocks match the YAML/JSONL files, and replays single events, overlapping
+operations, timeouts and both branch outcomes. `server/website.test.ts` checks
+catalog coverage, static English copy and tutorial entry points. Run `npm run test:website:browser` for browser checks across all
+seven languages at desktop and mobile sizes.
+
+The browser check uses the repository’s pinned Playwright version. Install its
+Chromium with `npx --no-install playwright install chromium`, or set
+`CHROME_EXECUTABLE` to an existing compatible browser executable.

@@ -1,0 +1,25 @@
+version: 1
+id: tutorial-multipart
+name: Sync data
+start: start
+timeout: 30s
+correlation: { scope: device-session, primary: requestId }
+steps:
+  - id: start
+    name: Start sync
+    match: { json: { path: event, equals: sync.started } }
+    extract:
+      requestId: { json: requestId, required: true }
+    next: [received]
+  - id: received
+    name: Receive data
+    match: { json: { path: event, equals: sync.received } }
+    extract:
+      requestId: { json: requestId, required: true }
+    next: [done]
+  - id: done
+    name: Finish sync
+    match: { json: { path: event, equals: sync.completed } }
+    extract:
+      requestId: { json: requestId, required: true }
+    outcome: completed

@@ -1,5 +1,9 @@
 # Semantic Flows test project
 
+New to Blueprints? Start with [Your first Semantic Flows](../tutorials/semantic-flows/README.md):
+a single event without an operation ID, a multipart flow with correlation, and a
+branching flow. This test project contains more advanced examples.
+
 From the repository root:
 
 ```sh

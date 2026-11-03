@@ -15,7 +15,7 @@ and share the relevant entries as plain text or structured JSON.
 Detailed [software setup guides](#guided-software-setup) are built into the app,
 with download links and copyable commands for the device tools you need.
 
-[Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
+[Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Semantic Flows](#semantic-flows) · [Documentation](#documentation)
 
 **Android + iOS** · **Seven languages** · **GPL-3.0-only**
 
@@ -30,6 +30,11 @@ with download links and copyable commands for the device tools you need.
 | Find what matters | Read at your own pace | Share useful context |
 | --- | --- | --- |
 | Search messages, tags, timestamps and PIDs. Combine search with Android severity filters. | Pause the view, inspect formatted exceptions, and open structured message details. | Select whole entries and copy or save them as plain text or JSON. |
+
+**See the operation behind the logs.** [Semantic Flows](#semantic-flows) turns
+matching messages into cards with steps, elapsed time and outcomes. Define a
+Blueprint for a standalone event, connect several messages by correlation ID,
+or follow alternative routes. Start with the [three guided tutorials](tutorials/semantic-flows/README.md).
 
 The responsive interface offers System, Light and Dark appearance options.
 
@@ -77,8 +82,8 @@ udl --version     # Show the installed version
 Use `udl --project /path/to/project` (or `--project=/path/to/project`) to associate
 the running instance with an existing project directory. Relative paths resolve
 from the launch directory. On startup, UDL creates `.udl/` and an empty
-`.udl/config.yaml` if missing, preserving existing configuration. This file is
-reserved for future project-specific settings. Invalid paths or initialization
+`.udl/config.yaml` if missing, preserving existing configuration. This file stores project settings, including the Blueprint directory and bundle
+activation settings. Invalid paths or initialization
 failures stop startup. Without `--project`, the instance runs without a project
 and creates no project configuration. From source, use
 `npm run dev -- --project /path/to/project`.
@@ -219,7 +224,7 @@ message details, export options and preferences.
 
 ### Semantic Flows
 
-Open **Flows** to recognize multistep operations from the same selected device
+Open **Flows** to recognize standalone events and multistep operations from the same selected device
 and WebView sources used by **Logs**. Each flow card shows observed and expected
 steps, outcome and elapsed time. **Timeline** inspects evidence and extracted
 payloads; **Info** describes the blueprint's possible routes and known errors.
@@ -228,6 +233,18 @@ Search narrows the flow list. **Clear** in Flows clears only flow results; captu
 and the raw log viewer continue. Log filters, pause and selection do not pause
 flow analysis. Changing included sources or reconnecting starts a new analysis
 epoch and interrupts active flows, preserving their history.
+
+**New to Blueprints?** Follow [Your first Semantic Flows](tutorials/semantic-flows/README.md)
+for setup and three complete, executable examples:
+
+| Build | Learn |
+| --- | --- |
+| [A single event](tutorials/semantic-flows/single-event/README.md) | Create a completed card from one message, without an operation ID. |
+| [A multipart operation](tutorials/semantic-flows/multipart/README.md) | Connect steps with a correlation ID and keep overlapping attempts separate. |
+| [Alternative routes](tutorials/semantic-flows/branching/README.md) | Model accepted and rejected paths with explicit outcomes. |
+
+Each tutorial explains the YAML, provides sample logs and shows what to expect
+in the viewer. The [format reference](docs/flow-format.md) covers all supported fields.
 
 Enable a project using `.udl/config.yaml` and a blueprint directory. The included
 `test_flow_project` has configuration, YAML blueprints and sample application
@@ -257,7 +274,7 @@ sample events. See [the test project](test_flow_project/README.md) for emitting 
 examples through a real inspected WebView, or explicitly start the isolated
 [synthetic browser fixture](docs/semantic-flows-browser-tests.md) without hardware.
 
-Start with the [Flow format reference](docs/flow-format.md) for a quickstart, every YAML field, branches, correlation and error handling. For agents working in another application repository, copy the [portable Flow authoring skill](docs/flow-authoring-skill.md), which includes the format, extraction guidance and examples.
+Continue with the [Flow format reference](docs/flow-format.md) for a quickstart, every YAML field, branches, correlation and error handling. For agents working in another application repository, copy the [portable Flow authoring skill](docs/flow-authoring-skill.md), which includes the format, extraction guidance and examples.
 
 Use the [agent extraction guide](docs/semantic-flows-agent-guide.md) to derive
 blueprints from application code, including payload identifiers reused by later

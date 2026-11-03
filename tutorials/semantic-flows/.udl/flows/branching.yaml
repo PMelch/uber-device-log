@@ -1,0 +1,25 @@
+version: 1
+id: tutorial-branching
+name: Checkout
+start: start
+timeout: 30s
+correlation: { scope: device-session, primary: requestId }
+steps:
+  - id: start
+    name: Start checkout
+    match: { json: { path: event, equals: checkout.started } }
+    extract:
+      requestId: { json: requestId, required: true }
+    next: [accepted, rejected]
+  - id: accepted
+    name: Checkout accepted
+    match: { json: { path: event, equals: checkout.accepted } }
+    extract:
+      requestId: { json: requestId, required: true }
+    outcome: completed
+  - id: rejected
+    name: Checkout rejected
+    match: { json: { path: event, equals: checkout.rejected } }
+    extract:
+      requestId: { json: requestId, required: true }
+    outcome: failed
