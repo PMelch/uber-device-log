@@ -1,0 +1,4 @@
+interface:
+  display_name: "UDL Semantic Flows"
+  short_description: "Author project flow blueprints and reusable bundles"
+  default_prompt: "Use $udl-semantic-flows to author evidence-backed flows from this application; first clarify whether to create a project Blueprint, create a new bundle, or extend an existing bundle."

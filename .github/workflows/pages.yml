@@ -2,7 +2,7 @@ name: Deploy website to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['website/**', 'src/i18n/**', 'shared/notifications.ts', 'docs/images/**', 'scripts/build-site.mjs', 'package-lock.json', '.github/workflows/pages.yml']
+    paths: ['website/**', 'src/i18n/**', 'shared/notifications.ts', 'docs/images/**', 'scripts/build-site.mjs', 'scripts/website-links.mjs', 'package-lock.json', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,6 +20,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node scripts/build-site.mjs
+        env:
+          WEBSITE_DOCS_REF: ${{ github.ref_name }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

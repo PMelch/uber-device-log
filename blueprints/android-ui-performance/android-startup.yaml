@@ -1,0 +1,82 @@
+# Source-derived, single-record observation; see ../README.md for evidence and limitations.
+version: 1
+id: android-startup
+name: Android first frame displayed
+description: Observes the Android framework Displayed record. firstFrameTime is TTID, not full app or WebView readiness. The logger PID belongs to the system service; component identifies the activity. Completion means first-frame evidence was recognized.
+priority: 4
+starts:
+  - manager
+  - taskmanager
+timeout: 1s
+correlation:
+  scope: device-session
+  primary: record
+steps:
+  - id: manager
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      tag: ActivityManager
+      regex: "^Displayed [A-Za-z0-9_.$]+/[A-Za-z0-9_.$]+(?: for user [0-9]+)?: \\+(?:[0-9]+(?:ms|s|m|h))+(?: \\(total \\+(?:[0-9]+(?:ms|s|m|h))+\\))?$"
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      component:
+        regex: "^Displayed (?<component>[A-Za-z0-9_.$]+/[A-Za-z0-9_.$]+)(?: for user [0-9]+)?:"
+        group: component
+        required: true
+        result: true
+      firstFrameTime:
+        regex: ": \\+(?<firstFrameTime>(?:[0-9]+(?:ms|s|m|h))+)"
+        group: firstFrameTime
+        required: true
+        result: true
+      totalTime:
+        regex: \(total \+(?<totalTime>(?:[0-9]+(?:ms|s|m|h))+)\)$
+        group: totalTime
+        result: true
+      userId:
+        regex: " for user (?<userId>[0-9]+):"
+        group: userId
+        result: true
+    label:
+      - text: "First frame displayed: {manager.component}, +{manager.firstFrameTime}"
+        tone: info
+    outcome: completed
+  - id: taskmanager
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      tag: ActivityTaskManager
+      regex: "^Displayed [A-Za-z0-9_.$]+/[A-Za-z0-9_.$]+(?: for user [0-9]+)?: \\+(?:[0-9]+(?:ms|s|m|h))+(?: \\(total \\+(?:[0-9]+(?:ms|s|m|h))+\\))?$"
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      component:
+        regex: "^Displayed (?<component>[A-Za-z0-9_.$]+/[A-Za-z0-9_.$]+)(?: for user [0-9]+)?:"
+        group: component
+        required: true
+        result: true
+      firstFrameTime:
+        regex: ": \\+(?<firstFrameTime>(?:[0-9]+(?:ms|s|m|h))+)"
+        group: firstFrameTime
+        required: true
+        result: true
+      totalTime:
+        regex: \(total \+(?<totalTime>(?:[0-9]+(?:ms|s|m|h))+)\)$
+        group: totalTime
+        result: true
+      userId:
+        regex: " for user (?<userId>[0-9]+):"
+        group: userId
+        result: true
+    label:
+      - text: "First frame displayed: {taskmanager.component}, +{taskmanager.firstFrameTime}"
+        tone: info
+    outcome: completed

@@ -9,6 +9,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright')
 const root = resolve(fileURLToPath(new URL('../dist/', import.meta.url)));
 const clients = new Set();
 let next = 0, revision = 0, executions = [], sessions = 0;
+let connectionDelay = 0;
 let executionDelay = 0, clearDelay = 0;
 const consoleState = () => ({ revision, connected: true, contexts: [
  { key: 'top', name: '', url: 'https://app.example.com', frame: 'main', top: true, depth: 0 },
@@ -38,6 +39,7 @@ const server = createServer(async (request, response) => {
         if (executionDelay) await new Promise(resolve => setTimeout(resolve, executionDelay));
         response.end(JSON.stringify({ revision, elapsed: 12, exception: command.expression === 'missing()', value: command.expression === 'missing()' ? {type:'error',text:'ReferenceError: missing is not defined'} : {type:'object',text:'Object',handle:'root-object',truncated:true,children:[{name:'answer',value:{type:'number',text:'42'}}]} })); return;
       }
+      if (connectionDelay) await new Promise(resolve => setTimeout(resolve, connectionDelay));
       response.end(JSON.stringify({ id: String(++sessions), ...consoleState() })); return;
     }
     response.end(JSON.stringify(consoleState())); return;
@@ -89,15 +91,22 @@ try {
     assert.ok(hintBounds.x >= 0 && hintBounds.x + hintBounds.width <= width);
     await page.keyboard.press('Escape');
     await entryHint.waitFor({state:'hidden'});
+    connectionDelay = width === 1440 && locale === 'en' ? 500 : 0;
     await trigger.click();
     const panel = page.locator('.js-console'); await panel.waitFor();
-    // Initial connection restores editor focus asynchronously. Let it finish
-    // before testing keyboard focus on the maturity tooltip.
+    // Wait for initial editor focus before moving keyboard focus to the
+    // maturity tooltip; connection completion must preserve that new focus.
     await page.waitForFunction(() => document.activeElement === document.querySelector('.js-console textarea'));
     const badge = panel.locator('header .feature-status-badge');
     assert.equal(await badge.getAttribute('data-status'), 'alpha');
     await badge.focus();
     await panel.locator('[role=tooltip]:popover-open').waitFor();
+    // Connection completion must preserve focus already moved by the user.
+    await page.waitForFunction(() => {
+      const reconnect = document.querySelector('.js-console .console-status button');
+      return reconnect && !reconnect.disabled;
+    });
+    assert.equal(await badge.evaluate(el => el === document.activeElement), true);
     await page.keyboard.press('Escape');
     assert.equal(await panel.isVisible(), true);
     assert.equal(await panel.locator('[role=tooltip]:popover-open').count(), 0);

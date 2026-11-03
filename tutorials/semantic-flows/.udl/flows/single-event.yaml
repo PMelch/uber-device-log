@@ -1,0 +1,13 @@
+version: 1
+id: tutorial-single-event
+name: App ready
+start: ready
+timeout: 30s
+correlation: { scope: device-session, primary: event }
+steps:
+  - id: ready
+    name: App is ready
+    match: { json: { path: event, equals: app.ready } }
+    extract:
+      event: { json: event, required: true }
+    outcome: completed

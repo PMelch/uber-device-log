@@ -1,0 +1,4 @@
+id: android-ui-performance
+name: Android UI performance
+description: Recognizes Android Logcat observations of delayed frame scheduling, slow HWUI frames and first-frame startup times. No app instrumentation required; these records do not establish CPU causation, FPS or full WebView readiness.
+specVersion: 1

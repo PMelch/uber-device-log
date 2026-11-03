@@ -1,0 +1,4 @@
+id: android-memory
+name: Android memory diagnostics
+description: Recognizes source-derived ART garbage-collection records, Java OutOfMemoryError reports and low-memory-killer records from Android Logcat. GC observations alone do not establish a memory leak or a UI stall.
+specVersion: 1

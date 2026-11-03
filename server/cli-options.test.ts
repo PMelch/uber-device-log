@@ -28,3 +28,7 @@ test('invalid ports and unknown arguments are rejected', () => {
   }
   assert.throws(() => parseCliOptions([], 'bad'));
 });
+test('project and flows are equivalent single-use project directory flags', () => {
+  for (const args of [['--project','./demo'],['--project=./demo'],['--flows','./demo'],['--flows=./demo']]) assert.equal(parseCliOptions(args).project,resolve('./demo'));
+  for (const args of [['--project'],['--flows='],['--project=a','--flows=b'],['--project','--port=5000']]) assert.throws(() => parseCliOptions(args));
+});

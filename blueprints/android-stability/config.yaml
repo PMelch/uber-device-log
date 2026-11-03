@@ -1,0 +1,4 @@
+id: android-stability
+name: Android stability diagnostics
+description: Recognizes Android Logcat ANR headers, Java fatal-exception reports and native fatal-signal reports. Each matching record is an independent diagnosis, not a complete incident or proof of process termination.
+specVersion: 1

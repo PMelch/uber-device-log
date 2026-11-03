@@ -130,6 +130,32 @@ when a response times out. A timeout does not stop code already running in the
 WebView. Closing the panel releases its session while log capture continues.
 History and results are held only in memory for the open panel.
 
+## Semantic Flows
+
+Start with `--project=<directory>` or `--flows=<directory>` to load project-specific
+flow blueprints. The **Flows** tab groups matching logs into correlated steps,
+with timelines, payload inspection and a blueprint editor. See the
+[Semantic Flows setup and sample project](../README.md#semantic-flows) and the
+[agent authoring guide](semantic-flows-agent-guide.md).
+
+### Minimal, Condensed and Detailed flow display
+
+**Detailed** is the initial default flow display. Each instance shows its current authored label, extracted result fields and the step overview. Choose **Condensed** to keep the same labels, results and outcome while hiding the overview nodes. **Minimal** shows only the current main label for each flow. Click an entry or activate its label with Enter or Space to open its Timeline. Switch to Condensed or Detailed to see status, results or per-flow actions. **Timeline** remains available in those two modes for steps, matching evidence and original logs; **Info** describes the blueprint. Switching display modes changes presentation only, while capture and flow recognition continue. The chosen display mode is saved in this browser (`uber-device-log.flowDisplay`); it does not persist captured logs or flow results.
+
+Labels may include values extracted by earlier accepted steps, and result fields retain their original technical names. All overview modes conceal marked sensitive values, including label substitutions and results; use Timeline to explicitly reveal sensitive evidence there. Missing template values preserve the previous usable label; an instance without one uses its blueprint name. Blueprint-authored text remains verbatim when you switch interface languages. See the [label and result format](flow-format.md#labels-and-result-fields) to author these summaries.
+
+### Flow importance
+
+Blueprint authors can assign a **Priority** from `1` (most important) to `5` (least important); the default is `3`. All three display modes show it through background emphasis, using light lavender in light appearance and dark purple in dark appearance. Stronger emphasis indicates higher importance and remains separate from success, failure or other outcome styling.
+
+Priority keeps the existing flow order and recognition behavior. Set it through the blueprint editor's Priority selector or the top-level YAML `priority` field, then validate and save. Changes apply to new instances after activation; existing flow instances retain their original blueprint priority. See [the format reference](flow-format.md#flow-priority) for exact syntax.
+
+### Repeated progress updates
+
+A flow blueprint can group many progress messages into one active step. Its current label and results update on each accepted event, in both Detailed and Condensed views; Timeline retains the observed updates within capture limits. For example, a label can move from **Loading 0%** to **Loading 50%** and then **Loading 40%** when that is what the application emits. These are example authored labels, not translations of captured logs.
+
+A later completion event ends the phase and can replace the progress label with its own summary. Further old progress does not reopen it. Progress messages do not extend the original timeout, and a percentage alone does not establish completion. The [loading example](../test_flow_project/README.md#repeatable-loading-progress-example) offers an optional phase that also permits completion without progress events.
+
 ## Full WebView inspectors
 
 Use the inspector button beside `>_` in a WebView source row, or inside the
@@ -148,3 +174,13 @@ details. On the Mac connected to the device, enable Safari's developer features;
 enable Web Inspector on the iOS device. In Safari's Develop menu, choose the
 device, then the corresponding app and page. There is no direct Safari deep link
 to an individual remote WebView.
+
+## Global Flow sources and bundles
+
+Global standalone Blueprints in `~/.udl/flows` are available without a project. A
+selected project adds its own sources. Open **Blueprint sources** in the Flow
+toolbar to inspect
+names, descriptions, specification versions, scope and active counts, enable or
+disable bundles, or install from a `.blueprint` URL. A bundle selection is saved in
+the selected project's `.udl/config.yaml`, or globally without a project argument.
+See [the bundle guide](blueprint-bundles.md) for the full contract and CLI commands.

@@ -1,0 +1,38 @@
+{
+  "formatVersion": 1,
+  "viewerPackageVersion": "0.9.0",
+  "compatibility": "Snapshot of the source contract, including unreleased changes. This package version is provenance, not a minimum supported release. Validate with a viewer that implements these features.",
+  "contractDigest": "e9d011ea9f48024002c473dd127a4923c7e8d1bd43d24e536d8a9dc053450dff",
+  "sourceFingerprints": {
+    "shared/flow-types.ts": "a6d2477e020d970f676559dcde060b889ead9021f2205e21525d4a07ebfaf706",
+    "shared/flow-blueprints.ts": "bddb6d5e6c8153fb7c9f5ea55de2771438ef1f16f3a612b18724bb1c72cd9fb8",
+    "shared/flow-engine.ts": "91bb97e205ac3619b8e5685e38bbe57614fe569bbf533d9f813c7e50bc781cf6",
+    "shared/flow-presentation.ts": "68bc3995f40c0be95ae5bac184ce66ef465d7eea502ed395df40f2b5165d1a0f",
+    "shared/flow-variables.ts": "5280b2b8b3e4815be1aa389c4e9d7935e22b3e57b8abf9a1131a76cfb8041bbc",
+    "shared/flow-error-code.ts": "84f70f83b2a8a742d2caf959d7eed5fc49b458253745337a4e016339a3a79eed",
+    "server/flow-bundles.ts": "103f788ac95923cb86657a8c88b23815b0b902d98d9ee03526cdc85700ce88d3",
+    "server/flow-storage.ts": "2c442417fe95adf82ac9fee4bfbe7d8fbaaed9669dab58b3eefdc19af904b95e",
+    "server/flow-project.ts": "504d9e448917f35ebdf2e0f129d8e6a918596f22ba366bb3f5ac294932c3a9b1"
+  },
+  "resources": {
+    "scripts/blueprint_bundle.py": "2f7d033c74dbcd74077b3b50fbf4fc43a8261d1dc1ab487ec5decc560c4504ff",
+    "references/blueprint-bundles.md": "6e27e724e3ceca447d15cea26908981a5fcabdbdea79ac7080a4531ba7dd6757",
+    "references/bundle-authoring.md": "484ec0434569f7998f188fe117f97c0ab05d02693123e9b90916440a51668f9d",
+    "assets/bundles/example.blueprint": "c8b7b48276bde5edfc3fdbfdddd7aa4514172e3bc75db97c6bb94d872efbb5ca",
+    "references/flow-format.md": "8f2658ca0c2285d32faa406fe6a9d722c977f1909b5fcfa3f16918583e4ddc00",
+    "references/authoring-guide.md": "1f95101f9499469622e7ab0e1da9b3d9fc77886b4702bf3ccff7742b1d2048d0",
+    "references/api.md": "f26654d1c24780b00543a44b20d78f5766b4e0a81e6640f377ec789e07ab0e90",
+    "assets/flows/purchase.yaml": "72023dc3f641c1cdff4ca313c621ba2409713c4da972a3eb395d650687488f4b",
+    "assets/flows/login.yaml": "dff6f8169206af49529b52aabb7822bfde86f59e319a94121c4af9df2f32dc1b",
+    "assets/flows/asset-download.yaml": "c394faa72b2a7a109a9b4340ec13b9ea65ba28dcf1e1e7921989d7d7abf63539",
+    "assets/flows/bank-transaction.yaml": "33793b25da37d6477e706c119ae0aca993c283019cbf12e3c705ea6cc76fa6f2",
+    "assets/flows/loading-progress.yaml": "3e0fb58cf1311f42c900f43366b3cd6b644f9a797e6592563a7628667e48a926",
+    "assets/flows/entry-routes.yaml": "cb3c8e5a3900bf5d87bc659272dc86602faadc3f9355b9225bacbcf7e270b4f6",
+    "assets/events/sample-events.jsonl": "1fdfd7912b5b65fe6ec3af9529a7a5efdf9c2f7e785d0138b352404034471361",
+    "assets/events/bank-transaction-events.jsonl": "648ae1e68b04bcc1128052a97294156be086982a46fc871913b5098a7b27992d",
+    "assets/events/loading-progress-events.jsonl": "ac937eb757fcfb8b3ed07526aae175c864b4e868e41b4823d7920e7ae5634821",
+    "assets/config.yaml": "1ca11782eb4b12ef1976886812137910eedd1c37633210a8e7385496dad1ce35",
+    "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "INSTALL.md": "898d207ef2616d23696cfaf0427afb02799a1196d0c9d3c91a632c21ca9c46e3"
+  }
+}

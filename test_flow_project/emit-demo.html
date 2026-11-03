@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Semantic Flows — test emitter</title>
+<style>body{font:16px system-ui;max-width:720px;margin:40px auto;padding:20px}button{font:inherit;padding:12px;margin:6px}pre{white-space:pre-wrap;background:#eee;padding:16px}</style>
+<h1>Semantic Flows test emitter</h1>
+<p>Open this page inside the WebView you are capturing. Select that WebView in Über Device Log. These buttons emit fictional JSON console records; no real purchases or network calls occur.</p>
+<button id="happy">Purchase + login + asset error</button><button id="orphan">Missing-start login</button><button id="timeout">Purchase timeout</button><button id="cancel">Cancelled purchase</button>
+<pre id="status" aria-live="polite">Ready.</pre>
+<script>
+const events = [{"event": "purchase.init", "attemptId": "attempt-demo-1"}, {"event": "purchase.ready", "attemptId": "attempt-demo-1", "uid": "purchase-demo-1"}, {"event": "store.android.start", "uid": "purchase-demo-1"}, {"event": "store.receipt", "uid": "purchase-demo-1", "receipt": "DEMO-RECEIPT", "payload": {"transactionId": "transaction-demo-1", "productId": "coins.small"}}, {"event": "purchase.submit", "transaction_id": "transaction-demo-1"}, {"event": "purchase.confirmed", "uid": "purchase-demo-1"}, {"event": "balance.updated", "purchaseUid": "purchase-demo-1", "balance": 1250}, {"event": "login.start", "requestId": "login-demo-1"}, {"event": "login.success", "requestId": "login-demo-1", "userId": "user-demo"}, {"event": "asset.start", "downloadId": "asset-demo-1", "url": "https://example.invalid/asset.zip"}, {"event": "asset.received", "downloadId": "asset-demo-1", "bytes": 1024}, {"event": "asset.error", "downloadId": "asset-demo-1", "code": "CHECKSUM_MISMATCH", "stack": "Error: checksum mismatch\n    at verifyAsset (demo.js:42:7)"}, {"event": "login.success", "requestId": "login-orphan-1", "userId": "user-demo"}, {"event": "purchase.init", "attemptId": "attempt-timeout"}];
+const status = document.querySelector('#status');
+async function emit(records) {
+ const suffix = Date.now().toString(36);
+ for (const original of records) {
+   const record = JSON.parse(JSON.stringify(original).replaceAll('demo-1',suffix).replaceAll('orphan-1',suffix).replaceAll('attempt-timeout','attempt-'+suffix));
+   console.log(JSON.stringify(record)); status.textContent = JSON.stringify(record,null,2);
+   await new Promise(resolve => setTimeout(resolve,700));
+ }
+}
+document.querySelector('#happy').onclick = () => emit(events.slice(0,12));
+document.querySelector('#orphan').onclick = () => emit([events[12]]);
+document.querySelector('#timeout').onclick = () => emit([events[13]]);
+document.querySelector('#cancel').onclick = () => emit([...events.slice(0,3),{event:'store.error',uid:'purchase-demo-1',code:'USER_CANCELLED'}]);
+</script></html>

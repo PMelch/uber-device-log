@@ -1,0 +1,39 @@
+# Fictional protocol: two alternative entry events share a continuation.
+version: 1
+id: entry-routes
+name: Alternative entry routes
+starts: [interactive, background]
+label: 'Operation {vars.token}'
+timeout: 30s
+correlation: { scope: device-session, primary: operationId }
+steps:
+  - id: interactive
+    name: Interactive request
+    match: { json: { path: event, equals: entry.interactive } }
+    extract:
+      operationId: { json: operationId, required: true }
+      token: { json: request.token, required: true, variable: token }
+      user: { json: request.user, sensitive: true }
+    next: [processing]
+  - id: background
+    name: Background request
+    match: { json: { path: event, equals: entry.background } }
+    extract:
+      operationId: { json: operationId, required: true }
+      token: { json: job.token, required: true, variable: token }
+    next: [processing]
+  - id: processing
+    name: Shared processing
+    match:
+      all:
+        - json: { path: event, equals: entry.processing }
+        - json: { path: token, equalsFrom: { variable: token } }
+    label: 'Processing {vars.token} {interactive.user?}'
+    next: [done]
+  - id: done
+    name: Operation completed
+    match: { json: { path: event, equals: entry.completed } }
+    extract:
+      operationId: { json: operationId, required: true }
+    label: 'Completed {vars.token}'
+    outcome: completed

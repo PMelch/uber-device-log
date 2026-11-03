@@ -62,7 +62,7 @@ export function streamLogs(response: ServerResponse, device: Device, open: OpenL
   void open(device, message => {
     if (closed) return;
     if (queue.length === 1000) { queue.shift(); dropped++; }
-    queue.push({ ...message, message: message.message.slice(0, 16384) });
+    queue.push({ ...message, ...(message.message.length > 16384 ? { truncated: true } : {}), message: message.message.slice(0, 16384) });
   }, finish).then(stop => {
     clearTimeout(connectTimeout);
     if (closed) stop();

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ConsoleResult, ConsoleState, ConsoleErrorCode, ConsoleValue as ConsoleValueData, ConsoleProperties } from '../../shared/console';
 import type { LogSource } from '../../shared/types';
 import { translate, type Locale } from '../i18n';
@@ -98,7 +98,13 @@ async function copy(index: number) {
 watch(selected, connect);
 watch(() => props.initial, value => { selected.value = value; });
 watch(target, value => { if (!value) { ++generation; clearTimeout(timer); release(session.value); session.value = ''; context.value = ''; state.value.connected = false; error.value = 'consoleUnavailable'; } });
-onMounted(async () => { panel.value?.showModal(); await connect(); await nextTick(); editor.value?.focus(); });
+onMounted(() => {
+  panel.value?.showModal();
+  // Establish initial focus immediately; a slow connection must not steal focus
+  // from a control the user has already reached inside the open dialog.
+  editor.value?.focus();
+  void connect();
+});
 onUnmounted(() => { disposed = true; ++generation; clearTimeout(timer); release(session.value); previousFocus?.focus(); });
 </script>
 <template>

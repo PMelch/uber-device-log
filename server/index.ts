@@ -3,20 +3,27 @@ import { readFileSync } from 'node:fs';
 import { createUpdateCheck, detectInstallation } from './update-check.js';
 import { consoleRoutes } from './console-routes.js';
 import express from 'express';
+import { parseCliOptions } from './cli-options.js';
+import { initializeProject } from './project-context.js';
+import { FlowProject } from './flow-project.js';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { listDevices, openLogs, type Stop } from './devices.js';
 import { streamLogs } from './stream.js';
-import { parseCliOptions } from './cli-options.js';
-import { initializeProject } from './project-context.js';
 
 const options = parseCliOptions(process.argv.slice(2).filter(arg => arg !== '--production'), process.env.PORT);
+if (options.install) {
+  const { runBlueprintInstall } = await import('./flow-cli.js');
+  console.log(await runBlueprintInstall(options));
+  process.exit(0);
+}
 const project = initializeProject(options.project);
 const root = fileURLToPath(new URL(process.argv.includes('--production') ? '../..' : '..', import.meta.url));
 const app = express();
 app.locals.project = project;
 const server = createServer(app);
 const port = options.port;
+const flowProject = await FlowProject.create(project?.directory);
 const active = new Set<Stop>();
 const packageVersion = JSON.parse(readFileSync(`${root}/package.json`, 'utf8')).version as string;
 // Start once, without awaiting the registry; API requests only read this snapshot.
@@ -32,6 +39,8 @@ app.use((request, response, next) => {
   }
   next();
 });
+
+app.use('/api/flows', flowProject.router());
 
 app.get('/api/update', (_request, response) => {
   response.setHeader('Cache-Control', 'no-store');

@@ -24,9 +24,20 @@ import UpdateNotice from './components/UpdateNotice.vue';
 import DeviceSetup from './components/DeviceSetup.vue';
 import { setupWarnings } from './device-setup';
 import { useLogDetails } from './composables/useLogDetails';
+import { useFlows } from './composables/useFlows';
+import FlowWorkspace from './components/FlowWorkspace.vue';
 
 const { locale, setLocale, t, n, localizeMessage, deviceState, levelLabel } = useI18n();
 
+const flows = useFlows();
+const activeTab = ref<'logs' | 'flows'>('logs');
+function tabKeydown(event: KeyboardEvent) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  activeTab.value = event.key === 'Home' ? 'logs' : event.key === 'End' ? 'flows' : activeTab.value === 'logs' ? 'flows' : 'logs';
+  nextTick(() => document.getElementById(`workspace-tab-${activeTab.value}`)?.focus());
+}
+watch(activeTab, () => { details.close(); nextTick(() => { rowVirtualizer.value.measure(); if (following.value && !paused.value) scrollToLatest(); }); });
 const devices = ref<Device[]>([]);
 const consoleSource = ref('');
 const warnings = ref<(DeviceList['warnings'][number] | UiMessage)[]>([]);
@@ -183,7 +194,7 @@ const selectedSources = computed(() => sourceOptions.value.filter(source => incl
 function metadata(source: StreamSource): LogSourceMetadata {
   const device = source.device;
   return { key: source.key, name: device.webview ? device.webview.title || device.webview.url || device.webview.id : device.name,
-    platform: device.platform, deviceId: device.id, ...(device.webview ? {webview:device.webview} : {}) };
+    platform: device.platform, deviceId: device.id, ...(device.webview ? {webview:{...device.webview}} : {}) };
 }
 function sourceLabel(source: StreamSource) {
   if (!source.device.webview) return t('sourceDeviceLogs');
@@ -197,6 +208,8 @@ let generation = 0;
 const collectors = createLogStreams({
   logs: (source, batch) => receiveLogs(source, batch),
   status: (source, message, live) => {
+    if (message.code === 'streamSkipped') flows.gap();
+    if (!live) { flows.gap(); flows.interrupt(); }
     sourceStates.value = {...sourceStates.value, [source.key]: {live, message}};
     const count = Object.values(sourceStates.value).filter(state => state.live).length;
     status.value = count ? uiMessage('sourcesLive', { count }) : message;
@@ -223,6 +236,7 @@ async function refresh() {
     const restored = rememberedDevice.restoreOnce(result.devices);
     if (!selected.value && restored) { includedKeys.value = [restored]; selected.value = restored; }
     if (selected.value && currentDevice.value?.state !== 'connected') {
+      flows.gap();
       stop();
       selected.value = '';
       status.value = uiMessage('disconnected');
@@ -235,6 +249,7 @@ async function refresh() {
         }
       }
       if (changed) {
+        flows.gap(); flows.interrupt();
         collectors.sync(selectedSources.value.filter(source => source.device.state === 'connected'));
         const count = Object.values(sourceStates.value).filter(state => state.live).length;
         status.value = count ? uiMessage('sourcesLive', {count}) : uiMessage('webviewEnded');
@@ -250,6 +265,7 @@ async function refresh() {
 
 function stop() {
   logBatcher.flush();
+  flows.interrupt();
   generation++;
   collectors.close();
   sourceStates.value = Object.fromEntries(Object.entries(sourceStates.value).map(([key, state]) => [key, {...state, live:false}]));
@@ -281,6 +297,7 @@ function syncSources() {
 }
 function toggleSource(source: StreamSource) {
   logBatcher.flush();
+  if (flows.snapshot.value?.enabled) { flows.interrupt(); collectors.close(); }
   const included = includedKeys.value.includes(source.key);
   includedKeys.value = included ? includedKeys.value.filter(key => key !== source.key) : [...includedKeys.value, source.key];
   if (!included) {
@@ -317,7 +334,11 @@ function receiveLogs(source: StreamSource, batch: LogMessage[]) {
   if (paused.value) receivedSincePause.value += batch.length;
   recordIncoming(batch.length);
   const origin = metadata(source);
-  logBatcher.push(batch.map(message => ({ ...message, source: origin, key: nextKey++ })));
+  const rows = batch.map(message => ({ ...message, source: origin, key: nextKey++ }));
+  // Recognition sees every delivery before display batching/retention can discard records.
+  if (rows.some(message => message.truncated)) flows.gap();
+  flows.ingest(rows);
+  logBatcher.push(rows);
 }
 function scrollAnchor() {
   const offset = viewport.value?.scrollTop ?? 0;
@@ -614,6 +635,10 @@ onUnmounted(() => {
         <button ref="deviceRefresh" class="precision-iconbutton" :disabled="loading" :aria-label="t('refreshDevices')" @click="refresh">↻</button>
       </div>
       <p v-for="(warning, index) in warnings" :key="index" class="warning" role="status">{{ localizeMessage(warning) }}</p>
+      <nav class="precision-workspace-tabs" role="tablist" :aria-label="t('flowsWorkspace')" @keydown="tabKeydown">
+        <button id="workspace-tab-logs" type="button" role="tab" aria-controls="workspace-logs" :aria-selected="activeTab === 'logs'" :tabindex="activeTab === 'logs' ? 0 : -1" @click="activeTab = 'logs'">{{ t('flowsTabLogs') }}</button>
+        <button id="workspace-tab-flows" type="button" role="tab" aria-controls="workspace-flows" :aria-selected="activeTab === 'flows'" :tabindex="activeTab === 'flows' ? 0 : -1" @click="activeTab = 'flows'">{{ t('flowsTabFlows') }} <span v-if="flows.instances.value.length">{{ n(flows.instances.value.length) }}</span></button>
+      </nav>
       <DeviceSetup v-if="showConnectionGuides" :setup="setup" :loading="loading" :connected="devices.some(device => device.state === 'connected')" :t="t" @hide="hideConnectionGuides" @retry="refresh" @resolved="focusDeviceRefresh" />
       <section class="precision-console" :aria-label="t('deviceMessages')">
         <section v-if="sourceOptions.length" class="precision-source-controls" :aria-label="t('includeSources')">
@@ -625,12 +650,17 @@ onUnmounted(() => {
               <span class="source-choice-check" aria-hidden="true">✓</span>
             </label>
           </div>
-          <p class="precision-source-hint">{{ t('combinedHint') }}</p>
+          <p v-show="activeTab === 'logs'" class="precision-source-hint">{{ t('combinedHint') }}</p>
           <template v-for="source in selectedSources" :key="source.key">
-            <SourceFilters :source="metadata(source)" :device-name="source.device.name" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
+            <SourceFilters v-show="activeTab === 'logs'" :source="metadata(source)" :device-name="source.device.name" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
             <p v-if="sourceStates[source.key] && !sourceStates[source.key]!.live" class="precision-source-status" role="status">{{ sourceLabel(source) }} · {{ localizeMessage(sourceStates[source.key]!.message) }}</p>
           </template>
         </section>
+        <div id="workspace-flows" v-show="activeTab === 'flows'" role="tabpanel" aria-labelledby="workspace-tab-flows" class="precision-flows-panel">
+          <div v-if="flows.error.value" class="flow-notice" role="status">{{ localizeMessage(flows.error.value) }} <button type="button" class="precision-action" @click="flows.error.value.code === 'flowsWorkerError' ? flows.restart() : flows.reload()">{{ t(flows.error.value.code === 'flowsWorkerError' ? 'flowsRestart' : 'flowsReload') }}</button></div>
+          <FlowWorkspace :snapshot="flows.snapshot.value" :instances="flows.instances.value" :loading="flows.loading.value" :gap-count="flows.gapCount.value" :active-sources="includedKeys.length" :locale="locale" @clear="flows.clear" @reload="flows.reload" />
+        </div>
+        <div id="workspace-logs" v-show="activeTab === 'logs'" role="tabpanel" aria-labelledby="workspace-tab-logs" class="precision-logs-panel">
         <div class="precision-commandbar" :class="{ 'has-selection': selectionMode }">
           <div class="command-heading"><div class="command-title-row"><strong class="stream-title">{{ t(includedKeys.length > 1 ? 'combinedLogs' : selectedSources[0]?.device.webview ? 'webviewConsole' : 'logStream') }}</strong><span class="precision-live command-live" :data-active="capturing" :data-paused="paused" tabindex="0" :title="t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing')" :aria-label="t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing')"><span class="precision-dot" aria-hidden="true"></span><span class="command-live-label">{{ t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing') }}</span></span></div>
           <span class="command-context" :title="rangePending ? t('rangeHint') : selectionMode ? t('frozenHint') : paused ? t('newSincePauseHint') : undefined" :aria-live="selectionMode ? 'polite' : 'off'">{{ rangePending ? t('rangeEndCompact') : selectionMode ? t('selectionCountCompact', { count: selectedRows.length }) : paused ? t('newSincePause', { count: receivedSincePause }) : t('messageCount', { count: displayedMessages.length }) }}</span>
@@ -687,6 +717,7 @@ onUnmounted(() => {
         </div>
         <dialog v-if="copyFallback !== undefined" ref="copyDialog" class="precision-copy-fallback" :aria-label="t('clipboardFallback')" @cancel.prevent="closeCopy"><label for="copy-text">{{ t('clipboardFallback') }}</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">{{ t('close') }}</button></dialog>
         <div class="precision-bottom"><span>{{ t('retained', { count: visibleMessages.length, capacity: bufferSize }) }}</span><button v-if="!following && !paused" class="precision-action" @click="follow">{{ t('followLatest') }}</button><span v-else>{{ paused ? t(capturing ? 'frozenActive' : 'frozenStopped') : (newestPosition === 'top' ? '↑ ' : '↓ ') + t('followingNewest') }}</span></div>
+        </div>
       </section>
       <section v-if="developmentBuild && performanceEnabled" ref="performancePanel" class="precision-performance" :class="{ 'is-scrollable': performanceOverflow }" :aria-label="t('performanceTitle')">
         <header><h2>{{ t('performanceTitle') }}</h2><button type="button" :aria-label="t('performanceClose')" @click="performanceEnabled = false">×</button></header>

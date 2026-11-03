@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
+import { createServer as createHttpServer } from 'node:http';
+import { promisify } from 'node:util';
 import { once } from 'node:events';
-import { mkdtempSync, readFileSync, rmSync, existsSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, existsSync, cpSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -49,7 +51,7 @@ async function freePort() {
   await new Promise(resolve => server.close(resolve));
   return port;
 }
-async function smoke(command, args, project) {
+async function smoke(command, args, project, withFlows = false) {
   const port = await freePort();
   const child = spawn(command, [...args, '--port', String(port), ...(project ? ['--project', project] : [])], { cwd: temporary, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
@@ -75,9 +77,13 @@ async function smoke(command, args, project) {
     assert.equal(devices.status, 200);
     assert.ok(Array.isArray((await devices.json()).devices));
     assert.equal((await fetch(`http://127.0.0.1:${port}/api/devices`, { headers: { Origin: 'https://untrusted.example' } })).status, 403);
-    if (project) assert.equal(readFileSync(join(temporary, project, '.udl', 'config.yaml'), 'utf8'), '');
-    else assert.equal(existsSync(join(temporary, '.udl')), false);
-    console.log(`PASS ${command}: installed archive starts; UI, assets, discovery and origin guard work`);
+    const snapshot = await (await fetch(`http://127.0.0.1:${port}/api/flows/snapshot`)).json();
+    assert.equal(snapshot.enabled, true);
+    assert.equal(snapshot.context, project ? 'project' : 'global');
+    if (withFlows) { assert.ok(snapshot.blueprints.some(item => item.id === 'bank-transaction')); assert.equal(snapshot.diagnostics.length, 0); assert.ok(snapshot.blueprints.some(item => item.id === 'purchase')); }
+    console.log(`PASS ${command}: installed archive starts; UI, assets, discovery, origin guard and ${withFlows ? 'project blueprints' : 'log-only mode'} work`);
+    if (project && !withFlows) assert.equal(readFileSync(join(temporary, project, '.udl', 'config.yaml'), 'utf8'), '');
+    else if (!project) assert.equal(existsSync(join(temporary, '.udl')), false);
   } finally {
     if (child.exitCode === null && !spawnError) {
       if (process.platform === 'win32') execFileSync('taskkill', ['/pid', String(child.pid), '/T', '/F']);
@@ -110,6 +116,26 @@ try {
   assert.ok(!existsSync(join(temporary, 'node_modules', 'tsx')));
   assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help'], temporary), /Usage: udl/);
   assert.equal(run('node', [join(installed, manifest.bin['uber-device-log']), '--version'], temporary).trim(), manifest.version);
+  assert.equal(manifest.dependencies.yauzl, '3.4.0');
+  const bundle = readFileSync(join(root, 'test_flow_project/bundles/example.blueprint'));
+  const download = createHttpServer((_request, response) => response.end(bundle));
+  await new Promise(resolve => download.listen(0, '127.0.0.1', resolve));
+  try {
+    const target = join(temporary, 'bundle project');
+    mkdirSync(target);
+    const args = [join(installed, manifest.bin['uber-device-log']), 'install-blueprint', `http://127.0.0.1:${download.address().port}/example.blueprint`, '--project', target];
+    const result = await promisify(execFile)('node', args, { cwd: temporary, timeout: 15000 });
+    assert.match(result.stdout, /Installed Example operations.*Disabled/s);
+    assert.deepEqual(readFileSync(join(target, '.udl/bundles/example.blueprint')), bundle);
+    await assert.rejects(promisify(execFile)('node', args, { cwd: temporary, timeout: 15000 }), /already installed/);
+    console.log('PASS installed one-shot CLI: validates and installs a bundle, reports disabled state and rejects replacement');
+  } finally {
+    download.closeAllConnections();
+    await new Promise(resolve => download.close(resolve));
+  }
+  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log']);
+  cpSync(join(root, 'test_flow_project'), join(temporary, 'fixture-project'), { recursive: true });
+  await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], 'fixture-project', true);
   const project = 'example project';
   mkdirSync(join(temporary, project));
   assert.match(run('node', [join(installed, manifest.bin['uber-device-log']), '--help', '--project', project], temporary), /--project/);

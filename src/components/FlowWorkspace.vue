@@ -1,0 +1,1046 @@
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import type {
+  FlowBlueprint,
+  FlowInstance,
+  FlowObservation,
+  FlowOutcome,
+  FlowSnapshot,
+  FlowStep,
+} from '../../shared/flow-types';
+import {
+  flowErrorCode,
+  flowPresentation,
+  flowPresentationHistory,
+} from '../../shared/flow-presentation';
+import { flowStarts } from '../../shared/flow-variables';
+import FlowLabel from './FlowLabel.vue';
+import FlowSources from './FlowSources.vue';
+import FlowBlueprintEditor from './FlowBlueprintEditor.vue';
+import { useFlowEditor } from '../composables/useFlowEditor';
+import { diagnosticLocation } from '../flow-diagnostics';
+import FlowResults from './FlowResults.vue';
+import {
+  cardFork,
+  flowEdgeTone,
+  flowSummary,
+  forkConnectors,
+  layoutFlowGraph,
+  flowRouteTopology,
+  flowRouteStates,
+} from '../flow-path';
+import { translate, translateMessage, type Locale } from '../i18n';
+import type { MessageKey } from '../i18n/en';
+import type { MessageParams } from '../../shared/notifications';
+import './flow-workspace.css';
+
+const props = defineProps<{
+  snapshot: FlowSnapshot | null;
+  instances: FlowInstance[];
+  loading: boolean;
+  gapCount: number;
+  activeSources: number;
+  locale: Locale;
+}>();
+const emit = defineEmits<{ clear: []; reload: [] }>();
+const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, key, params);
+const view = ref<'list' | 'timeline' | 'info' | 'editor'>('list');
+const query = ref('');
+const displayStorageKey = 'uber-device-log.flowDisplay';
+const displayMode = ref<'minimal' | 'detailed' | 'condensed'>('detailed');
+onMounted(() => {
+  try {
+    const stored = window.localStorage.getItem(displayStorageKey);
+    if (stored === 'minimal' || stored === 'condensed') displayMode.value = stored;
+  } catch {
+    /* Storage may be unavailable. */
+  }
+});
+function setDisplayMode(value: typeof displayMode.value) {
+  displayMode.value = value;
+  try {
+    window.localStorage.setItem(displayStorageKey, value);
+  } catch {
+    /* Keep the session preference. */
+  }
+}
+const presentations = computed(
+  () => new Map(props.instances.map((instance) => [instance.id, flowPresentation(instance)])),
+);
+function presentation(instance: FlowInstance) {
+  return presentations.value.get(instance.id)!;
+}
+function presentationAt(instance: FlowInstance, observation: FlowObservation) {
+  return selectedHistory.value.get(observation) ?? presentation(instance);
+}
+function searchableBindings(instance: FlowInstance) {
+  const definitions = [...instance.blueprint.steps, ...(instance.blueprint.errors ?? [])];
+  return Object.entries(instance.bindings ?? {})
+    .filter(([field]) => !definitions.some((node) => node.extract?.[field]?.sensitive))
+    .map(([, value]) => value);
+}
+function searchablePresentation(instance: FlowInstance) {
+  const data = presentation(instance);
+  return [
+    ...data.label.filter((part) => !part.sensitive).map((part) => part.text),
+    ...data.results
+      .filter((result) => !result.sensitive)
+      .map((result) => `${result.field} ${JSON.stringify(result.value)}`),
+  ].join(' ');
+}
+const selectedId = ref('');
+const selectedBlueprintId = ref('');
+const selectedStep = ref('');
+const inspector = ref<'payload' | 'match' | 'raw'>('payload');
+const reveal = ref(false);
+const title = ref<HTMLElement>();
+const clock = ref(0);
+let timer: ReturnType<typeof setInterval> | undefined;
+onMounted(() => {
+  clock.value = performance.timeOrigin + performance.now();
+  timer = setInterval(() => {
+    clock.value = performance.timeOrigin + performance.now();
+  }, 1000);
+});
+onBeforeUnmount(() => clearInterval(timer));
+const selected = computed(() => props.instances.find((value) => value.id === selectedId.value));
+const selectedHistory = computed(() => {
+  const instance = view.value === 'timeline' ? selected.value : undefined;
+  if (!instance) return new Map<FlowObservation, ReturnType<typeof flowPresentation>>();
+  const history = flowPresentationHistory(instance);
+  return new Map(instance.observations.map((observation, index) => [observation, history[index]!]));
+});
+const blueprint = computed(
+  () =>
+    selected.value?.blueprint ??
+    props.snapshot?.blueprints.find((value) => value.id === selectedBlueprintId.value),
+);
+const step = computed(() =>
+  blueprint.value?.steps.find((value) => value.id === selectedStep.value),
+);
+const evidence = computed(
+  () => selected.value?.observations.filter((value) => value.stepId === selectedStep.value) ?? [],
+);
+const visible = computed(() => {
+  const text = query.value.trim().toLocaleLowerCase(props.locale);
+  return [...props.instances]
+    .reverse()
+    .filter(
+      (value) =>
+        !text ||
+        [
+          value.blueprint.name,
+          value.id,
+          value.deviceId,
+          searchableError(value),
+          value.errorDescription,
+          searchablePresentation(value),
+          ...searchableBindings(value),
+        ]
+          .join(' ')
+          .toLocaleLowerCase(props.locale)
+          .includes(text),
+    );
+});
+function errorCode(instance: FlowInstance, observation?: FlowObservation) {
+  const data = flowErrorCode(instance, observation);
+  return data.sensitive && !(observation && reveal.value) ? t('flowsSensitive') : data.value;
+}
+function searchableError(instance: FlowInstance) {
+  const data = flowErrorCode(instance);
+  return data.sensitive ? '' : data.value;
+}
+const outcomes: Record<FlowOutcome, MessageKey> = {
+  running: 'flowsStatusRunning',
+  completed: 'flowsStatusCompleted',
+  failed: 'flowsStatusFailed',
+  cancelled: 'flowsStatusCancelled',
+  timed_out: 'flowsStatusTimedOut',
+  interrupted: 'flowsStatusInterrupted',
+};
+const completeness: Partial<Record<FlowInstance['completeness'], MessageKey>> = {
+  missing_start: 'flowsCompletenessMissingStart',
+  missing_steps: 'flowsCompletenessMissingSteps',
+  capture_gap: 'flowsCompletenessCaptureGap',
+  ambiguous: 'flowsCompletenessAmbiguous',
+};
+function elapsed(value: FlowInstance) {
+  return t('flowsDuration', {
+    seconds:
+      Math.round(
+        Math.max(0, (value.endedAt ?? Math.max(value.updatedAt, clock.value)) - value.startedAt) /
+          100,
+      ) / 10,
+  });
+}
+const topologyCache = new WeakMap<FlowBlueprint, ReturnType<typeof flowRouteTopology<FlowStep>>>();
+function topology(definition: FlowBlueprint) {
+  let value = topologyCache.get(definition);
+  if (!value) {
+    value = flowRouteTopology(definition.steps, flowStarts(definition));
+    topologyCache.set(definition, value);
+  }
+  return value;
+}
+const routeKeys = {
+  observed: 'flowsObserved',
+  expected: 'flowsExpected',
+  other: 'flowsNotOnRoute',
+  optional: 'flowsSkippedOptional',
+  missing: 'flowsNotObserved',
+} as const;
+const graphStates = computed(
+  () =>
+    new Map(
+      props.instances.map((instance) => {
+        const graph = topology(instance.blueprint);
+        const witnessed = new Set(
+          instance.observations
+            .filter((item) => item.accepted !== false)
+            .map((item) => item.stepId),
+        );
+        const states = flowRouteStates(graph, witnessed, instance.expected);
+        const ordered =
+          instance.outcome === 'failed' || instance.outcome === 'cancelled'
+            ? graph.ordered.filter((item) => witnessed.has(item.id))
+            : graph.ordered.filter(
+                (item) =>
+                  states.get(item.id) !== 'other' && (!item.optional || witnessed.has(item.id)),
+              );
+        const result = flowSummary(ordered, witnessed, instance.expected);
+        const expectedSteps = instance.expected.flatMap((id) => {
+          const step = graph.byId.get(id);
+          return step && !(step.repeatable && witnessed.has(id)) ? [step] : [];
+        });
+        const fork = cardFork(result.shown, expectedSteps);
+        const card = {
+          ...result,
+          ...fork,
+          connectors: fork.branching
+            ? forkConnectors(fork.lanes.length, 48, 96)
+            : { width: 0, height: 0, startY: 0, paths: [] as string[] },
+        };
+        return [
+          instance.id,
+          { graph, witnessed, states, orderedIds: new Set(ordered.map((item) => item.id)), card },
+        ] as const;
+      }),
+    ),
+);
+function observed(value: FlowInstance, id: string) {
+  return graphStates.value.get(value.id)?.witnessed.has(id) ?? false;
+}
+function failedStep(value: FlowInstance, item: FlowStep) {
+  return (
+    value.outcome === 'failed' &&
+    ((item.outcome === 'failed' && observed(value, item.id)) ||
+      value.observations.some(
+        (observation) => observation.stepId === item.id && observation.errorCode,
+      ))
+  );
+}
+function stepLabel(item: FlowStep, definition: FlowBlueprint) {
+  return item.shortLabel ?? `S${definition.steps.findIndex((value) => value.id === item.id) + 1}`;
+}
+function card(value: FlowInstance) {
+  return graphStates.value.get(value.id)!.card;
+}
+function laneContinues(value: FlowInstance, id: string) {
+  const state = graphStates.value.get(value.id)!;
+  return (state.graph.next.get(id) ?? []).some(
+    (next) => state.orderedIds.has(next) && !value.expected.includes(next),
+  );
+}
+const diagram = computed(() => layoutFlowGraph(blueprint.value?.steps ?? []));
+function diagramStep(id: string) {
+  return blueprint.value?.steps.find((step) => step.id === id);
+}
+function edgeTone(instance: FlowInstance, from: string, to: string) {
+  const source = instance.blueprint.steps.find((step) => step.id === from);
+  const target = instance.blueprint.steps.find((step) => step.id === to);
+  if (!source || !target) return '';
+  const sourceState = stepState(instance, source);
+  const targetState = stepState(instance, target);
+  if (sourceState === 'flowsNotOnRoute' || targetState === 'flowsNotOnRoute') return 'is-other';
+  return flowEdgeTone(instance.observations, instance.expected, from, to);
+}
+function dependencies(observation: FlowObservation) {
+  const values: string[] = [];
+  for (const consumer of blueprint.value?.steps ?? []) {
+    const visit = (matcher: FlowStep['match']) => {
+      const ref = matcher.json?.equalsFrom;
+      if (ref && 'step' in ref && ref.step === observation.stepId)
+        values.push(`${ref.step}.${ref.field} → ${consumer.id}.${matcher.json!.path}`);
+      if (ref && 'variable' in ref) {
+        const producer = blueprint.value?.steps.find((step) => step.id === observation.stepId);
+        if (Object.values(producer?.extract ?? {}).some((spec) => spec.variable === ref.variable))
+          values.push(`vars.${ref.variable} → ${consumer.id}.${matcher.json!.path}`);
+      }
+      matcher.all?.forEach(visit);
+    };
+    visit(consumer.match);
+  }
+  return values;
+}
+async function navigate(target: typeof view.value, instance?: FlowInstance) {
+  if (instance) {
+    selectedId.value = instance.id;
+    selectedBlueprintId.value = instance.blueprint.id;
+    selectedStep.value =
+      instance.observations.at(-1)?.stepId ?? flowStarts(instance.blueprint)[0] ?? '';
+  }
+  reveal.value = false;
+  view.value = target;
+  await nextTick();
+  title.value?.focus();
+}
+function inspect(id: string) {
+  selectedStep.value = id;
+  reveal.value = false;
+}
+function stepState(instance: FlowInstance, item: FlowStep): MessageKey {
+  return routeKeys[graphStates.value.get(instance.id)?.states.get(item.id) ?? 'missing'];
+}
+function payload(observation: FlowObservation) {
+  const definition =
+    blueprint.value?.steps.find((item) => item.id === observation.stepId)?.extract ??
+    blueprint.value?.errors?.find((item) => item.id === observation.stepId)?.extract;
+  return JSON.stringify(
+    Object.fromEntries(
+      Object.entries(observation.payload).map(([key, value]) => [
+        key,
+        !reveal.value && definition?.[key]?.sensitive ? t('flowsSensitive') : value,
+      ]),
+    ),
+    null,
+    2,
+  );
+}
+function matching(observation: FlowObservation) {
+  return JSON.stringify(
+    {
+      match:
+        blueprint.value?.steps.find((item) => item.id === observation.stepId)?.match ??
+        blueprint.value?.errors?.find((item) => item.id === observation.stepId)?.match,
+      matchedBy: reveal.value ? observation.matchedBy : undefined,
+      source: observation.message.source,
+      bindings: reveal.value ? selected.value?.bindings : t('flowsSensitive'),
+    },
+    null,
+    2,
+  );
+}
+function raw(observation: FlowObservation) {
+  // Raw log evidence can contain receipts or tokens even if extracted fields are masked.
+  return reveal.value ? JSON.stringify(observation.message, null, 2) : t('flowsSensitive');
+}
+watch(
+  () => props.instances,
+  () => {
+    if (selectedId.value && !selected.value && view.value !== 'editor') void navigate('list');
+  },
+);
+const editor = useFlowEditor(
+  () => props.snapshot,
+  t,
+  () => emit('reload'),
+);
+const { busy, priorityOptions, priorityKeys } = editor;
+async function openEditor() {
+  await navigate('editor');
+  await editor.initialize();
+}
+</script>
+
+<template>
+  <section
+    class="flow-workspace"
+    :aria-label="t('flowsWorkspace')"
+    :data-display="displayMode"
+    @keydown.esc="view !== 'list' && navigate('list')"
+  >
+    <div
+      v-if="loading"
+      role="status"
+      class="flow-notice"
+    >
+      {{ t('flowsLoading') }}
+    </div>
+    <div
+      v-if="gapCount"
+      role="status"
+      class="flow-notice"
+    >
+      {{ t('flowsGap', { count: gapCount }) }}
+    </div>
+    <div
+      v-for="(diagnostic, index) in snapshot?.diagnostics"
+      :key="index"
+      class="flow-notice flow-warning"
+    >
+      <code v-if="diagnosticLocation(diagnostic)">{{ diagnosticLocation(diagnostic) }}</code>
+      {{ translateMessage(locale, diagnostic) }}
+    </div>
+    <div
+      v-if="!loading && !snapshot?.enabled"
+      class="flow-empty"
+    >
+      <h2>{{ t('flowsTitle') }}</h2>
+      <p>{{ t('flowsNoProject') }}</p>
+      <code>npx uber-device-log --project=./test_flow_project</code
+      ><button
+        type="button"
+        @click="emit('reload')"
+      >
+        {{ t('flowsReload') }}
+      </button>
+    </div>
+    <template v-else-if="snapshot?.enabled">
+      <template v-if="view === 'list'">
+        <div class="flow-toolbar">
+          <input
+            v-model="query"
+            type="search"
+            :placeholder="t('flowsSearch')"
+            :aria-label="t('flowsSearch')"
+          />
+          <div
+            class="flow-display-toggle"
+            role="group"
+            :aria-label="t('flowsDisplayMode')"
+          >
+            <button
+              v-for="mode in ['minimal', 'condensed', 'detailed'] as const"
+              :key="mode"
+              type="button"
+              :aria-pressed="displayMode === mode"
+              @click="setDisplayMode(mode)"
+            >
+              {{
+                t(
+                  mode === 'minimal'
+                    ? 'flowsDisplayMinimal'
+                    : mode === 'detailed'
+                      ? 'flowsDisplayDetailed'
+                      : 'flowsDisplayCondensed',
+                )
+              }}
+            </button>
+          </div>
+          <button
+            type="button"
+            @click="openEditor"
+          >
+            {{ t('flowsBlueprints') }}
+            <span class="flow-count">{{ snapshot.files.length }}</span></button
+          ><FlowSources
+            v-if="snapshot.sources"
+            :snapshot="snapshot"
+            :locale="locale"
+            @changed="emit('reload')"
+          /><button
+            type="button"
+            :disabled="!instances.length"
+            @click="emit('clear')"
+          >
+            {{ t('flowsClear') }}
+          </button>
+        </div>
+        <details class="flow-priority-legend">
+          <summary>{{ t('flowsPriority') }}</summary>
+          <span
+            v-for="level in priorityOptions"
+            :key="level"
+            ><i
+              :data-priority="level"
+              aria-hidden="true"
+            ></i
+            >{{ t(priorityKeys[level]) }}</span
+          >
+        </details>
+        <div
+          v-if="!visible.length"
+          class="flow-empty"
+        >
+          <h2>
+            {{
+              t(
+                query
+                  ? 'flowsNoResults'
+                  : !snapshot.blueprints.length
+                    ? 'flowsNoBlueprints'
+                    : 'flowsEmpty',
+              )
+            }}
+          </h2>
+          <p>{{ t(!snapshot.blueprints.length ? 'flowsEditorHelp' : 'flowsEmptyHint') }}</p>
+          <button
+            v-if="!snapshot.blueprints.length"
+            type="button"
+            @click="openEditor"
+          >
+            {{ t('flowsNewBlueprint') }}
+          </button>
+        </div>
+        <article
+          v-for="instance in visible"
+          :key="instance.id"
+          class="flow-card"
+          :data-priority="instance.blueprint.priority ?? 3"
+          :data-outcome="instance.outcome"
+        >
+          <header>
+            <div class="flow-card-heading">
+              <span
+                v-if="displayMode === 'detailed'"
+                class="flow-card-kind"
+                >{{ instance.blueprint.name }} <small>({{ instance.blueprint.id }})</small></span
+              >
+              <h2>
+                <button
+                  v-if="displayMode === 'minimal'"
+                  type="button"
+                  class="flow-minimal-open"
+                  :title="t('flowsTimeline')"
+                  @click="navigate('timeline', instance)"
+                >
+                  <FlowLabel
+                    :parts="presentation(instance).label"
+                    :concealed="t('flowsSensitive')"
+                  /></button
+                ><FlowLabel
+                  v-else
+                  :parts="presentation(instance).label"
+                  :concealed="t('flowsSensitive')"
+                />
+              </h2>
+              <span
+                v-if="displayMode !== 'minimal'"
+                class="flow-priority-mark"
+                >{{ t('flowsPriorityValue', { priority: instance.blueprint.priority ?? 3 }) }}</span
+              ><span
+                v-if="displayMode !== 'minimal'"
+                class="flow-badge"
+                :data-outcome="instance.outcome"
+                ><span
+                  v-if="instance.outcome === 'running'"
+                  class="flow-status-spinner"
+                  aria-hidden="true"
+                ></span
+                >{{ t(outcomes[instance.outcome]) }}</span
+              >
+            </div>
+            <div
+              v-if="displayMode !== 'minimal'"
+              class="flow-actions"
+            >
+              <button
+                type="button"
+                @click="navigate('timeline', instance)"
+              >
+                {{ t('flowsTimeline') }}</button
+              ><button
+                type="button"
+                @click="navigate('info', instance)"
+              >
+                {{ t('flowsInfo') }}
+              </button>
+            </div>
+          </header>
+          <FlowResults
+            v-if="displayMode !== 'minimal'"
+            :results="presentation(instance).results"
+            :label="t('flowsResults')"
+            :concealed="t('flowsSensitive')"
+          />
+          <div
+            v-if="
+              displayMode !== 'minimal' &&
+              (displayMode === 'detailed' || completeness[instance.completeness])
+            "
+            class="flow-meta"
+          >
+            <span v-if="displayMode === 'detailed'">{{ instance.deviceId }}</span
+            ><span v-if="displayMode === 'detailed'">{{ elapsed(instance) }}</span
+            ><span
+              v-if="completeness[instance.completeness]"
+              class="flow-warning"
+              >{{ t(completeness[instance.completeness]!) }}</span
+            >
+          </div>
+          <div
+            v-if="displayMode === 'detailed'"
+            class="flow-sequence"
+          >
+            <ol
+              class="flow-path"
+              :class="{ 'is-branching': card(instance).branching }"
+              :style="
+                card(instance).branching && card(instance).lanes.length
+                  ? { marginTop: `${card(instance).connectors.startY - 19}px` }
+                  : undefined
+              "
+            >
+              <li
+                v-for="item in card(instance).trunk"
+                :key="item.id"
+                :class="{
+                  'is-observed': observed(instance, item.id),
+                  'is-expected': instance.expected.includes(item.id),
+                  'is-failed': failedStep(instance, item),
+                }"
+              >
+                <button
+                  type="button"
+                  @click="
+                    navigate('timeline', instance);
+                    inspect(item.id);
+                  "
+                >
+                  <span class="flow-node">{{ stepLabel(item, instance.blueprint) }}</span
+                  ><span
+                    >{{ item.name }}<small>{{ t(stepState(instance, item)) }}</small></span
+                  >
+                </button>
+              </li>
+              <li
+                v-if="!card(instance).branching && card(instance).continues"
+                class="is-continuation"
+                :aria-label="t('flowsPathContinues')"
+              >
+                <span
+                  class="flow-node"
+                  aria-hidden="true"
+                  >…</span
+                >
+              </li>
+              <li
+                v-if="!card(instance).branching && instance.outcome === 'failed'"
+                class="is-failed"
+              >
+                <span
+                  class="flow-node"
+                  aria-hidden="true"
+                  >!</span
+                ><span>{{ errorCode(instance) ?? t('flowsStatusFailed') }}</span>
+              </li>
+            </ol>
+            <div
+              v-if="card(instance).branching && card(instance).lanes.length"
+              class="flow-fork"
+              :style="{ height: card(instance).connectors.height + 'px' }"
+            >
+              <svg
+                :style="{
+                  width: card(instance).connectors.width + 'px',
+                  height: card(instance).connectors.height + 'px',
+                }"
+                :width="card(instance).connectors.width"
+                :height="card(instance).connectors.height"
+                aria-hidden="true"
+              >
+                <path
+                  v-for="(curve, index) in card(instance).connectors.paths"
+                  :key="index"
+                  :d="curve"
+                />
+              </svg>
+              <div class="flow-fork-lanes">
+                <div
+                  v-for="item in card(instance).lanes"
+                  :key="item.id"
+                  class="flow-lane"
+                  :style="{
+                    height: card(instance).connectors.height / card(instance).lanes.length + 'px',
+                  }"
+                >
+                  <button
+                    type="button"
+                    :class="{
+                      'is-expected': instance.expected.includes(item.id),
+                      'is-failed': failedStep(instance, item),
+                    }"
+                    @click="
+                      navigate('timeline', instance);
+                      inspect(item.id);
+                    "
+                  >
+                    <span class="flow-node">{{ stepLabel(item, instance.blueprint) }}</span
+                    ><span
+                      >{{ item.name }}<small>{{ t(stepState(instance, item)) }}</small></span
+                    >
+                  </button>
+                  <span
+                    v-if="laneContinues(instance, item.id)"
+                    class="flow-lane-more"
+                    role="img"
+                    :aria-label="t('flowsPathContinues')"
+                    ><span aria-hidden="true">…</span></span
+                  >
+                </div>
+              </div>
+            </div>
+            <span
+              v-if="card(instance).branching && instance.outcome === 'failed'"
+              class="is-failed flow-fail-mark"
+              ><span
+                class="flow-node"
+                aria-hidden="true"
+                >!</span
+              ><span>{{ errorCode(instance) ?? t('flowsStatusFailed') }}</span></span
+            >
+          </div>
+          <p
+            v-if="displayMode === 'detailed' && (instance.errorCode || instance.errorDescription)"
+            class="flow-error-detail"
+          >
+            <code>{{ errorCode(instance) }}</code> {{ instance.errorDescription }}
+          </p>
+        </article>
+      </template>
+      <template v-else>
+        <div class="flow-panelhead">
+          <button
+            type="button"
+            @click="navigate('list')"
+          >
+            <span aria-hidden="true">←</span> {{ t('flowsBack') }}</button
+          ><button
+            v-if="view !== 'editor'"
+            type="button"
+            @click="openEditor"
+          >
+            {{ t('flowsEditYaml') }}</button
+          ><button
+            v-else
+            type="button"
+            :disabled="busy"
+            @click="emit('reload')"
+          >
+            {{ t('flowsReload') }}
+          </button>
+        </div>
+        <section
+          v-if="view === 'timeline' && selected"
+          class="flow-detail"
+        >
+          <header class="flow-detail-heading">
+            <span class="flow-card-kind"
+              >{{ selected.blueprint.name }} <small>({{ selected.blueprint.id }})</small></span
+            >
+            <h2
+              ref="title"
+              tabindex="-1"
+            >
+              <FlowLabel
+                :parts="presentation(selected).label"
+                :concealed="t('flowsSensitive')"
+              />
+            </h2>
+            <span
+              class="flow-badge"
+              :data-outcome="selected.outcome"
+              ><span
+                v-if="selected.outcome === 'running'"
+                class="flow-status-spinner"
+                aria-hidden="true"
+              ></span
+              >{{ t(outcomes[selected.outcome]) }}</span
+            >
+            <p>
+              {{ elapsed(selected) }} · {{ t('flowsRevision', { revision: selected.revision }) }}
+            </p>
+            <p v-if="selected.errorCode || selected.errorDescription">
+              <code>{{ errorCode(selected) }}</code> {{ selected.errorDescription }}
+            </p>
+          </header>
+          <div class="flow-detail-grid">
+            <div class="flow-timeline">
+              <div
+                v-if="diagram.nodes.length"
+                class="flow-diagram"
+                :style="{ width: diagram.width + 'px', height: diagram.height + 'px' }"
+              >
+                <svg
+                  :style="{ width: diagram.width + 'px', height: diagram.height + 'px' }"
+                  :width="diagram.width"
+                  :height="diagram.height"
+                  aria-hidden="true"
+                >
+                  <path
+                    v-for="edge in diagram.edges"
+                    :key="edge.from + '-' + edge.to"
+                    :d="edge.d"
+                    :class="edgeTone(selected, edge.from, edge.to)"
+                  /></svg
+                ><button
+                  v-for="node in diagram.nodes"
+                  :key="node.id"
+                  type="button"
+                  class="flow-diagram-node"
+                  :title="diagramStep(node.id)?.name ?? node.id"
+                  :style="{ left: node.x + 'px', top: node.y + 'px' }"
+                  :aria-pressed="selectedStep === node.id"
+                  :aria-label="
+                    diagramStep(node.id) &&
+                    stepState(selected, diagramStep(node.id)!) === 'flowsNotOnRoute'
+                      ? `${diagramStep(node.id)!.name}, ${t('flowsNotOnRoute')}`
+                      : (diagramStep(node.id)?.name ?? node.id)
+                  "
+                  :class="{
+                    'is-observed': observed(selected, node.id),
+                    'is-expected': selected.expected.includes(node.id),
+                    'is-failed':
+                      diagramStep(node.id) && failedStep(selected, diagramStep(node.id)!),
+                    'is-other':
+                      diagramStep(node.id) &&
+                      stepState(selected, diagramStep(node.id)!) === 'flowsNotOnRoute',
+                  }"
+                  @click="inspect(node.id)"
+                >
+                  <span class="flow-node">{{
+                    diagramStep(node.id)
+                      ? stepLabel(diagramStep(node.id)!, selected.blueprint)
+                      : node.id
+                  }}</span
+                  ><span class="flow-diagram-label"
+                    ><strong>{{ diagramStep(node.id)?.name ?? node.id }}</strong
+                    ><small
+                      v-if="
+                        diagramStep(node.id) &&
+                        stepState(selected, diagramStep(node.id)!) !== 'flowsNotOnRoute'
+                      "
+                      >{{ t(stepState(selected, diagramStep(node.id)!))
+                      }}<template v-if="diagramStep(node.id)?.optional">
+                        · {{ t('flowsOptional') }}</template
+                      ></small
+                    ></span
+                  >
+                </button>
+              </div>
+              <button
+                v-for="item in selected.observations.filter(
+                  (value) => !blueprint?.steps.some((definition) => definition.id === value.stepId),
+                )"
+                :key="item.stepId"
+                type="button"
+                class="is-failed"
+                :aria-pressed="selectedStep === item.stepId"
+                @click="inspect(item.stepId)"
+              >
+                <span class="flow-node">!</span>{{ item.stepId }}
+              </button>
+            </div>
+            <div class="flow-inspector">
+              <h3>{{ step?.name ?? selectedStep }}</h3>
+              <div class="flow-subnav">
+                <button
+                  v-for="option in ['payload', 'match', 'raw'] as const"
+                  :key="option"
+                  type="button"
+                  :aria-pressed="inspector === option"
+                  @click="
+                    inspector = option;
+                    reveal = false;
+                  "
+                >
+                  {{
+                    t(
+                      option === 'payload'
+                        ? 'flowsPayload'
+                        : option === 'match'
+                          ? 'flowsMatch'
+                          : 'flowsRawLog',
+                    )
+                  }}
+                </button>
+              </div>
+              <button
+                v-if="evidence.length"
+                type="button"
+                class="flow-reveal"
+                :aria-pressed="reveal"
+                @click="reveal = !reveal"
+              >
+                {{ t(reveal ? 'flowsHide' : 'flowsReveal') }}
+              </button>
+              <p v-if="!evidence.length">{{ t('flowsChooseStep') }}</p>
+              <div
+                v-for="(observation, index) in evidence"
+                :key="index"
+                class="flow-evidence"
+              >
+                <small
+                  >{{ observation.receivedAt >= selected.startedAt ? '+' : ''
+                  }}{{ Math.round(observation.receivedAt - selected.startedAt) }} ms ·
+                  {{ observation.message.timestamp }}</small
+                >
+                <section
+                  v-if="inspector === 'payload'"
+                  class="flow-label-evidence"
+                >
+                  <h3>{{ t('flowsLabel') }}</h3>
+                  <p>
+                    <FlowLabel
+                      :parts="presentationAt(selected, observation).label"
+                      :concealed="t('flowsSensitive')"
+                      :reveal="reveal"
+                    />
+                  </p>
+                  <FlowResults
+                    :results="presentationAt(selected, observation).results"
+                    :label="t('flowsResults')"
+                    :concealed="t('flowsSensitive')"
+                    :reveal="reveal"
+                  />
+                </section>
+                <pre>{{
+                  inspector === 'payload'
+                    ? payload(observation)
+                    : inspector === 'match'
+                      ? matching(observation)
+                      : raw(observation)
+                }}</pre>
+                <div
+                  v-if="inspector === 'payload' && dependencies(observation).length"
+                  class="flow-provenance"
+                >
+                  <h3>{{ t('flowsMatch') }}</h3>
+                  <code
+                    v-for="dependency in dependencies(observation)"
+                    :key="dependency"
+                    >{{ dependency }}</code
+                  >
+                </div>
+                <p v-if="observation.errorCode || observation.errorDescription">
+                  <code>{{ errorCode(selected, observation) }}</code>
+                  {{ observation.errorDescription }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section
+          v-if="view === 'info' && blueprint"
+          class="flow-detail"
+        >
+          <header class="flow-detail-heading">
+            <h2
+              ref="title"
+              tabindex="-1"
+            >
+              {{ blueprint.name }}
+            </h2>
+            <p>{{ blueprint.description }}</p>
+            <p>{{ t('flowsTimeout', { timeout: blueprint.timeout }) }}</p>
+          </header>
+          <div class="flow-info-body">
+            <div
+              v-if="diagram.nodes.length"
+              class="flow-diagram flow-blueprint-diagram"
+              :style="{ width: diagram.width + 'px', height: diagram.height + 'px' }"
+            >
+              <svg
+                :style="{ width: diagram.width + 'px', height: diagram.height + 'px' }"
+                :width="diagram.width"
+                :height="diagram.height"
+                aria-hidden="true"
+              >
+                <path
+                  v-for="edge in diagram.edges"
+                  :key="edge.from + '-' + edge.to"
+                  :d="edge.d"
+                />
+              </svg>
+              <div
+                v-for="node in diagram.nodes"
+                :key="node.id"
+                class="flow-diagram-node"
+                :title="diagramStep(node.id)?.name ?? node.id"
+                :style="{ left: node.x + 'px', top: node.y + 'px' }"
+              >
+                <span class="flow-node">{{
+                  diagramStep(node.id) ? stepLabel(diagramStep(node.id)!, blueprint) : node.id
+                }}</span
+                ><span class="flow-diagram-label"
+                  ><strong>{{ diagramStep(node.id)?.name ?? node.id }}</strong></span
+                >
+              </div>
+            </div>
+            <div class="flow-graph">
+              <article
+                v-for="item in blueprint.steps"
+                :key="item.id"
+              >
+                <span class="flow-node">{{ stepLabel(item, blueprint) }}</span>
+                <div>
+                  <h3>
+                    {{ item.name }} <small v-if="item.optional">{{ t('flowsOptional') }}</small>
+                  </h3>
+                  <code>{{ item.id }}</code
+                  ><span
+                    v-if="item.outcome"
+                    class="flow-badge"
+                    :data-outcome="item.outcome"
+                    >{{ t(outcomes[item.outcome]) }}</span
+                  >
+                  <details>
+                    <summary>{{ t('flowsMatch') }}</summary>
+                    <pre>{{
+                      JSON.stringify({ match: item.match, extract: item.extract }, null, 2)
+                    }}</pre>
+                  </details>
+                </div>
+              </article>
+            </div>
+            <h3 v-if="blueprint.errors?.length">{{ t('flowsKnownErrors') }}</h3>
+            <dl class="flow-errors">
+              <template
+                v-for="error in blueprint.errors"
+                :key="error.id"
+                ><template
+                  v-for="(definition, code) in error.codes"
+                  :key="code"
+                  ><dt>
+                    <code>{{ code }}</code>
+                  </dt>
+                  <dd>
+                    {{ definition.description }}
+                    <span
+                      class="flow-badge"
+                      :data-outcome="definition.outcome"
+                      >{{ t(outcomes[definition.outcome]) }}</span
+                    >
+                  </dd></template
+                ></template
+              >
+            </dl>
+          </div>
+        </section>
+        <section
+          v-if="view === 'editor'"
+          class="flow-detail"
+        >
+          <header class="flow-detail-heading">
+            <h2
+              ref="title"
+              tabindex="-1"
+            >
+              {{ t('flowsBlueprints') }}
+            </h2>
+            <p>{{ snapshot.directory }}</p>
+          </header>
+          <FlowBlueprintEditor
+            :editor="editor"
+            :snapshot="snapshot"
+            :locale="locale"
+          />
+        </section>
+      </template>
+      <footer class="flow-footer">
+        <span>{{ t('flowsSources', { count: activeSources }) }}</span
+        ><span>{{ t('flowsRevision', { revision: snapshot.revision }) }}</span>
+      </footer>
+    </template>
+  </section>
+</template>

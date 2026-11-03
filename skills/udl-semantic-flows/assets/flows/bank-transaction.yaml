@@ -1,0 +1,103 @@
+# Fictional application protocol for demonstration; not a real banking integration.
+version: 1
+priority: 2
+id: bank-transaction
+name: Bank transaction
+description: Fictional transfer with automatic decisions, manual review and explicit cancellation.
+label: 'Transfer {start.amount} {start.currency} to {start.recipient}'
+start: start
+timeout: 60s
+correlation: { scope: device-session, primary: transactionId }
+steps:
+  - id: start
+    shortLabel: INIT
+    name: Transfer requested
+    match: { json: { path: event, equals: bank.transfer.requested } }
+    extract:
+      transactionId: { json: transactionId, required: true }
+      amount: { json: amount, required: true, result: true }
+      currency: { json: currency, required: true, result: true }
+      recipient: { json: recipient, required: true, result: true }
+      account: { json: recipientAccount, sensitive: true, result: true }
+    next: [accepted, review]
+  - id: accepted
+    shortLabel: AUTO
+    name: Automatic checks accepted
+    match: { json: { path: event, equals: bank.transfer.accepted } }
+    extract:
+      transactionId: { json: transactionId, required: true }
+    label:
+      - { text: 'Transfer checks passed: ', tone: info }
+      - { text: '{start.amount} {start.currency} → {start.recipient}' }
+    next: [posted]
+  - id: review
+    shortLabel: REVIEW
+    name: Manual review pending
+    match: { json: { path: event, equals: bank.transfer.review.pending } }
+    extract:
+      transactionId: { json: transactionId, required: true }
+    label:
+      - { text: 'Manual review pending: ', tone: warning }
+      - { text: '{start.amount} {start.currency} → {start.recipient}' }
+    next: [review_approved]
+  - id: review_approved
+    shortLabel: APPROVE
+    name: Manual review approved
+    match: { json: { path: event, equals: bank.transfer.review.approved } }
+    extract:
+      transactionId: { json: transactionId, required: true }
+    label: 'Review approved: {start.amount} {start.currency} to {start.recipient}'
+    next: [posted]
+  - id: posted
+    shortLabel: DONE
+    name: Transfer booked
+    match: { json: { path: event, equals: bank.transfer.posted } }
+    extract:
+      transactionId: { json: transactionId, required: true }
+      reference: { json: reference, required: true, result: true }
+    label:
+      - { text: 'Transfer completed: ', tone: success }
+      - { text: '{start.amount} {start.currency} → {start.recipient}' }
+      - { text: ' · Reference {posted.reference}' }
+      - { text: ' · Account {start.account?}' }
+    outcome: completed
+errors:
+  - id: declined
+    appliesTo: active
+    match: { json: { path: event, equals: bank.transfer.declined } }
+    extract:
+      transactionId: { json: transactionId, required: true }
+      errorCode: { json: code, required: true, result: true }
+    label:
+      - { text: 'Transfer rejected: {declined.errorCode} · ', tone: error }
+      - { text: '{start.amount} {start.currency} → {start.recipient}' }
+    codeField: errorCode
+    codes:
+      INSUFFICIENT_FUNDS:
+        description: The fictional account has insufficient funds.
+        outcome: failed
+        label:
+          - { text: 'Insufficient funds: ', tone: error }
+          - { text: '{start.amount} {start.currency} → {start.recipient}' }
+      FRAUD_SUSPECTED:
+        description: Fictional fraud screening rejected the transfer.
+        outcome: failed
+        label: [{ text: 'Transfer blocked by fraud screening', tone: error }]
+      REVIEW_REJECTED:
+        description: Manual review rejected the fictional transfer.
+        outcome: failed
+        label: [{ text: 'Manual review rejected the transfer', tone: error }]
+    unknownOutcome: failed
+  - id: cancelled
+    appliesTo: active
+    match: { json: { path: event, equals: bank.transfer.cancelled } }
+    extract:
+      transactionId: { json: transactionId, required: true }
+      errorCode: { json: code, required: true, result: true }
+    codeField: errorCode
+    codes:
+      USER_CANCELLED:
+        description: The user cancelled the fictional transfer.
+        outcome: cancelled
+        label: [{ text: 'Transfer cancelled by user', tone: info }]
+    unknownOutcome: cancelled

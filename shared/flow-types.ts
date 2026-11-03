@@ -1,0 +1,165 @@
+import type { LogMessage } from './types.js';
+/** Display priority: 1 is most important, 5 least; omission means 3. */
+export type FlowPriority = 1 | 2 | 3 | 4 | 5;
+export type FlowOutcome =
+  'running' | 'completed' | 'failed' | 'cancelled' | 'timed_out' | 'interrupted';
+export type FlowLabelTone = 'success' | 'error' | 'warning' | 'info';
+export type FlowLabel = string | { text: string; tone?: FlowLabelTone }[];
+export interface FlowLabelPart {
+  text: string;
+  tone?: FlowLabelTone;
+  sensitive?: boolean;
+}
+export interface FlowResult {
+  field: string;
+  stepId: string;
+  value: unknown;
+  sensitive?: boolean;
+}
+export type FlowReference = ({ step: string; field: string } | { variable: string }) & {
+  optional?: boolean;
+};
+export interface FlowMatcher {
+  source?: 'any' | 'device' | 'webview';
+  platform?: 'ios' | 'android';
+  tag?: string;
+  level?: string;
+  contains?: string;
+  regex?: string;
+  json?: { path: string; equals?: string | number | boolean | null; equalsFrom?: FlowReference };
+  all?: FlowMatcher[];
+}
+export interface FlowExtractor {
+  json?: string;
+  regex?: string;
+  group?: string;
+  required?: boolean;
+  variable?: string;
+  sensitive?: boolean;
+  result?: boolean;
+}
+export interface FlowStep {
+  id: string;
+  shortLabel?: string;
+  label?: FlowLabel;
+  name: string;
+  optional?: boolean;
+  repeatable?: boolean;
+  match: FlowMatcher;
+  extract?: Record<string, FlowExtractor>;
+  next?: string[];
+  outcome?: 'completed' | 'failed' | 'cancelled';
+}
+export interface FlowError {
+  id: string;
+  label?: FlowLabel;
+  appliesTo: 'active' | string[];
+  match: FlowMatcher;
+  extract?: Record<string, FlowExtractor>;
+  codeField: string;
+  codes: Record<
+    string,
+    { description: string; label?: FlowLabel; outcome: 'failed' | 'cancelled' }
+  >;
+  unknownOutcome: 'failed' | 'cancelled';
+}
+export interface FlowBlueprint {
+  version: 1;
+  sourceId?: string;
+  sourceFile?: string;
+  sourceGeneration?: string;
+  id: string;
+  name: string;
+  priority?: FlowPriority;
+  label?: FlowLabel;
+  description?: string;
+  start?: string;
+  starts?: string[];
+  timeout: string;
+  correlation: { scope: 'device-session'; primary: string; aliases?: string[] };
+  steps: FlowStep[];
+  errors?: FlowError[];
+}
+export interface FlowDiagnostic {
+  code: 'flowsDiagnostic' | 'flowsBundleError' | 'flowsSourceConflict';
+  params: Record<string, string | number>;
+  message: string;
+  sourceId?: string;
+  file?: string;
+  line?: number;
+  column?: number;
+  path?: string;
+}
+export interface FlowBlueprintFile {
+  filename: string;
+  source: string;
+  revision: string;
+}
+export interface FlowSource {
+  id: string;
+  name: string;
+  description?: string;
+  scope: 'global' | 'project';
+  kind: 'loose' | 'bundle';
+  filename: string;
+  revision: string;
+  specVersion?: number;
+  selectionRevision?: string;
+  generation?: string;
+  enabled: boolean;
+  blueprintIds: string[];
+  activeBlueprintIds: string[];
+  diagnostics: FlowDiagnostic[];
+}
+export interface FlowActivationPolicy {
+  sourceIds?: string[];
+  sourceGenerations?: Record<string, string>;
+  inactiveSources?: string[];
+  conflictedBlueprintIds?: string[];
+}
+export interface FlowSnapshot extends FlowActivationPolicy {
+  sources?: FlowSource[];
+  context?: 'global' | 'project';
+  configRevision?: string;
+  enabled: boolean;
+  projectName: string;
+  directory: string;
+  revision: string;
+  token?: string;
+  blueprints: FlowBlueprint[];
+  files: FlowBlueprintFile[];
+  diagnostics: FlowDiagnostic[];
+}
+export interface FlowObservation {
+  stepId: string;
+  message: LogMessage;
+  receivedAt: number;
+  payload: Record<string, unknown>;
+  errorCode?: string;
+  errorDescription?: string;
+  matchedBy?: string[];
+  accepted?: boolean;
+}
+export interface FlowInstance {
+  id: string;
+  epoch: number;
+  blueprint: FlowBlueprint;
+  revision: string;
+  deviceId: string;
+  outcome: FlowOutcome;
+  completeness: 'complete' | 'missing_start' | 'missing_steps' | 'capture_gap' | 'ambiguous';
+  startedAt: number;
+  updatedAt: number;
+  endedAt?: number;
+  timeoutAt: number;
+  observations: FlowObservation[];
+  expected: string[];
+  bindings: Record<string, string | number | boolean>;
+  errorCode?: string;
+  errorDescription?: string;
+  lateOutcome?: FlowOutcome;
+}
+export interface FlowEngineState {
+  instances: FlowInstance[];
+  gaps: number;
+}

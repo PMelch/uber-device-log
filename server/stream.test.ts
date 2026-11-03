@@ -100,3 +100,15 @@ test('slow browsers bound the queue and are told when messages were skipped', as
     assert.equal(messages[0].message, '200');
   } finally { stop(); }
 });
+
+test('truncated messages carry explicit incomplete-capture metadata', async () => {
+  const response = new Response();
+  let emit!: Parameters<OpenLogs>[1];
+  const stop = streamLogs(response.asHttp(), device, async (_device, onMessage) => { emit = onMessage; return () => {}; });
+  try {
+    await delay(0); emit({ timestamp: 'now', message: 'x'.repeat(20000) }); await delay(120);
+    const frame = response.frames.find(value => value.startsWith('event: logs'))!;
+    const record = JSON.parse(frame.split('\n')[1].slice(6))[0];
+    assert.equal(record.truncated,true); assert.equal(record.message.length,16384);
+  } finally { stop(); }
+});

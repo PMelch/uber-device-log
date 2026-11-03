@@ -61,10 +61,44 @@ not the changelog. See [AGENTS.md](AGENTS.md) for the project rule.
 For every change:
 
 ```sh
+npm run format:check
+npm run lint
 npm test
 npm run build
+npm run blueprints:check
+npm run skill:check
 git diff --check
 ```
+
+Prettier and ESLint are pinned development tools. The initial rollout covers the
+Flow engine/schema/presentation, registry and Flow frontend listed in
+`scripts/style-scope.mjs`; both commands use that same scope. Use `npm run format`
+to apply two-space indentation, single quotes, semicolons and multiline Vue
+attributes. Keep formatting changes separate from behavioral edits when reviewing.
+Expand the scope deliberately when adopting more code; this is not yet a
+repository-wide lint guarantee. Generated portable resources are checked by
+`skill:check`, not reformatted; run `skill:sync` after changing their source contract.
+
+ESLint uses TypeScript recommended and Vue essential checks, forbids `v-html`,
+debuggers and loose equality (except null checks), and rejects warnings. TypeScript
+owns name/global resolution through the build. Explicit `any` is allowed only at
+the existing YAML validator boundary; other scoped code keeps that rule enabled.
+ESLint 9 is pinned to retain Node 22.12 compatibility: ESLint 10 requires at least
+Node 22.13 on the Node 22 line. Revisit that pin when raising the supported minimum;
+this compatibility pin does not claim ongoing upstream ESLint 9 support.
+The TypeScript and Vue parser versions are also pinned explicitly so peer
+resolution cannot pull in a newer Node requirement. Keep the complete lint tree
+compatible when updating these tools.
+See [ESLint's Vue guide](https://eslint.vuejs.org/user-guide/) and
+[Prettier configuration](https://prettier.io/docs/configuration) for editor setup.
+
+The **Product checks** workflow runs tests, build and consistency/style checks on
+pull requests and pushes to `main`, on Node 22.12.0 and 26.12.0. A separate job
+installs the Chromium revision associated with the locked Playwright version and
+runs `npm run test:flows:browser`. Fixtures use temporary home/project directories,
+fictional evidence and loopback servers, with no device or external log service.
+No secrets or write permissions are provided to these jobs. A local green run does
+not imply a hosted Actions run or branch-protection requirement is configured.
 
 For behavior changes, add a regression test that fails before the fix and passes
 afterward. Use focused tests while iterating, then run the full checks. For docs-only

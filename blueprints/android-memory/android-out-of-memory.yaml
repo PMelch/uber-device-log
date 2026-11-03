@@ -1,0 +1,32 @@
+# Source-derived, single-record observation; see ../README.md for evidence and limitations.
+version: 1
+id: android-out-of-memory
+name: Android Java allocation failure
+description: Observes an AndroidRuntime OutOfMemoryError line, including a nested cause in a multiline record. It proves the exception was reported, not that the process was killed or that there is a leak. A fatal report containing this exception can also produce a Java-fatal diagnosis.
+priority: 1
+start: observed
+timeout: 1s
+correlation:
+  scope: device-session
+  primary: record
+steps:
+  - id: observed
+    name: Observe diagnostic record
+    match:
+      source: device
+      platform: android
+      tag: AndroidRuntime
+      regex: "(?:^|\\r?\\n)(?:Caused by: )?java\\.lang\\.OutOfMemoryError(?::[^\\r\\n]*)?(?:\\r?\\n|$)"
+    extract:
+      record:
+        regex: (?<record>[^\r\n]+)
+        group: record
+        required: true
+      detail:
+        regex: "(?:^|\\r?\\n)(?:Caused by: )?java\\.lang\\.OutOfMemoryError: (?<detail>[^\\r\\n]+)"
+        group: detail
+        result: true
+    label:
+      - text: Java OutOfMemoryError reported
+        tone: error
+    outcome: failed

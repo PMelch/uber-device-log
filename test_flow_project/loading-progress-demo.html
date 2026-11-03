@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fictional loading progress emitter</title>
+  <style>:root{font:16px/1.5 system-ui,sans-serif;color-scheme:light dark}body{max-width:800px;margin:32px auto;padding:0 18px}h1{font-size:25px}.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;margin:22px 0}button{font:inherit;text-align:left;padding:12px;border:1px solid #8887;border-radius:7px;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;border:1px solid #8886;padding:14px;border-radius:8px;font-size:12px}code{overflow-wrap:anywhere}</style>
+</head>
+<body>
+  <h1>Fictional loading progress emitter</h1>
+  <p>Developer fixture: buttons only emit JSON console messages. They make no network requests and do not download resources. Every click uses a fresh loadId, so multiple examples can run concurrently.</p>
+  <p>Open this page in an inspectable WebView. Start Über Device Log with <code>--project=./test_flow_project</code>, include the WebView, and open Flows. Select Detailed or Condensed to inspect updates to the same flow label and percent result. Timeline retains the accepted progress observations.</p>
+  <div class="actions">
+    <button type="button" data-route="success">Progress 0 → 25 → 50 → 75 → 100 → completed</button>
+    <button type="button" data-route="backward">Progress 0 → 50 → 40 → 100 → completed</button>
+    <button type="button" data-route="zero">Complete without progress events</button>
+    <button type="button" data-route="error">Progress → explicit loading error</button>
+    <button type="button" data-route="cancelled">Progress → user cancellation</button>
+    <button type="button" data-route="timeout">Progress 50%, no completion (30 s timeout)</button>
+  </div>
+  <p>Backward progress is shown as received, without inventing a monotonic percentage. Progress does not extend the 30-second deadline. A timeout means completion was not observed, rather than proving a loader failure.</p>
+  <h2>Most recent emitted records</h2>
+  <pre id="output" aria-live="polite">No demo records emitted yet.</pre>
+  <script>
+    const output = document.querySelector('#output');
+    const lines = [];
+    function emit(event, loadId, fields = {}) {
+      const record = { event, loadId, ...fields };
+      console.log(JSON.stringify(record));
+      lines.push(JSON.stringify(record));
+      output.textContent = lines.slice(-30).join('\n');
+      output.scrollTop = output.scrollHeight;
+    }
+    const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+    async function run(route) {
+      const loadId = 'demo-load-' + (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      emit('loading.started', loadId, { resource: 'fictional-demo-resource' });
+      await pause(400);
+      const percentages = route === 'zero' ? [] : route === 'backward' ? [0, 50, 40, 100] : route === 'success' ? [0, 25, 50, 75, 100] : [0, 50];
+      for (const percent of percentages) { emit('loading.progress', loadId, { percent }); await pause(550); }
+      if (route === 'timeout') return;
+      if (route === 'error') { emit('loading.error', loadId, { code: 'LOAD_FAILED' }); return; }
+      if (route === 'cancelled') { emit('loading.cancelled', loadId, { code: 'USER_CANCELLED' }); return; }
+      emit('loading.completed', loadId);
+    }
+    document.querySelectorAll('[data-route]').forEach(button => button.addEventListener('click', () => void run(button.dataset.route)));
+  </script>
+</body>
+</html>

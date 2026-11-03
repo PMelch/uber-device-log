@@ -1,0 +1,2 @@
+# Paths are relative to this project directory.
+blueprints: .udl/flows

@@ -7,16 +7,39 @@ compatibility are separate checks; a simulated protocol test cannot establish th
 ## Standard checks
 
 ```sh
+npm run format:check
+npm run lint
 npm test
 npm run build
+npm run blueprints:check
+npm run skill:check
 git diff --check
 ```
 
 `npm test` uses Node's built-in test runner with the tsx import hook and discovers
 `server/*.test.ts`. That directory also holds tests for shared/browser modules;
 its name does not imply backend-only coverage. `npm run build` runs vue-tsc, Vite,
-and server TypeScript compilation, producing `dist/` and `build/`. There is no
-separate lint command or committed general-purpose browser test runner.
+and server TypeScript compilation, producing `dist/` and `build/`. The bounded Flow style rollout uses `npm run format:check` and `npm run lint`;
+see [Contributing](../CONTRIBUTING.md) for scope and intentional exceptions.
+
+The Product checks workflow runs those commands on pull requests, pushes to `main`
+and manual dispatch. The matrix includes the exact minimum Node 22.12.0 and Node
+26.12.0. A separate browser job runs the Semantic Flow, labels and bundle/source
+regressions against a production build with the locked Playwright/Chromium pair:
+
+```sh
+npm ci
+npx --no-install playwright install chromium
+npm run build
+npm run test:flows:browser
+```
+
+Linux CI installs browser system libraries with `playwright install --with-deps
+chromium`. `CHROME_EXECUTABLE` can select an existing browser locally, but that
+checks a different browser version from CI. All fixtures bind loopback and use
+temporary storage. The tests do not establish hardware compatibility, hosted CI
+success, or release readiness. Additional UI suites are listed in the
+[Flow browser guide](semantic-flows-browser-tests.md).
 
 For a focused test, pass files directly rather than appending them to the wildcard
 npm script:
@@ -56,6 +79,7 @@ malformed records and unavailable storage. No live registry is used.
 | UI interaction | `log-details-interaction.test.ts`, `disclosure-dismissal.test.ts`, `device-picker.test.ts`, `source-filters.test.ts`: controlled DOM/event simulations and Vue SSR contracts |
 | Preferences/diagnostics | `preferences.test.ts`, `remembered-device.test.ts`, `performance.test.ts`: storage fallback, initial restoration, elapsed-time sampling and lifecycle cleanup |
 | Localization/website | `i18n.test.ts`, `website.test.ts`: catalog/context coverage, placeholders, locale resolution, live status translation, static HTML and package boundary |
+| Semantic Flows | `flow-blueprints.test.ts`, `flow-engine.test.ts`, `flow-project.test.ts`, `flow-analysis.test.ts`, `flow-workspace.test.ts`, `flow-sample.test.ts`: schema/dependency validation, per-instance correlation and branches, filesystem/API boundaries, worker lifecycle, UI contracts and example project recognition |
 | CLI | `cli-options.test.ts`: defaults, environment/flag precedence, help/version and argument rejection |
 
 UI unit/SSR tests do not replace actual keyboard, touch, layout or screen-reader
@@ -114,6 +138,47 @@ PERFORMANCE_RELEASE_CHECK=true node scripts/test-log-performance.mjs
 See [log-performance.md](log-performance.md) for optional module/executable paths,
 screenshots, measured metrics, assertions and limitations. This is a committed
 synthetic browser regression; broader manual UI checks are not an automated E2E suite.
+
+## Semantic Flows checks
+
+Focused checks use the same Node test runner:
+
+```sh
+node --import tsx --test server/flow-blueprints.test.ts server/flow-engine.test.ts server/flow-project.test.ts server/flow-analysis.test.ts server/flow-workspace.test.ts server/flow-sample.test.ts
+```
+
+For an actual project launch from the checkout root:
+
+```sh
+npm run dev -- --project=./test_flow_project
+# Or after building:
+npm run build
+node bin/uber-device-log.mjs --flows=./test_flow_project
+```
+
+Choose the intended device/WebView sources, then emit matching application logs
+as described in [the test project README](../test_flow_project/README.md). Its
+`.udl/config.yaml` and `.udl/flows/` directory are ordinary project inputs. Selecting this
+project does not fabricate capture traffic. The example HTML emitter must run in
+the inspected WebView, or equivalent lines must be emitted by the tested app.
+
+For isolated synthetic testing without hardware, explicitly launch the
+[Semantic Flows browser fixture/regression](semantic-flows-browser-tests.md).
+It uses a temporary project copy for editor writes and shortened deadlines, never
+the committed example files. Keep this distinction when reporting results:
+synthetic recognition checks do not prove real device log formats or correlation.
+
+Exercise simultaneous operations with distinct IDs, later steps identified only
+by extracted payload values, alternative and optional paths, expected error codes,
+missing-start evidence, out-of-order evidence and timeouts. Check that log filters,
+pause and selection leave analysis active; changing source inclusion/reconnecting
+interrupts the prior epoch. Verify Flows Clear leaves raw Logs intact and Logs
+Clear leaves flow history intact. Confirm search, explicitly revealed sensitive
+values, pinned blueprint revisions, validation, save conflicts and draft recovery.
+Check keyboard access, language switching with existing statuses, long translations,
+and mobile overflow. Use the [agent extraction guide](semantic-flows-agent-guide.md)
+when adding blueprints derived from application code, and retain representative
+log fixtures to demonstrate their actual matching and identifier dependencies.
 
 ## Manual checks by change type
 
@@ -205,3 +270,38 @@ visible. Without permission, Chrome rejected the WebSocket with
 permission guidance. This establishes the browser/proxy integration, not physical
 Android WebView compatibility. Safari guidance has synthetic UI coverage only;
 no physical iOS Safari inspection was performed for this change.
+
+## Global Blueprint bundle regression
+
+`server/flow-bundle-skill.test.ts` copies the portable skill to temporary storage
+and executes its helper for pack/inspect/unpack/whole-bundle validation. These
+tests require Python 3.9+ (`python3`, or `python` on Windows; override with `PYTHON`).
+They exercise offline draft status, the actual viewer validator, existing-bundle
+extension without data loss, no-overwrite behavior, unsafe paths, duplicates,
+symlinks, CRC/size/count failures and malformed manifest/DSL. No bundle is installed
+or activated by the helper. The independent skill review also checks ambiguous
+creation requests and explicit project/new-bundle/extension prompts.
+
+`server/flow-bundles.test.ts`, `flow-catalog.test.ts`, `flow-bundle-api.test.ts`,
+`flow-download.test.ts`, `flow-cli.test.ts` and `flow-source-ui.test.ts` exercise
+ZIP/manifest validation, temporary homes and projects, activation, duplicate IDs,
+disabling pinned recognition, atomic installs, API permissions and translated UI.
+The [bundle guide](blueprint-bundles.md) documents the contract and browser fixture.
+Tests must inject temporary homes, never use or modify the real user's bundle store.
+
+## Android diagnostic bundle regression
+
+`server/android-diagnostics.test.ts` validates the nine source-derived definitions,
+their extracted values, immediate terminal outcomes, repeated identical records,
+device isolation and negative source/tag/platform cases. It also checks that the
+three distributed archives match their source YAML and install disabled before
+explicit activation. `npm run blueprints:build` regenerates the archives;
+`npm run blueprints:check` verifies them without writing. Evidence and supported
+shapes are documented in [the bundle library](../blueprints/README.md).
+
+After building, `node --import tsx scripts/test-android-diagnostics.mjs` installs
+the real archives through the API and exercises the SSE/worker/production UI with
+fictional Android records. It checks repeated single events, affected PID/results,
+raw-evidence reveal, escaping, keyboard Timeline access, three display modes and
+seven languages at desktop/mobile widths in light/dark themes. No physical Android
+validation is implied by these synthetic checks.

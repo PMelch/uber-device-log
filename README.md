@@ -15,7 +15,7 @@ and share the relevant entries as plain text or structured JSON.
 Detailed [software setup guides](#guided-software-setup) are built into the app,
 with download links and copyable commands for the device tools you need.
 
-[Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Documentation](#documentation)
+[Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Semantic Flows](#semantic-flows) · [Documentation](#documentation)
 
 **Android + iOS** · **Seven languages** · **GPL-3.0-only**
 
@@ -31,9 +31,18 @@ with download links and copyable commands for the device tools you need.
 | --- | --- | --- |
 | Search messages, tags, timestamps and PIDs. Combine search with Android severity filters. | Pause the view, inspect formatted exceptions, and open structured message details. | Select whole entries and copy or save them as plain text or JSON. |
 
+**See the operation behind the logs.** [Semantic Flows](#semantic-flows) turns
+matching messages into cards with steps, elapsed time and outcomes. Define a
+Blueprint for a standalone event, connect several messages by correlation ID,
+or follow alternative routes. Start with the [three guided tutorials](tutorials/semantic-flows/README.md).
+
 The responsive interface offers System, Light and Dark appearance options.
 
 ## Get started
+
+For opt-in diagnostics from existing Android logs, see the [Android diagnostic
+Blueprint bundles](blueprints/README.md). They recognize rendering, memory and
+stability signals without adding application instrumentation.
 
 **Minimum Node.js version: 22.12.0.** A browser and the device setup below are also required.
 Node.js must be installed and available on `PATH`, including when launching with `bunx`.
@@ -73,8 +82,8 @@ udl --version     # Show the installed version
 Use `udl --project /path/to/project` (or `--project=/path/to/project`) to associate
 the running instance with an existing project directory. Relative paths resolve
 from the launch directory. On startup, UDL creates `.udl/` and an empty
-`.udl/config.yaml` if missing, preserving existing configuration. This file is
-reserved for future project-specific settings. Invalid paths or initialization
+`.udl/config.yaml` if missing, preserving existing configuration. This file stores project settings, including the Blueprint directory and bundle
+activation settings. Invalid paths or initialization
 failures stop startup. Without `--project`, the instance runs without a project
 and creates no project configuration. From source, use
 `npm run dev -- --project /path/to/project`.
@@ -213,6 +222,77 @@ Chinese**, with light, dark and system appearance. Original logs remain unchange
 See the [user guide](docs/usage.md) for selection shortcuts, filter behavior,
 message details, export options and preferences.
 
+### Semantic Flows
+
+Open **Flows** to recognize standalone events and multistep operations from the same selected device
+and WebView sources used by **Logs**. Each flow card shows observed and expected
+steps, outcome and elapsed time. **Timeline** inspects evidence and extracted
+payloads; **Info** describes the blueprint's possible routes and known errors.
+Values marked sensitive and original log evidence require an explicit reveal.
+Search narrows the flow list. **Clear** in Flows clears only flow results; capture
+and the raw log viewer continue. Log filters, pause and selection do not pause
+flow analysis. Changing included sources or reconnecting starts a new analysis
+epoch and interrupts active flows, preserving their history.
+
+**New to Blueprints?** Follow [Your first Semantic Flows](tutorials/semantic-flows/README.md)
+for setup and three complete, executable examples:
+
+| Build | Learn |
+| --- | --- |
+| [A single event](tutorials/semantic-flows/single-event/README.md) | Create a completed card from one message, without an operation ID. |
+| [A multipart operation](tutorials/semantic-flows/multipart/README.md) | Connect steps with a correlation ID and keep overlapping attempts separate. |
+| [Alternative routes](tutorials/semantic-flows/branching/README.md) | Model accepted and rejected paths with explicit outcomes. |
+
+Each tutorial explains the YAML, provides sample logs and shows what to expect
+in the viewer. The [format reference](docs/flow-format.md) covers all supported fields.
+
+Enable a project using `.udl/config.yaml` and a blueprint directory. The included
+`test_flow_project` has configuration, YAML blueprints and sample application
+messages. From the checkout root:
+
+```sh
+npm run dev -- --project=./test_flow_project
+# Or after building:
+npm run build
+node bin/uber-device-log.mjs --flows=./test_flow_project
+```
+
+`--project` and `--flows` are aliases for the project directory, resolved relative
+to your shell's working directory. Use either once. For your own project, create
+`.udl/config.yaml` containing `blueprints: .udl/flows` and put `.yaml` or `.yml` definitions in
+`.udl/flows`. An empty configuration also defaults to `.udl/flows`. Without a project,
+Flows loads global definitions from `~/.udl/flows` and enabled global bundles from
+`~/.udl/bundles`. With a project, global and project sources are available together.
+Manage bundle installation and activation through **Flows → Blueprint sources**;
+see [Blueprint bundles](docs/blueprint-bundles.md) for configuration and scope rules.
+
+The **Blueprints** editor validates drafts and saves loose YAML files in the selected
+project, or in the global directory when no project is selected. It does not edit
+files inside installed bundles. Existing flows retain their original blueprint version. Captured application
+logs must actually match your definitions; selecting a project does not inject
+sample events. See [the test project](test_flow_project/README.md) for emitting the
+examples through a real inspected WebView, or explicitly start the isolated
+[synthetic browser fixture](docs/semantic-flows-browser-tests.md) without hardware.
+
+Continue with the [Flow format reference](docs/flow-format.md) for a quickstart, every YAML field, branches, correlation and error handling. For agents working in another application repository, copy the [portable Flow authoring skill](docs/flow-authoring-skill.md), which includes the format, extraction guidance and examples.
+
+Use the [agent extraction guide](docs/semantic-flows-agent-guide.md) to derive
+blueprints from application code, including payload identifiers reused by later
+steps. [Semantic Flows design](docs/semantic-flows.md) records the broader design
+and implementation scope.
+
+### Project configuration upgrade
+
+UDL creates a missing `.udl/config.yaml` without overwriting an existing file.
+The optional `blueprints` setting defaults to `.udl/flows` and resolves relative
+to the project root. Other project settings may coexist in the YAML mapping.
+On startup, projects with an empty shared config automatically import
+`.flowsrc` (retained as a backup), move the legacy default `.flows/` directory
+to `.udl/flows/`, and update its default `blueprints` value. Custom blueprint
+paths remain unchanged. A nonempty shared config takes precedence. If both
+legacy and destination directories exist, startup fails without overwriting
+either directory; reconcile them before restarting.
+
 ## Good to know
 
 - The JavaScript console evaluates expressions in inspectable WebViews. Commands
@@ -276,6 +356,10 @@ Release notes and upcoming changes: [CHANGELOG.txt](CHANGELOG.txt).
 | [Architecture and code map](docs/architecture.md) | Data flow, module ownership, resource cleanup and state invariants |
 | [API and exports](docs/api.md) | HTTP/SSE contracts, source metadata, JSON versions and limits |
 | [Testing](docs/testing.md) | Coverage map, focused tests, browser fixtures and hardware checks |
+| [Flow format reference](docs/flow-format.md) | Version 1 quickstart, complete field reference and tested examples |
+| [Portable Flow authoring skill](docs/flow-authoring-skill.md) | Copyable Agent Skills folder, installation paths and offline authoring references |
+| [Flow blueprint extraction](docs/semantic-flows-agent-guide.md) | Agent workflow for deriving evidence-backed YAML from application code |
+| [Flow browser regression](docs/semantic-flows-browser-tests.md) | Isolated synthetic fixture and desktop/mobile browser checks |
 | [Public website](docs/website.md) | Separate static build and deployment |
 | [Contributing](CONTRIBUTING.md) | Local checks, translation requirements and change guidelines |
 | [Localization](docs/localization.md) | Seven-language workflow and translation context |
@@ -290,3 +374,14 @@ private information before sharing log excerpts.
 ## License
 
 [GNU General Public License v3.0 only](LICENSE).
+
+### Global Blueprints and bundles
+
+Put reusable Flow definitions in `~/.udl/flows`, or install a `.blueprint` ZIP bundle
+from **Flows → Blueprint sources**. Bundles include a name, description and
+Blueprint specification version. Install from the terminal with
+`udl install-blueprint <url> --global` or
+`udl install-blueprint <url> --project <directory>`, then enable the bundle in the
+interface. Selections are stored in the selected project when launched with
+`--project`/`--flows`, otherwise globally. See [the bundle guide](docs/blueprint-bundles.md)
+for the format, conflicts, limits and installation examples.

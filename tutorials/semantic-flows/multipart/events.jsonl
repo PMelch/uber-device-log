@@ -1,0 +1,7 @@
+{"event":"sync.started","requestId":"sync-1"}
+{"event":"sync.started","requestId":"sync-2"}
+{"event":"sync.received","requestId":"sync-2"}
+{"event":"sync.received","requestId":"sync-1"}
+{"event":"sync.completed","requestId":"sync-2"}
+{"event":"sync.completed","requestId":"sync-1"}
+{"event":"sync.started","requestId":"sync-3"}

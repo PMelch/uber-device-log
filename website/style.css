@@ -3,3 +3,49 @@
 .combined-badge{display:inline-block;margin:20px 0 0;padding:9px 16px;border:1px solid #c5d9f8;border-radius:6px;background:#eaf2ff;color:var(--accent);font-size:14px;font-weight:600;text-wrap:balance}.webview-section{margin-top:45px;border-block:1px solid var(--line);background:#f0f3f8}.webview-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:60px;align-items:center;padding-block:65px}.webview-grid h2{margin-bottom:24px}.webview-grid figure{max-width:100%;min-width:0}.webview-grid .platform-note{max-width:none}.webview-grid .text-link{display:inline-block;margin-top:12px}@media(max-width:700px){.webview-grid{grid-template-columns:1fr;gap:30px;padding-block:45px}.combined-badge{font-size:13px}.webview-section{margin-top:24px}}
 
 .setup-guides{margin:26px 0;padding:20px 0;border-block:1px solid var(--line)}.setup-guides h3{margin:0 0 10px;font-size:19px;line-height:1.3;letter-spacing:-.3px}.setup-guides p{margin:0 0 14px}.setup-guides .text-link{display:inline-block}
+
+/* Semantic Flows: a schematic overview and progressive README entry points. */
+.flows-section { padding-block: 80px; border-bottom: 1px solid var(--line); scroll-margin-top: 24px; }
+.flows-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.flows-intro > div, .flows-illustration { min-width: 0; }
+.flows-intro h2 { margin-bottom: 24px; }
+.flows-evidence { font-size: 14px; }
+.flows-illustration { width: 100%; max-width: none; padding: 28px; border: 1px solid #263c58; border-radius: 14px; background: #101e31; color: #f2f6fc; box-shadow: 0 20px 50px #28314716; }
+.flows-illustration h3 { margin: 0 0 24px; font-size: 19px; line-height: 1.4; }
+.flows-records { display: grid; gap: 10px; }
+.flows-records code { font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; color: #b3c9e8; overflow-wrap: anywhere; }
+.flows-connector { color: #7bb4ff; font-size: 26px; text-align: center; padding: 14px; }
+.flows-result { background: #1a2d44; border: 1px solid #345374; border-radius: 8px; padding: 20px 16px; }
+.flows-result > code { color: #b3c9e8; font-size: 12px; }
+.flows-steps { list-style: none; padding: 0; margin: 20px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.flows-steps li { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.flows-steps li > span:first-child { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid #6ba7f5; border-radius: 50%; color: #b6d5ff; font: 12px ui-monospace, monospace; }
+.flows-steps li:last-child > span:first-child { border-color: #78d5ae; color: #a2e6c9; }
+.flows-illustration figcaption { text-align: left; color: #b3c9e8; font-family: inherit; font-size: 12px; line-height: 1.6; }
+.flows-tutorial-intro { margin-top: 60px; max-width: 720px; }
+.flows-tutorial-intro h3 { font-size: 28px; letter-spacing: -.7px; }
+.flows-tutorial-intro p { font-size: 14px; }
+.flows-tutorials { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 28px; }
+.flows-tutorials article { padding: 24px; display: flex; flex-direction: column; align-items: flex-start; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.flows-card-top { width: 100%; min-height: 42px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; color: var(--accent); font: 13px/1.5 ui-monospace, monospace; white-space: pre; }
+.flows-card-top > span:first-child { color: var(--muted); }
+.flows-tutorials h4 { font-size: 20px; font-weight: 550; line-height: 1.3; margin: 20px 0 10px; }
+.flows-tutorials p { font-size: 14px; margin: 0 0 24px; }
+.flows-tutorials .text-link { margin-top: auto; line-height: 1.6; }
+@media (max-width: 1000px) {
+  .flows-intro { gap: 30px; }
+  .flows-illustration { padding: 22px; }
+  .flows-records code > span { display: block; }
+  .flows-steps { grid-template-columns: 1fr; }
+  .flows-steps li { flex-direction: row; align-items: center; }
+  .flows-steps li > span:first-child { flex-shrink: 0; }
+  .flows-tutorials { gap: 14px; }
+  .flows-tutorials article { padding: 20px; }
+}
+@media (max-width: 700px) {
+  .flows-section { padding-block: 50px; }
+  .flows-intro, .flows-tutorials { grid-template-columns: 1fr; }
+  .flows-tutorial-intro { margin-top: 40px; }
+  .flows-illustration { padding: 20px; }
+  .nav nav { flex-wrap: wrap; }
+}
