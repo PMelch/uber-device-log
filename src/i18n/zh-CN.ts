@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const zhCN = {
   tuiPrototype: "OpenTUI 原型",
   tuiDemo: "演示",
+  tuiRefreshSources: "刷新来源",
   tuiSources: "来源",
   tuiHelp: "Tab: 焦点 · Enter: 打开 · ↑↓: 导航 · Esc: 关闭 · Ctrl+C: 退出",
   tuiInspectHint: "点击日志或按 Enter 查看详情。视图将冻结，但采集会继续。",
@@ -489,6 +490,7 @@ export const zhCN = {
   tuiShowSources: "显示来源 · F6",
   tuiFullscreen: "全屏 · F11",
   tuiExitFullscreen: "退出全屏 · F11",
+  tuiSettingsSession: "更改会立即应用于当前会话。缩小缓冲区会删除最早的条目。采集将继续进行。",
   tuiThemeAuto: "颜色：自动",
   tuiThemeLight: "颜色：浅色",
   tuiThemeDark: "颜色：深色",

@@ -1,3 +1,4 @@
+import type { MessageOrder } from '../src/preferences';
 import type { LogMessage } from '../shared/types';
 import { mergeSourceMessages } from '../shared/log-sources';
 import { createLogSearch } from '../shared/search';
@@ -15,19 +16,31 @@ export function createLogModel(capacity = 2000) {
   let snapshot: TuiLog[] | undefined;
   let nextKey = 0;
   let query = '';
+  let order: MessageOrder = 'bottom';
+  let cachedOrder: MessageOrder | undefined;
   let selectedKey: number | undefined;
   let cachedInput: TuiLog[] | undefined;
   let cachedQuery = '';
   let filtered: TuiLog[] = [];
   function rows() {
     const input = snapshot ?? live;
-    if (input !== cachedInput || query !== cachedQuery) {
+    if (input !== cachedInput || query !== cachedQuery || order !== cachedOrder) {
       filtered = createLogSearch(input)(query, 'literal');
-      cachedInput = input; cachedQuery = query;
+      if (order === 'top') filtered = [...filtered].reverse();
+      cachedInput = input; cachedQuery = query; cachedOrder = order;
     }
     return filtered;
   }
   return {
+    get capacity() { return capacity; },
+    get order() { return order; },
+    setOrder(value: MessageOrder) { order = value; },
+    setCapacity(value: number) {
+      if (!Number.isInteger(value) || value < 1 || value > 100000) throw new Error('Capacity must be 1–100000.');
+      capacity = value; live = live.slice(-capacity);
+      if (snapshot) snapshot = snapshot.slice(-capacity);
+      if (selectedKey !== undefined && !rows().some(row => row.key === selectedKey)) selectedKey = undefined;
+    },
     get paused() { return snapshot !== undefined; },
     get liveCount() { return live.length; },
     get query() { return query; },

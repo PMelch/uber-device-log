@@ -153,8 +153,8 @@ test('Tab scrolls overflowing source controls into view on a narrow terminal', a
     }
     const focused = t.renderer.currentFocusedRenderable!;
     expect(focused.id).toBe('sidebar-source-7');
-    expect(focused.y).toBeGreaterThan(6);
-    expect(focused.y + focused.height).toBeLessThan(20);
+    expect(focused.y).toBeGreaterThanOrEqual(t.app.controls.sidebar.y + 1);
+    expect(focused.y + focused.height).toBeLessThanOrEqual(t.app.controls.sidebar.y + t.app.controls.sidebar.height - 1);
     expect(t.captureCharFrame()).toContain('Phone 7');
   } finally { t.app.dispose(); await t.dispose(); }
 });
@@ -459,5 +459,225 @@ test('paused button blinks through log arrivals and theme changes, then stops on
     const live = pause.backgroundColor;
     await Bun.sleep(650);
     expect(pause.backgroundColor).toEqual(live);
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('settings apply immediately while capture continues, preserve pause and restore focus', async () => {
+  const t = await setup();
+  try {
+    const trigger = t.renderer.root.findDescendantById('settings')!;
+    trigger.focus(); t.mockInput.pressEnter();
+    await t.renderOnce();
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('close-settings');
+    const activate = (id: string) => {
+      t.renderer.root.findDescendantById(id.split('-').slice(0, 2).join('-'))!.focus(); t.mockInput.pressEnter();
+      t.renderer.root.findDescendantById(id)!.focus(); t.mockInput.pressEnter();
+    };
+    activate('settings-order-top');
+    expect(t.app.model.rows()[0]!.message).toBe('record-99');
+    activate('settings-capacity-1000');
+    expect(t.app.model.capacity).toBe(1000);
+    activate('settings-theme-mono');
+    activate('settings-language-de');
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain('Einstellungen');
+    t.app.ingest([{ timestamp: '2026-11-03T12:00:01Z', message: 'settings arrival' }]);
+    expect(t.app.model.rows()[0]!.message).toBe('settings arrival');
+    t.mockInput.pressEscape(); await Bun.sleep(50);
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('settings');
+    expect(t.app.model.paused).toBe(false);
+    t.app.model.pause(); t.app.openSettings();
+    activate('settings-order-bottom');
+    t.mockInput.pressEscape(); await Bun.sleep(50);
+    expect(t.app.model.paused).toBe(true);
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('settings keep keyboard choices visible at narrow and wide sizes in every language', async () => {
+  for (const locale of ['en', 'de', 'es', 'fr', 'it', 'ja', 'zh-CN'] as const) {
+    const t = await setup({ locale });
+    try {
+      for (const width of [60, 120]) {
+        t.resize(width, 24); t.app.openSettings(); await t.renderOnce();
+        for (let i = 0; i < 4; i++) {
+          t.mockInput.pressTab(); await t.renderOnce();
+          const focused = t.renderer.currentFocusedRenderable!;
+          expect(focused.id.startsWith('settings-')).toBe(true);
+          expect(focused.y).toBeGreaterThanOrEqual(4);
+          expect(focused.y + focused.height).toBeLessThanOrEqual(23);
+          expect(focused.x + focused.width).toBeLessThanOrEqual(width);
+        }
+        t.mockInput.pressTab();
+        expect(t.renderer.currentFocusedRenderable?.id).toBe('close-settings');
+        t.mockInput.pressEnter(); await t.renderOnce();
+      }
+    } finally { t.app.dispose(); await t.dispose(); }
+  }
+});
+
+test('settings order follows the latest log at the top and supplies export order', async () => {
+  let saved: { records: string[]; order: string } | undefined;
+  const t = await setup({ save: async (records, order) => { saved = { records: records.map(row => row.message), order }; return '/tmp/test.json'; } });
+  try {
+    t.app.openSettings();
+    t.renderer.root.findDescendantById('settings-order')!.focus(); t.mockInput.pressEnter();
+    const order = t.renderer.root.findDescendantById('settings-order-top')!;
+    order.focus(); t.mockInput.pressEnter();
+    t.renderer.root.findDescendantById('close-settings')!.focus(); t.mockInput.pressEnter();
+    t.app.ingest([{ timestamp: '2026-11-03T12:00:01Z', message: 'latest entry' }]);
+    await t.renderOnce();
+    expect(t.captureCharFrame()).toContain('latest entry');
+    t.renderer.root.findDescendantById('save')!.focus(); t.mockInput.pressEnter();
+    await Promise.resolve();
+    expect(saved?.order).toBe('top');
+    expect(saved?.records[0]).toBe('latest entry');
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+
+test('settings popover focuses current value, cancels with Escape and commits with arrows and Enter', async () => {
+  const t = await setup();
+  try {
+    t.app.openSettings(); await t.renderOnce();
+    expect(!!t.renderer.root.findDescendantById('settings-order-top')).toBe(false);
+    const trigger = t.renderer.root.findDescendantById('settings-order')!;
+    await t.mockMouse.click(trigger.x + 1, trigger.y + 1); await t.renderOnce();
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('settings-order-bottom');
+    t.mockInput.pressArrow('up');
+    expect(t.app.model.order).toBe('bottom');
+    t.mockInput.pressEscape(); await Bun.sleep(50);
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('settings-order');
+    expect(t.renderer.root.findDescendantById('settings-dialog')).toBeDefined();
+    t.mockInput.pressEnter(); t.mockInput.pressArrow('up'); t.mockInput.pressEnter();
+    expect(t.app.model.order).toBe('top');
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('settings-order');
+    expect(!!t.renderer.root.findDescendantById('settings-order-top')).toBe(false);
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('settings popovers stay bounded across locales and resize, and outside clicks only dismiss', async () => {
+  for (const locale of ['en', 'de', 'es', 'fr', 'it', 'ja', 'zh-CN'] as const) {
+    const t = await setup({ locale });
+    try {
+      t.app.openSettings();
+      for (const id of ['language', 'theme', 'order', 'capacity']) {
+        t.resize(60, 24); await t.renderOnce();
+        const trigger = t.renderer.root.findDescendantById(`settings-${id}`)!;
+        trigger.focus(); t.mockInput.pressEnter(); await t.renderOnce();
+        for (const width of [40, 100]) {
+          t.resize(width, 18); await t.renderOnce();
+          const popup = t.renderer.root.findDescendantById('settings-picker')!;
+          expect(popup.x).toBeGreaterThanOrEqual(0);
+          expect(popup.y).toBeGreaterThanOrEqual(0);
+          expect(popup.x + popup.width).toBeLessThanOrEqual(width);
+          expect(popup.y + popup.height).toBeLessThanOrEqual(18);
+          t.mockInput.pressArrow('down'); await t.renderOnce();
+          const focused = t.renderer.currentFocusedRenderable!;
+          expect(focused.y).toBeGreaterThan(popup.y);
+          expect(focused.y + focused.height).toBeLessThan(popup.y + popup.height);
+        }
+        // Close via the overlay without activating a field underneath it.
+        await t.mockMouse.click(98, 1);
+        expect(!!t.renderer.root.findDescendantById('settings-picker')).toBe(false);
+        expect(t.renderer.currentFocusedRenderable?.id).toBe(`settings-${id}`);
+        expect(t.app.model.order).toBe('bottom');
+        expect(t.app.model.capacity).toBe(2000);
+      }
+    } finally { t.app.dispose(); await t.dispose(); }
+  }
+});
+
+test('mouse selects a popover option after background logs refresh its labels', async () => {
+  const t = await setup();
+  try {
+    t.app.openSettings(); await t.renderOnce();
+    const trigger = t.renderer.root.findDescendantById('settings-theme')!;
+    await t.mockMouse.click(trigger.x + 1, trigger.y + 1); await t.renderOnce();
+    t.app.ingest([{ timestamp: '2026-11-03T12:00:01Z', message: 'during picker' }]);
+    await t.renderOnce();
+    const choice = t.renderer.root.findDescendantById('settings-theme-mono')!;
+    await t.mockMouse.click(choice.x + 1, choice.y); await t.renderOnce();
+    expect(!!t.renderer.root.findDescendantById('settings-picker')).toBe(false);
+    expect(t.captureCharFrame()).toContain('Colors: Off');
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('settings-theme');
+    expect(t.app.model.rows().at(-1)!.message).toBe('during picker');
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('fullscreen keeps one keyboard-accessible search across all source logs and preserves it on exit', async () => {
+  const t = await setup({ demo: false, syncSources() {} });
+  try {
+    t.app.model.clear();
+    t.app.ingest(['native', 'webview'].flatMap(key => [
+      { timestamp: '2026-11-03T12:00:00Z', message: `${key} match`, source: { key, name: key, deviceId: 'phone', platform: 'android' as const } },
+      { timestamp: '2026-11-03T12:00:01Z', message: `${key} other`, source: { key, name: key, deviceId: 'phone', platform: 'android' as const } },
+    ]));
+    for (const width of [60, 120]) {
+      t.resize(width, 24); t.app.toggleFullscreen(); await t.renderOnce();
+      expect(t.app.controls.search.parent!.visible).toBe(true);
+      t.app.controls.logs.focus(); t.mockInput.pressTab({ shift: true });
+      expect(t.renderer.currentFocusedRenderable?.id).toBe('search');
+      if (!t.app.model.query) await t.mockInput.typeText('match');
+      await t.renderOnce();
+      expect(t.app.model.rows().map(row => row.message).sort()).toEqual(['native match', 'webview match']);
+      expect(t.captureCharFrame()).toContain('Literal search');
+      expect(t.app.controls.search.y).toBeLessThan(t.app.controls.logs.y);
+      expect(t.app.controls.logs.height).toBeGreaterThan(3);
+      t.app.toggleFullscreen(); await t.renderOnce();
+      expect(t.app.controls.search.value).toBe('match');
+      expect(t.app.model.query).toBe('match');
+    }
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('manual source refresh sits after the sources and stays reachable when the list overflows', async () => {
+  let calls = 0;
+  const devices = Array.from({ length: 8 }, (_, i) => ({ id: String(i), name: `Phone ${i}`, platform: 'android' as const, state: 'connected' }));
+  const t = await setup({ demo: false, sources: async () => { calls++; return devices; }, syncSources() {} });
+  try {
+    t.resize(70, 30); await t.app.refreshSources(); await t.renderOnce();
+    const refresh = t.app.controls.sources;
+    expect(refresh.parent?.id).not.toBe('toolbar');
+    t.renderer.root.findDescendantById('sidebar-source-7')!.focus();
+    t.mockInput.pressTab(); await t.renderOnce();
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('sources');
+    expect(refresh.y).toBeGreaterThanOrEqual(t.app.controls.sidebar.y + 1);
+    expect(refresh.y + refresh.height).toBeLessThanOrEqual(t.app.controls.sidebar.y + t.app.controls.sidebar.height - 1);
+    const before = calls;
+    t.mockInput.pressEnter(); await t.app.refreshSources();
+    expect(calls).toBe(before + 1);
+    devices.push({ id: 'new', name: 'New phone', platform: 'android', state: 'connected' });
+    await t.app.refreshSources(); await t.renderOnce();
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('sources');
+    expect(refresh.y + refresh.height).toBeLessThanOrEqual(t.app.controls.sidebar.y + t.app.controls.sidebar.height - 1);
+    t.app.toggleSources();
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('logs');
+    t.app.toggleSources(); await t.renderOnce();
+    expect(t.captureCharFrame()).toContain('Refresh sources');
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('empty or failed initial discovery keeps manual refresh in the Tab focus chain', async () => {
+  for (const fails of [false, true]) {
+  const t = await setup({ demo: false, sources: async () => { if (fails) throw new Error('offline'); return []; }, syncSources() {} });
+  try {
+    await t.app.refreshSources();
+    for (let i = 0; i < 25 && t.renderer.currentFocusedRenderable?.id !== 'sources'; i++) t.mockInput.pressTab();
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('sources');
+  } finally { t.app.dispose(); await t.dispose(); }
+  }
+});
+
+test('settings frame X closes the screen and restores its trigger focus', async () => {
+  const t = await setup();
+  try {
+    t.renderer.root.findDescendantById('settings')!.focus(); t.mockInput.pressEnter();
+    await t.renderOnce();
+    const dialog = t.renderer.root.findDescendantById('settings-dialog')!;
+    expect(t.captureCharFrame()).toContain('[X] Settings');
+    await t.mockMouse.click(dialog.x + 3, dialog.y); await t.renderOnce();
+    expect(!!t.renderer.root.findDescendantById('settings-dialog')).toBe(false);
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('settings');
+    expect(t.app.model.paused).toBe(false);
   } finally { t.app.dispose(); await t.dispose(); }
 });

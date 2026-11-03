@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const ja = {
   tuiPrototype: "OpenTUI プロトタイプ",
   tuiDemo: "デモ",
+  tuiRefreshSources: "更新",
   tuiSources: "ソース",
   tuiHelp: "Tab: フォーカス · Enter: 開く · ↑↓: 移動 · Esc: 閉じる · Ctrl+C: 終了",
   tuiInspectHint: "ログをクリックするか Enter を押すと詳細を表示します。表示は固定されますが、キャプチャは続きます。",
@@ -489,6 +490,7 @@ export const ja = {
   tuiShowSources: "ソースを表示 · F6",
   tuiFullscreen: "全画面表示 · F11",
   tuiExitFullscreen: "全画面表示を終了 · F11",
+  tuiSettingsSession: "変更はこのセッションにすぐ適用されます。バッファーを小さくすると古いエントリーが削除されます。キャプチャーは継続します。",
   tuiThemeAuto: "配色: 自動",
   tuiThemeLight: "配色: ライト",
   tuiThemeDark: "配色: ダーク",

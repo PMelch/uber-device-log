@@ -2,6 +2,7 @@ import { notificationMessages } from '../../shared/notifications';
 export const en = {
   tuiPrototype: "OpenTUI prototype",
   tuiDemo: "Demo",
+  tuiRefreshSources: "Refresh sources",
   tuiSources: "Sources",
   tuiHelp: "Tab: focus · Enter: open · ↑↓: navigate · Esc: close · Ctrl+C: quit",
   tuiInspectHint: "Click a log or press Enter to inspect it. The view freezes; capture continues.",
@@ -474,6 +475,7 @@ export const en = {
   tuiShowSources: "Show sources · F6",
   tuiFullscreen: "Fullscreen · F11",
   tuiExitFullscreen: "Exit fullscreen · F11",
+  tuiSettingsSession: "Changes apply immediately for this session. A smaller buffer removes the oldest entries. Capture continues.",
   tuiThemeAuto: "Colors: Auto",
   tuiThemeLight: "Colors: Light",
   tuiThemeDark: "Colors: Dark",

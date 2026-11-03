@@ -20,14 +20,25 @@ node bin/uber-device-log.mjs --tui --project .
 
 `udl --tui` starts direct native/WebView collectors without starting the HTTP
 server. `--project` and `--flows` initialize the same project context; `--port`
-is accepted and validated but unused. Settings, Flows and Blueprint editing are not implemented yet.
+is accepted and validated but unused. Flows and Blueprint editing are not implemented yet.
+
+Settings shows one compact field with the current value for language, terminal
+colors, message order and retained record capacity. Enter/Space or a click opens
+a popover; arrows or Tab move through its choices, and Enter or a click applies
+the selected value. Escape or a click outside dismisses the popover unchanged.
+Escape in Settings, Close settings or the frame’s [X] returns to the viewer. Changes apply immediately
+for the current session, while capture continues. Smaller buffers discard the
+oldest live and frozen-view entries; changing order preserves pause and inspection.
+JSON exports remain oldest first regardless of display order. Preferences are not
+saved across restarts.
 
 Sources refresh automatically two seconds after each completed discovery; the
-Sources button also refreshes immediately. Closed WebViews disappear and stop
+Refresh sources button at the end of the Sources panel also refreshes immediately. Closed WebViews disappear and stop
 capturing, while existing log history and other active sources remain. New
 WebViews require explicit selection. An open console target picker updates too. Use F6 or the Hide/Show sources button
 to collapse the source panel. F11 or Fullscreen expands the log stream; F11,
-Escape or Exit fullscreen restores the previous layout. Capture, search and
+Escape or Exit fullscreen restores the previous layout. The single shared search
+field stays visible in fullscreen and filters logs from all active sources. Capture, search and
 selection survive these layout changes. The Sources border also offers `[-]`
 and a collapsed `[+]` control; the Log stream border offers a fullscreen icon
 and a restore arrow. These have the same behavior as the toolbar and shortcuts. Source checkboxes combine native logs
@@ -48,7 +59,7 @@ a context again. Clear output releases retained results. Escape or Close returns
 to the logs, whose capture continues in the background. Console access is
 available in direct local mode, not the synthetic demo or legacy HTTP client.
 
-The Colors toolbar button cycles Auto, Light, Dark and Off (monochrome).
+The Appearance field in Settings offers Auto, Light, Dark and Off (monochrome).
 Auto reads the terminal foreground, background and ANSI palette and responds to
 reported palette changes. Unsupported queries fall back to a fixed dark palette.
 Text roles are adjusted to at least 4.5:1 contrast against normal, panel and
@@ -81,7 +92,7 @@ npm run tui -- --records 100000 --locale de
 The default source is explicitly synthetic. It preloads the requested record
 count, retains at most that many records, and adds 100 fictional records per
 second. It does not contact a phone. Supported locales are `en`, `es`, `de`,
-`fr`, `it`, `ja`, and `zh-CN`; the language button cycles through them.
+`fr`, `it`, `ja`, and `zh-CN`; the Language field in Settings lets you choose between them.
 
 The web application retains its existing Node requirement. OpenTUI's development
 dependency declares Node >=26.4, so installing this development checkout under
@@ -172,9 +183,8 @@ reviewed `docs/architecture.md`, `src/App.vue`'s documented invariants,
 - New UI keys have matching translator context and all seven translations.
   No captured log text is translated.
 
-The existing web UI and device adapters are unchanged. The PoC omits simultaneous
-sources, severity/tag/PID controls, multi-record range selection, Semantic Flows,
-JavaScript execution, clipboard commands, settings persistence, and update UI.
+The terminal viewer still omits severity/tag/PID controls, multi-record range
+selection, Semantic Flows, clipboard commands, settings persistence, and update UI.
 These remain follow-up features, not implied parity with the web application.
 
 ## Verify

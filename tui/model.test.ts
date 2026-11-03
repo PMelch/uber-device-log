@@ -55,3 +55,21 @@ test('display escapes terminal controls without mutating original logs', async (
   assert.ok(api.terminalText(original).includes('\n日本語'));
   assert.equal(original, 'hello\x1b[2J\x07\rworld\n日本語');
 });
+
+test('settings trim live and frozen buffers and reorder without losing retained selection', async () => {
+  const state = await model(4);
+  state.ingest([record('a'), record('b'), record('c'), record('d')]);
+  state.select(state.rows()[3].key);
+  state.setOrder('top');
+  assert.deepEqual(state.rows().map((r: any) => r.message), ['d', 'c', 'b', 'a']);
+  assert.equal(state.selected.message, 'd');
+  state.ingest([record('e')]);
+  state.setCapacity(2);
+  assert.equal(state.capacity, 2);
+  assert.deepEqual(state.rows().map((r: any) => r.message), ['d', 'c']);
+  assert.equal(state.paused, true);
+  state.resume();
+  assert.deepEqual(state.rows().map((r: any) => r.message), ['e', 'd']);
+  assert.throws(() => state.setCapacity(0));
+  assert.equal(state.capacity, 2);
+});

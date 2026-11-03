@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const it = {
   tuiPrototype: "Prototipo OpenTUI",
   tuiDemo: "Dimostrazione",
+  tuiRefreshSources: "Aggiorna",
   tuiSources: "Sorgenti",
   tuiHelp: "Tab: focus · Enter: apri · ↑↓: naviga · Esc: chiudi · Ctrl+C: esci",
   tuiInspectHint: "Fai clic su un log o premi Enter per esaminarlo. La vista si blocca; la cattura continua.",
@@ -489,6 +490,7 @@ export const it = {
   tuiShowSources: "Mostra sorgenti · F6",
   tuiFullscreen: "Schermo intero · F11",
   tuiExitFullscreen: "Esci da schermo intero · F11",
+  tuiSettingsSession: "Le modifiche si applicano subito per questa sessione. Un buffer più piccolo rimuove le voci più vecchie. La cattura continua.",
   tuiThemeAuto: "Colori: Auto",
   tuiThemeLight: "Colori: Chiaro",
   tuiThemeDark: "Colori: Scuro",

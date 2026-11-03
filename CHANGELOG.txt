@@ -16,10 +16,17 @@ Added
   a host-specific TUI build is required. The synthetic demo remains available.
   Collapse the Sources panel with F6 or expand the log stream with F11; leaving
   fullscreen restores the previous panel state without interrupting capture.
+  Keep the shared search field visible in fullscreen to filter all active sources.
   Click the controls in the Sources and Log stream borders to change their layout.
   Adapt terminal colors automatically or choose light, dark or monochrome display;
   severity and source accents preserve readable contrast, including selected rows.
   Blink the pause button while the view is frozen, keeping its label readable.
+- Add terminal Settings for language, colors, message order and retained record
+  capacity, using compact current-value fields with keyboard and mouse popovers
+  and a clickable [X] close control in the Settings frame.
+  Language and color controls live in Settings, keeping the main toolbar compact.
+  Manual source refresh is available at the end of the Sources panel.
+  Changes apply immediately for the current session while capture continues.
 - Add a terminal WebView JavaScript console with explicit target/context selection,
   command history and expandable result properties while log capture continues.
 

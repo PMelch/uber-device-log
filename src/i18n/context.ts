@@ -14,6 +14,7 @@ const detail = { detail: 'Original technical diagnostic or HTTP status; retain v
 export const translationContext = {
   tuiPrototype: c("Terminal header.", "Identifies the experimental OpenTUI proof of concept. OpenTUI remains verbatim."),
   tuiDemo: c("Terminal source button.", "Synthetic demo source; no actual device is being captured."),
+  tuiRefreshSources: c("Button at the end of the terminal Sources panel.", "Manually repeat device and WebView discovery; does not restart capture. Keep short to fit the narrow panel (18 terminal columns). The surrounding panel supplies source context."),
   tuiSources: c("Terminal source picker trigger and heading.", "Choose one native device or WebView capture source. The proof of concept captures one source at a time."),
   tuiHelp: c("Terminal footer.", "Keyboard guide: Tab moves focus, Enter activates or opens a log, arrows navigate, Escape closes a dialog, Ctrl+C exits. Retain key names verbatim."),
   tuiInspectHint: c("Empty terminal detail panel.", "Click a log record or press Enter on it to freeze the view and inspect the complete record. Capture continues."),
@@ -344,10 +345,10 @@ export const translationContext = {
   refreshDevices: c('Accessible name of the refresh icon beside the compact device picker or in the wide-screen device sidebar.', 'Repeat device discovery; does not reload the page or restart capture.'),
   disconnectDevice: c('Button beside the device picker.', 'Stop this viewer’s log capture and deselect the device, retaining logs, filters and selection. Does not unplug the device or revoke authorization.'),
   captureDisconnected: c('Page footer after the user disconnects.', 'Capture has stopped and retained logs remain available. Selecting a device starts a new capture.'),
-  messageOrder: c('Message-order selector label in the Settings popover; preference persists locally.', 'Display order of log records, not severity or search relevance.'),
+  messageOrder: c('Message-order selector in web and terminal Settings. Web preferences persist locally; terminal preferences last for the session.', 'Display order of log records, not severity or search relevance.'),
   newestFirst: c('Ordering-menu option and selected value.', 'Display the most recent records at the top.'),
   oldestFirst: c('Ordering-menu option and selected value.', 'Display older records first, with the newest records at the bottom.'),
-  bufferCapacity: c('Buffer-capacity selector label in the Settings popover; preference persists locally.', 'Maximum number of log records retained in browser memory; not a byte size.'),
+  bufferCapacity: c('Buffer-capacity selector in web and terminal Settings. Web preferences persist locally; terminal preferences last for the session.', 'Maximum number of log records retained in viewer memory; not a byte size.'),
   messageCount: c('Buffer-size menu options and displayed-record count above the stream.', 'Number of log records. Use a count label that reads naturally at zero, one and many.', countMessages),
   deviceMessages: c('Accessible name of the console section.', 'Region containing device logs and their controls; not SMS messages.'),
   filterLogs: c('Search field accessible name.', 'Filter the visible device log records.'),
@@ -493,10 +494,11 @@ export const translationContext = {
   "tuiShowSources": c("TUI main log toolbar", "Show the terminal source panel again. F6 is the keyboard shortcut, keep it verbatim."),
   "tuiFullscreen": c("TUI main log toolbar", "Expand logs to fill the terminal, hiding other panels. F11 is the keyboard shortcut, keep it verbatim."),
   "tuiExitFullscreen": c("TUI main log toolbar", "Leave terminal log fullscreen and restore previous panel state. F11 is the keyboard shortcut, keep it verbatim."),
-  tuiThemeAuto: c("TUI toolbar appearance button", "Cycle terminal appearance modes; current mode follows the detected terminal palette, with contrast correction and a dark fallback."),
-  tuiThemeLight: c("TUI toolbar appearance button", "Cycle terminal appearance modes; current mode uses a fixed light background and contrast-corrected colors."),
-  tuiThemeDark: c("TUI toolbar appearance button", "Cycle terminal appearance modes; current mode uses a fixed dark background and contrast-corrected colors."),
-  tuiThemeMono: c("TUI toolbar appearance button", "Cycle terminal appearance modes; current mode uses neutral grayscale only, with level labels and emphasis retained."),
+  tuiSettingsSession: c("Terminal settings footer.", "Settings apply immediately for this process only and are not persisted. Reducing capacity drops the oldest captured and frozen-view entries. Capture continues while settings are open."),
+  tuiThemeAuto: c("TUI Settings appearance choice", "Select this terminal appearance mode; it follows the detected terminal palette, with contrast correction and a dark fallback."),
+  tuiThemeLight: c("TUI Settings appearance choice", "Select this terminal appearance mode; it uses a fixed light background and contrast-corrected colors."),
+  tuiThemeDark: c("TUI Settings appearance choice", "Select this terminal appearance mode; it uses a fixed dark background and contrast-corrected colors."),
+  tuiThemeMono: c("TUI Settings appearance choice", "Select this terminal appearance mode; it uses neutral grayscale only, with level labels and emphasis retained."),
 } satisfies Record<MessageKey, TranslationContext>;
 
 /** Public website copy is separate from the application catalogs and npm bundle. */

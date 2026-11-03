@@ -71,9 +71,9 @@ Ctrl+C or Quit exits the client. The separately running server stays active.`);
       syncSources: local ? selected => { if (selected[0]) device = selected[0]; local.sync(selected); } : undefined,
       sources: () => local ? local.sources() : client ? client.sources() : Promise.resolve([demoDevice]),
       chooseSource: selected => { device = selected; client?.select(selected); },
-      async save(records) {
+      async save(records, order) {
         const path = resolve(values['export-dir']!, `udl-tui-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.json`);
-        await writeFile(path, serializeLogExport(records, device, 'json').text, { flag: 'wx', mode: 0o600 });
+        await writeFile(path, serializeLogExport(records, device, 'json', order).text, { flag: 'wx', mode: 0o600 });
         return path;
       },
     });

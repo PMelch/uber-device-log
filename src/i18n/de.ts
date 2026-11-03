@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const de = {
   tuiPrototype: "OpenTUI-Prototyp",
   tuiDemo: "Demo",
+  tuiRefreshSources: "Aktualisieren",
   tuiSources: "Quellen",
   tuiHelp: "Tab: Fokus · Enter: öffnen · ↑↓: navigieren · Esc: schließen · Ctrl+C: beenden",
   tuiInspectHint: "Log anklicken oder Enter drücken. Die Ansicht wird eingefroren; die Erfassung läuft weiter.",
@@ -489,6 +490,7 @@ export const de = {
   tuiShowSources: "Quellen einblenden · F6",
   tuiFullscreen: "Vollbild · F11",
   tuiExitFullscreen: "Vollbild verlassen · F11",
+  tuiSettingsSession: "Änderungen gelten sofort für diese Sitzung. Ein kleinerer Puffer entfernt die ältesten Einträge. Die Aufnahme läuft weiter.",
   tuiThemeAuto: "Farben: Automatisch",
   tuiThemeLight: "Farben: Hell",
   tuiThemeDark: "Farben: Dunkel",
