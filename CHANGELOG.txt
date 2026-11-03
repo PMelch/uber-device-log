@@ -9,6 +9,11 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Added
+- Add an optional OpenTUI proof of concept with a live demo, single-source device
+  capture, mouse and Tab navigation, literal search, paused inspection and JSON
+  export. A standalone TUI build can bundle its runtime.
+
 0.10.0 - 2026-11-03
 -------------------
 

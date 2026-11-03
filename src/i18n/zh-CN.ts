@@ -1,5 +1,14 @@
 import type { Messages } from './en';
 export const zhCN = {
+  tuiPrototype: "OpenTUI 原型",
+  tuiDemo: "演示",
+  tuiSources: "来源",
+  tuiHelp: "Tab: 焦点 · Enter: 打开 · ↑↓: 导航 · Esc: 关闭 · Ctrl+C: 退出",
+  tuiInspectHint: "点击日志或按 Enter 查看详情。视图将冻结，但采集会继续。",
+  tuiSave: "保存 JSON",
+  tuiSaved: "已保存：{path}",
+  tuiFailure: "失败：{detail}",
+  tuiQuit: "退出",
   flowsSourceSearch: "搜索蓝图来源…",
   flowsSourceNoResults: "没有与搜索条件匹配的来源。",
   flowsSourceNoSources: "暂无蓝图来源。",

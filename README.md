@@ -103,6 +103,11 @@ Stop the running server before updating, then restart it; retain
 any custom command options such as `--port`. Offline checks fail silently. The
 request sends no logs or device information. Help/version commands do not check.
 
+### Terminal prototype
+
+An optional OpenTUI proof of concept supports mouse and keyboard navigation,
+a live demo and single-source device capture. See [TUI setup and limitations](docs/tui.md).
+
 ### Run from source
 
 ```sh

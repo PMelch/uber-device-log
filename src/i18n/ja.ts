@@ -1,5 +1,14 @@
 import type { Messages } from './en';
 export const ja = {
+  tuiPrototype: "OpenTUI プロトタイプ",
+  tuiDemo: "デモ",
+  tuiSources: "ソース",
+  tuiHelp: "Tab: フォーカス · Enter: 開く · ↑↓: 移動 · Esc: 閉じる · Ctrl+C: 終了",
+  tuiInspectHint: "ログをクリックするか Enter を押すと詳細を表示します。表示は固定されますが、キャプチャは続きます。",
+  tuiSave: "JSON を保存",
+  tuiSaved: "保存先: {path}",
+  tuiFailure: "失敗: {detail}",
+  tuiQuit: "終了",
   flowsSourceSearch: "Blueprint のソースを検索…",
   flowsSourceNoResults: "検索条件に一致するソースはありません。",
   flowsSourceNoSources: "Blueprint のソースはありません。",

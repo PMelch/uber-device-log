@@ -22,7 +22,11 @@
     "format": "node scripts/check-style.mjs write",
     "lint": "node scripts/check-style.mjs lint",
     "test:website:browser": "node scripts/build-site.mjs && node --import tsx scripts/test-website-flows.mjs",
-    "test:flows:browser": "node --import tsx scripts/test-semantic-flows.mjs && node --import tsx scripts/test-flow-labels.mjs && node --import tsx scripts/test-flow-bundles.mjs"
+    "test:flows:browser": "node --import tsx scripts/test-semantic-flows.mjs && node --import tsx scripts/test-flow-labels.mjs && node --import tsx scripts/test-flow-bundles.mjs",
+    "tui": "bun tui/index.ts",
+    "test:tui": "bun test tui/*.test.ts",
+    "typecheck:tui": "tsc -p tsconfig.tui.json",
+    "build:tui": "bun build --compile ./tui/index.ts --outfile build/udl-tui"
   },
   "dependencies": {
     "@devicefarmer/adbkit": "^3.3.9",
@@ -39,12 +43,14 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
+    "@opentui/core": "0.8.2",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.3",
     "@typescript-eslint/parser": "8.55.0",
     "@vitejs/plugin-vue": "^6.0.9",
     "eslint": "9.39.5",
     "eslint-plugin-vue": "10.6.2",
+    "eventsource": "5.1.4",
     "fuse.js": "^7.5.0",
     "playwright": "1.62.1",
     "prettier": "3.9.10",

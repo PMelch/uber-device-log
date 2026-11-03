@@ -12,6 +12,15 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  tuiPrototype: c("Terminal header.", "Identifies the experimental OpenTUI proof of concept. OpenTUI remains verbatim."),
+  tuiDemo: c("Terminal source button.", "Synthetic demo source; no actual device is being captured."),
+  tuiSources: c("Terminal source picker trigger and heading.", "Choose one native device or WebView capture source. The proof of concept captures one source at a time."),
+  tuiHelp: c("Terminal footer.", "Keyboard guide: Tab moves focus, Enter activates or opens a log, arrows navigate, Escape closes a dialog, Ctrl+C exits. Retain key names verbatim."),
+  tuiInspectHint: c("Empty terminal detail panel.", "Click a log record or press Enter on it to freeze the view and inspect the complete record. Capture continues."),
+  tuiSave: c("Terminal export button.", "Save the inspected whole record, or all filtered records when none is inspected, as JSON to the configured export path."),
+  tuiSaved: c("Terminal export result.", "Confirms the export was written successfully.", {"path": "Absolute destination filesystem path; preserve verbatim."}),
+  tuiFailure: c("Terminal operation status.", "An operation failed; shows original diagnostic.", {"detail": "Original technical diagnostic; preserve verbatim."}),
+  tuiQuit: c("Terminal exit button.", "Exit the terminal client and close its capture connection; leave a separately running server active."),
   flowsSourceSearch: c("Source manager search input placeholder and accessible label.", "Filter definition sources by original name, description, filename or identifier and localized scope/type. Does not filter captured logs or change activation."),
   flowsSourceNoResults: c("Source manager empty search state.", "No source matches the current search. Existing sources and activation are retained."),
   flowsSourceNoSources: c("Source manager empty inventory state.", "No Blueprint definition sources are currently available."),

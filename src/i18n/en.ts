@@ -1,5 +1,14 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  tuiPrototype: "OpenTUI prototype",
+  tuiDemo: "Demo",
+  tuiSources: "Sources",
+  tuiHelp: "Tab: focus · Enter: open · ↑↓: navigate · Esc: close · Ctrl+C: quit",
+  tuiInspectHint: "Click a log or press Enter to inspect it. The view freezes; capture continues.",
+  tuiSave: "Save JSON",
+  tuiSaved: "Saved: {path}",
+  tuiFailure: "Failed: {detail}",
+  tuiQuit: "Quit",
   flowsSourceSearch: "Search Blueprint sources…",
   flowsSourceNoResults: "No sources match your search.",
   flowsSourceNoSources: "No Blueprint sources available.",

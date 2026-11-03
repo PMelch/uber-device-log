@@ -1,5 +1,14 @@
 import type { Messages } from './en';
 export const es = {
+  tuiPrototype: "Prototipo OpenTUI",
+  tuiDemo: "Demostración",
+  tuiSources: "Fuentes",
+  tuiHelp: "Tab: foco · Enter: abrir · ↑↓: navegar · Esc: cerrar · Ctrl+C: salir",
+  tuiInspectHint: "Haz clic en un registro o pulsa Enter para examinarlo. La vista se congela; la captura continúa.",
+  tuiSave: "Guardar JSON",
+  tuiSaved: "Guardado: {path}",
+  tuiFailure: "Error: {detail}",
+  tuiQuit: "Salir",
   flowsSourceSearch: "Buscar fuentes de blueprints…",
   flowsSourceNoResults: "Ninguna fuente coincide con la búsqueda.",
   flowsSourceNoSources: "No hay fuentes de blueprints disponibles.",
