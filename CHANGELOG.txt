@@ -57,6 +57,8 @@ Added
   Identify active flows with progress text and a reduced-motion-aware spinner.
 
 Fixed
+- Resolve website Blueprint and tutorial links against the build branch, avoiding
+  missing pages before merge while automatically using main after merge.
 - Preserve Flow ambiguity and missing-start evidence across capture gaps and
   truncated records. Close timed-out recognition after its first late terminal
   result, allowing a fresh operation without reusing old buffered evidence.
