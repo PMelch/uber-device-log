@@ -9,15 +9,17 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+0.10.0 - 2026-11-03
+-------------------
+
 Added
 - Add Semantic Flows with YAML blueprints for standalone events and correlated
   multistep operations, including branches, expected errors and missing-start
   detection. Inspect timelines and original evidence beside raw logs, and edit
   and validate definitions in the viewer. A terminal start can recognize a single
   event without an operation ID in the log.
-- Associate an instance with a project using --project and store configuration
-  in .udl/config.yaml, creating it when missing and preserving existing files;
-  default Semantic Flow blueprints to .udl/flows with a configurable project-relative path.
+- Default project Semantic Flow blueprints to .udl/flows, with a configurable
+  project-relative path in .udl/config.yaml.
   Automatically migrate legacy .flowsrc settings and the default .flows directory
   without overwriting existing configuration or conflicting destination files.
 - Load global Semantic Flows from ~/.udl alongside project definitions. Install
@@ -60,32 +62,6 @@ Added
   Link directly to the Android Blueprint collection on GitHub for downloads and setup.
 - Refresh README and website screenshots, and highlight the built-in software
   setup guides in the README and all seven website languages.
-- Show the installed app version in the Settings footer.
-- Hide connection guides from their footer and restore them in Settings, with
-  the visibility preference remembered in this browser.
-- Show the app logo in the browser tab, adapting to light and dark browser themes.
-- Show host-specific Android and iOS setup help when device tools, transport or
-  Android USB authorization are unavailable, with copyable commands, manual-copy
-  fallback and instructions for Windows, Linux and macOS in all seven languages.
-  Use compact, expandable steps with a clear explanation of the current connection
-  problem in a distinct panel with a platform icon, platform switching and
-  separate troubleshooting guidance.
-- Hide an update reminder for 24 hours or dismiss that version permanently in
-  this browser. Newer versions still appear; update instructions remain unchanged.
-- Open Chrome DevTools for a selected Android WebView from its source row or
-  JavaScript console. Provide a copyable inspector address and a Safari setup
-  guide with the selected iOS device and WebView details. Use a labeled, outlined
-  Inspect action beside the JavaScript console.
-- Check for new versions in the background at startup and show the installed and
-  latest versions, changelog, and update instructions for the detected launcher
-  or global installation. Offer alternatives when detection is inconclusive.
-- Introduce shared Alpha, Beta and Preview feature badges with localized,
-  keyboard-accessible explanations. Mark the JavaScript console as Alpha at
-  its entry point and panel heading; centralize feature maturity settings.
-- Add a JavaScript console for Android and iOS WebViews with explicit frame
-  selection, command history, bounded property previews and JSON preview copying.
-  Navigation invalidates the context without automatically repeating commands.
-  Console execution shares the existing capture connection.
 
 Changed
 - License the project under GNU GPL version 3 only (GPL-3.0-only) instead of
@@ -130,6 +106,54 @@ Fixed
   so Escape dismisses a feature tooltip without closing the console.
 - Keep semantic-flow connectors at their graph dimensions inside the app, so
   global icon sizing no longer offsets or clips branches and detail diagrams.
+- Keep long graph labels within their hit areas and render dense valid Flow
+  graphs without stalls.
+
+Security
+- Conceal sensitive Flow error codes in decorations and search.
+
+0.9.0 - 2026-10-21
+------------------
+
+Security
+- Update Vite and follow-redirects to patched releases in both development
+  lockfiles, and verify patched redirect handling in fresh package installations.
+  The unresolved node-forge advisory remains; no dependencies are bundled.
+
+Removed
+- Remove the promotional tagline from the app header.
+
+Added
+- Show the installed app version in the Settings footer.
+- Hide connection guides from their footer and restore them in Settings, with
+  the visibility preference remembered in this browser.
+- Show the app logo in the browser tab, adapting to light and dark browser themes.
+- Show host-specific Android and iOS setup help when device tools, transport or
+  Android USB authorization are unavailable, with copyable commands, manual-copy
+  fallback and instructions for Windows, Linux and macOS in all seven languages.
+  Use compact, expandable steps with a clear explanation of the current connection
+  problem in a distinct panel with a platform icon, platform switching and
+  separate troubleshooting guidance.
+- Hide an update reminder for 24 hours or dismiss that version permanently in
+  this browser. Newer versions still appear; update instructions remain unchanged.
+- Associate an instance with a project using --project and create a missing
+  .udl/config.yaml for future project-specific settings, preserving existing files.
+- Open Chrome DevTools for a selected Android WebView from its source row or
+  JavaScript console. Provide a copyable inspector address and a Safari setup
+  guide with the selected iOS device and WebView details. Use a labeled, outlined
+  Inspect action beside the JavaScript console.
+- Check for new versions in the background at startup and show the installed and
+  latest versions, changelog, and update instructions for the detected launcher
+  or global installation. Offer alternatives when detection is inconclusive.
+- Introduce shared Alpha, Beta and Preview feature badges with localized,
+  keyboard-accessible explanations. Mark the JavaScript console as Alpha at
+  its entry point and panel heading; centralize feature maturity settings.
+- Add a JavaScript console for Android and iOS WebViews with explicit frame
+  selection, command history, bounded property previews and JSON preview copying.
+  Navigation invalidates the context without automatically repeating commands.
+  Console execution shares the existing capture connection.
+
+Fixed
 - Make the Settings gear icon larger and clearly recognizable on all platforms.
 - Populate the iOS JavaScript console context picker by initializing WebKit frame
   discovery before requesting execution contexts.
@@ -137,17 +161,6 @@ Fixed
   iOS WebViews whose log capture keeps the shared inspector connection open.
 - Render Pause and Resume as font-independent icons, avoiding serif pause bars
   on Windows.
-- Keep long graph labels within their hit areas and render dense valid Flow
-  graphs without stalls.
-
-Security
-- Conceal sensitive Flow error codes in decorations and search.
-- Update Vite and follow-redirects to patched releases in both development
-  lockfiles, and verify patched redirect handling in fresh package installations.
-  The unresolved node-forge advisory remains; no dependencies are bundled.
-
-Removed
-- Remove the promotional tagline from the app header.
 
 0.8.0 - 2026-10-19
 ------------------
