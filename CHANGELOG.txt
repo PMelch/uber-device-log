@@ -9,121 +9,54 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
-Changed
-- Provide reproducible Flow formatting, lint and browser checks for contributors,
-  and run product tests/builds on pull requests including the minimum Node version.
-- Manage Blueprint sources in a toolbar-opened dialog with a searchable global/project
-  list and a selected-source inspector for descriptions, metadata, definitions and
-  diagnostics. Keep bundle installation collapsed, retain drafts when closing, and
-  support keyboard focus, Escape dismissal and smaller screens.
-
 Added
-- Introduce Semantic Flows on the website in all seven interface languages, with
-  guided README tutorials for single events, correlated multipart operations and
-  branching routes, including complete Blueprints and reproducible example logs.
-  Link directly to the Android Blueprint collection on GitHub for downloads and setup.
-- Provide opt-in Android diagnostic Blueprint bundles for frame scheduling,
-  slow rendering, startup, ART garbage collection, allocation failures,
-  low-memory kills, ANRs and fatal reports using existing Logcat signals.
-  Include reproducible archives, source evidence and installation guidance.
-- Load global Semantic Flows from ~/.udl alongside project definitions. Install
-  validated .blueprint ZIP bundles from a URL through the interface or CLI, inspect
-  their names, descriptions and specification versions, and enable or disable them
-  independently per project or globally without a project. Report duplicate IDs
-  with their origins and stop recognition for disabled bundles while retaining logs.
-- Recognize alternative Semantic Flow entry points that converge on shared steps.
-  Share per-instance variables across entries and branches, and mark unchosen
-  entry paths as alternatives in the overview and Timeline.
-- Highlight flows by blueprint priority (1–5, default 3) with separate light and
-  dark palettes, independent of outcome. Edit priority in the blueprint draft
-  selector; include priority guidance in the portable authoring skill.
-- Add a Minimal flow overview that shows only each current main label, alongside
-  the existing Condensed and Detailed views. Remember the selected view. Open
-  a Minimal entry's Timeline by clicking it or using Enter or Space.
-- Allow explicitly correlated, repeatable flow steps to update progress labels and
-  result fields until the flow advances or ends. Use the latest accepted values
-  in downstream references. Include a loading-progress example and authoring skill guidance.
-- Provide a copyable, self-contained Semantic Flows authoring skill with the
-  format specification, extraction and validation guidance, fictional fixtures
-  and cross-agent installation instructions. Ask which output to create when
-  unspecified: project Blueprint, new bundle or existing-bundle addition. Include
-  portable bundle packaging, safe unpacking and whole-bundle validation guidance.
-  Check bundled references and helper resources for drift.
-- Define dynamic Semantic Flow labels with payload references and semantic text
-  colors. Show explicitly marked result fields, switch between detailed node
-  views and condensed summaries, and keep sensitive values concealed. Leave
-  unchanged labels without an extra status notice. Include
-  a bank-transfer example covering success, rejection, cancellation and review.
-  Identify active flows with progress text and a reduced-motion-aware spinner.
-
-Fixed
-- Resolve website Blueprint and tutorial links against the build branch, avoiding
-  missing pages before merge while automatically using main after merge.
-- Preserve Flow ambiguity and missing-start evidence across capture gaps and
-  truncated records. Close timed-out recognition after its first late terminal
-  result, allowing a fresh operation without reusing old buffered evidence.
-- Keep Semantic Flow analysis running when a captured JSON error code cannot be
-  converted to text. Use the rule's unknown outcome, preserve sensitive original
-  evidence, and distinguish missing codes from the literal string "undefined".
-- Keep reordered events with their original operation, enforce deadlines without
-  depending on timer ticks, and prevent stale progress or rejected branch evidence
-  from changing later flow state. Bound deep JSON analysis and finite timeouts.
-- Conceal sensitive error codes in flow decorations and search. Keep long graph
-  labels within their hit areas and render dense valid flow graphs without stalls.
-
-Changed
-- Validate required flow references against every incoming route and required
-  extractions, including existing branch joins. Use explicit optional references
-  for values that may be absent; missing comparisons never match.
-- Show the blueprint name with its ID in parentheses above detailed flow labels;
-  hide that line in condensed summaries. Omit the generated instance ID from
-  the main label row.
-- License the project under GNU GPL version 3 only (GPL-3.0-only) instead of
-  Apache-2.0. Third-party platform icons retain their separate CC0 license.
-- Inspect JavaScript result objects on demand, load further properties in pages,
-  and explore nested objects without evaluating the expression again or invoking getters.
-- Show JavaScript console contexts in frame hierarchy order, with nested frames
-  indented beneath their parents and the main page first.
-- Draw an open semantic-flow fork as rounded lanes on the flow card, and lay the
-  timeline and blueprint graph out as a branching diagram. Dim a route that was
-  not taken instead of labeling it as another branch. Keep the first card lane
-  straight and round additional paths away from it, including forks with more
-  than two alternatives. Round detours and joins in the detail graph as well.
-
-Fixed
-- Preserve out-of-order events independently for overlapping Semantic Flows.
-  Keep queued events tied to their original blueprint revisions so running flows
-  can finish after definition changes without starting new flows retroactively.
-- Preserve keyboard focus in the JavaScript console when a connection finishes,
-  so Escape dismisses a feature tooltip without closing the console.
-- Keep semantic-flow connectors at their graph dimensions inside the app, so
-  global icon sizing no longer offsets or clips branches and detail diagrams.
-- Make the Settings gear icon larger and clearly recognizable on all platforms.
-- Populate the iOS JavaScript console context picker by initializing WebKit frame
-  discovery before requesting execution contexts.
-- Retry failed JavaScript console context discovery when reconnecting, including
-  iOS WebViews whose log capture keeps the shared inspector connection open.
-- Render Pause and Resume as font-independent icons, avoiding serif pause bars
-  on Windows.
-
-Security
-- Update Vite and follow-redirects to patched releases in both development
-  lockfiles, and verify patched redirect handling in fresh package installations.
-  The unresolved node-forge advisory remains; no dependencies are bundled.
-
-Removed
-- Remove the promotional tagline from the app header.
-
-Added
+- Add Semantic Flows with YAML blueprints for standalone events and correlated
+  multistep operations, including branches, expected errors and missing-start
+  detection. Inspect timelines and original evidence beside raw logs, and edit
+  and validate definitions in the viewer. A terminal start can recognize a single
+  event without an operation ID in the log.
 - Associate an instance with a project using --project and store configuration
   in .udl/config.yaml, creating it when missing and preserving existing files;
   default Semantic Flow blueprints to .udl/flows with a configurable project-relative path.
   Automatically migrate legacy .flowsrc settings and the default .flows directory
   without overwriting existing configuration or conflicting destination files.
-- Add Semantic Flows with project-specific YAML blueprints, correlated step payloads,
-  branching, expected errors and orphan detection. Inspect flow timelines beside
-  raw logs, edit and validate blueprints, and use the agent authoring guide and
-  sample project to create definitions from application code.
+- Load global Semantic Flows from ~/.udl alongside project definitions. Install
+  validated .blueprint ZIP bundles from a URL through the interface or CLI, inspect
+  their names, descriptions and specification versions, and enable or disable them
+  independently per project or globally without a project. Report duplicate IDs
+  with their origins and stop recognition for disabled bundles while retaining logs.
+- Continue a normal expected step without an identifier only when exactly one
+  eligible candidate is waiting and no primary or alias extractor is declared.
+  Multiple candidates remain ambiguous; repeated steps and error rules still
+  require explicit correlation.
+- Recognize alternative Semantic Flow entry points that converge on shared steps.
+  Share per-instance variables across entries and branches, and mark unchosen
+  entry paths as alternatives in the overview and Timeline.
+- Define dynamic Flow labels with extracted payloads and semantic text colors,
+  and show explicitly marked result fields. Detailed and Condensed views retain
+  the same summaries while concealing sensitive values. Active flows show progress
+  with a reduced-motion-aware spinner. Include a bank-transfer example covering
+  success, rejection, cancellation and review.
+- Add a Minimal flow overview that shows only each current main label, alongside
+  the existing Condensed and Detailed views. Remember the selected view. Open
+  a Minimal entry's Timeline by clicking it or using Enter or Space.
+- Highlight flows by blueprint priority (1–5, default 3) with separate light and
+  dark palettes, independent of outcome. Edit priority in the blueprint draft
+  selector; include priority guidance in the portable authoring skill.
+- Allow explicitly correlated, repeatable flow steps to update progress labels and
+  result fields until the flow advances or ends. Use the latest accepted values
+  in downstream references. Include a loading-progress example and authoring skill guidance.
+- Provide opt-in Android diagnostic Blueprint bundles for frame scheduling,
+  slow rendering, startup, ART garbage collection, allocation failures,
+  low-memory kills, ANRs and fatal reports using existing Logcat signals.
+  Include reproducible archives, source evidence and installation guidance.
+- Provide a portable Semantic Flows authoring skill for project Blueprints and
+  new or existing bundles, with the format reference, extraction and validation
+  guidance, examples, safe bundle packaging and cross-agent installation steps.
+- Introduce Semantic Flows on the website in all seven interface languages, with
+  guided README tutorials for single events, correlated multipart operations and
+  branching routes, including complete Blueprints and reproducible example logs.
+  Link directly to the Android Blueprint collection on GitHub for downloads and setup.
 - Refresh README and website screenshots, and highlight the built-in software
   setup guides in the README and all seven website languages.
 - Show the installed app version in the Settings footer.
@@ -152,6 +85,68 @@ Added
   selection, command history, bounded property previews and JSON preview copying.
   Navigation invalidates the context without automatically repeating commands.
   Console execution shares the existing capture connection.
+
+Changed
+- License the project under GNU GPL version 3 only (GPL-3.0-only) instead of
+  Apache-2.0. Third-party platform icons retain their separate CC0 license.
+- Provide reproducible Flow formatting, lint and browser checks for contributors,
+  and run product tests/builds on pull requests including the minimum Node version.
+- Manage Blueprint sources in a toolbar-opened dialog with a searchable global/project
+  list and a selected-source inspector for descriptions, metadata, definitions and
+  diagnostics. Keep bundle installation collapsed, retain drafts when closing, and
+  support keyboard focus, Escape dismissal and smaller screens.
+- Validate required flow references against every incoming route and required
+  extractions, including existing branch joins. Use explicit optional references
+  for values that may be absent; missing comparisons never match.
+- Show the blueprint name with its ID in parentheses above detailed flow labels;
+  hide that line in condensed summaries. Omit the generated instance ID from
+  the main label row.
+- Inspect JavaScript result objects on demand, load further properties in pages,
+  and explore nested objects without evaluating the expression again or invoking getters.
+- Show JavaScript console contexts in frame hierarchy order, with nested frames
+  indented beneath their parents and the main page first.
+- Show observed steps and immediately expected alternatives on Flow cards, with
+  later steps behind an ellipsis. Draw forks, detours and joins as rounded lanes
+  in the overview, Timeline and Blueprint graph; dim unchosen routes and keep
+  the first card lane straight, including forks with more than two alternatives.
+
+Fixed
+- Resolve website Blueprint and tutorial links against the build branch, avoiding
+  missing pages before merge while automatically using main after merge.
+- Keep out-of-order events with their original operation and Blueprint revision,
+  including overlapping flows and definition changes. Running flows can finish
+  without starting new flows retroactively from buffered records.
+- Enforce deadlines independently of timer ticks, and prevent stale progress or
+  rejected branch evidence from changing later flow state. Bound deep JSON
+  analysis and require finite, safely representable timeouts.
+- Preserve Flow ambiguity and missing-start evidence across capture gaps and
+  truncated records. Close timed-out recognition after its first late terminal
+  result, allowing a fresh operation without reusing old buffered evidence.
+- Keep Semantic Flow analysis running when a captured JSON error code cannot be
+  converted to text. Use the rule's unknown outcome, preserve sensitive original
+  evidence, and distinguish missing codes from the literal string "undefined".
+- Preserve keyboard focus in the JavaScript console when a connection finishes,
+  so Escape dismisses a feature tooltip without closing the console.
+- Keep semantic-flow connectors at their graph dimensions inside the app, so
+  global icon sizing no longer offsets or clips branches and detail diagrams.
+- Make the Settings gear icon larger and clearly recognizable on all platforms.
+- Populate the iOS JavaScript console context picker by initializing WebKit frame
+  discovery before requesting execution contexts.
+- Retry failed JavaScript console context discovery when reconnecting, including
+  iOS WebViews whose log capture keeps the shared inspector connection open.
+- Render Pause and Resume as font-independent icons, avoiding serif pause bars
+  on Windows.
+- Keep long graph labels within their hit areas and render dense valid Flow
+  graphs without stalls.
+
+Security
+- Conceal sensitive Flow error codes in decorations and search.
+- Update Vite and follow-redirects to patched releases in both development
+  lockfiles, and verify patched redirect handling in fresh package installations.
+  The unresolved node-forge advisory remains; no dependencies are bundled.
+
+Removed
+- Remove the promotional tagline from the app header.
 
 0.8.0 - 2026-10-19
 ------------------
