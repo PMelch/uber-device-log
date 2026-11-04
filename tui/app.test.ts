@@ -2,6 +2,7 @@ import { test, expect } from 'bun:test';
 import type { TextRenderable } from '@opentui/core';
 import { createTestRenderer } from '@opentui/core/testing';
 import { createTui, type TuiOptions } from './app';
+import { sourceKey } from './local-client';
 
 async function setup(options: TuiOptions = {}) {
   const terminal = await createTestRenderer({ width: 100, height: 30 });
@@ -697,4 +698,64 @@ test('Flows consumes arrivals while logs are paused and returns focus without ch
     expect(t.renderer.currentFocusedRenderable?.id).toBe('flows');
     expect(t.app.model.paused).toBe(true);
   } finally { t.app.dispose(); flows.dispose(); await t.dispose(); }
+});
+
+test('log rows show source names only when multiple sources are selected', async () => {
+  const device = { id: 'p', name: 'Pixel', platform: 'android' as const, state: 'connected' };
+  const webview = { ...device, webview: { id: 'w', socket: 's', title: 'Shop', url: 'https://shop.test' } };
+  const t = await setup({ demo: false, sources: async () => [device, webview], syncSources() {} });
+  try {
+    await t.app.refreshSources();
+    t.app.toggleSource(device);
+    t.app.ingest([{ timestamp: '2026-11-03T12:00:01Z', level: 'INFO', message: 'native message', source: { key: sourceKey(device), name: 'Native origin', platform: 'android', deviceId: 'p' } }]);
+    const native = () => t.app.controls.rows.find(row => row.plainText.includes('native message'))!;
+    expect(native().plainText).not.toContain('Native origin');
+    t.app.toggleSource(webview);
+    expect(native().plainText).toContain('Native origin');
+    t.app.ingest([{ timestamp: '2026-11-03T12:00:02Z', level: 'INFO', message: 'web message', source: { key: sourceKey(webview), name: 'Web origin', platform: 'android', deviceId: 'p', webview: webview.webview } }]);
+    const web = () => t.app.controls.rows.find(row => row.plainText.includes('web message'))!;
+    expect(web().plainText).toContain('Web origin');
+    t.app.toggleSource(device);
+    expect(web().plainText).not.toContain('Web origin');
+    expect(t.app.model.rows().at(-1)?.source?.name).toBe('Web origin');
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('retained logs keep their origins when a source disappears', async () => {
+  const device = { id: 'p', name: 'Pixel', platform: 'android' as const, state: 'connected' };
+  const webview = { ...device, webview: { id: 'w', socket: 's', title: 'Shop', url: 'https://shop.test' } };
+  let available = [device, webview];
+  const t = await setup({ demo: false, sources: async () => available, syncSources() {} });
+  try {
+    await t.app.refreshSources();
+    t.app.toggleSource(device); t.app.toggleSource(webview);
+    for (const source of [device, webview]) t.app.ingest([{ timestamp: '2026-11-03T12:00:01Z', message: source.name, source: { key: sourceKey(source), name: source === device ? 'Native origin' : 'Web origin', platform: 'android', deviceId: 'p' } }]);
+    available = [device];
+    await t.app.refreshSources();
+    const text = t.app.controls.rows.map(row => row.plainText).join('\n');
+    expect(text).toContain('Native origin');
+    expect(text).toContain('Web origin');
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('Quit stays at the right edge beside wrapping toolbar actions', async () => {
+  for (const locale of ['en', 'de', 'es', 'fr', 'it', 'ja', 'zh-CN'] as const) {
+    let quitCount = 0;
+    const t = await setup({ locale, quit: () => quitCount++ });
+    try {
+      const quit = t.renderer.root.findDescendantById('quit')!;
+      const toolbar = t.renderer.root.findDescendantById('toolbar')!;
+      for (const width of [160, 100, 60, 40]) {
+        t.resize(width, 40); await t.renderOnce();
+        expect(quit.x + quit.width).toBe(width - 1);
+        expect(quit.y).toBe(toolbar.y);
+        const settings = t.renderer.root.findDescendantById('settings')!;
+        expect(settings.x + settings.width).toBeLessThan(quit.x);
+      }
+      await t.mockMouse.click(quit.x + 1, quit.y + 1);
+      expect(quitCount).toBe(1);
+      quit.focus(); t.mockInput.pressTab({ shift: true });
+      expect(t.renderer.currentFocusedRenderable?.id).toBe('settings');
+    } finally { t.app.dispose(); await t.dispose(); }
+  }
 });

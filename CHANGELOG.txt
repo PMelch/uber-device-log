@@ -36,6 +36,11 @@ Added
 - Add a terminal WebView JavaScript console with explicit target/context selection,
   command history and expandable result properties while log capture continues.
 
+Changed
+- Keep the terminal Quit button at the right edge while other toolbar actions wrap.
+- Hide the source column in web and terminal log lists when only one source is
+  selected, leaving more room for messages; restore it for combined sources.
+
 Fixed
 - Return the terminal viewer to live mode when a source is enabled again, instead
   of keeping an empty frozen view while new events are captured in the background.

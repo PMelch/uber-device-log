@@ -72,8 +72,10 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   renderer.root.add(root);
   const heading = new TextRenderable(renderer, { id: 'heading', height: 1, fg: colors.accent, selectable: false });
   root.add(heading);
-  const toolbar = new BoxRenderable(renderer, { id: 'toolbar', flexDirection: 'row', flexWrap: 'wrap', height: 'auto', minHeight: 3, flexShrink: 0, gap: 1 });
+  const toolbar = new BoxRenderable(renderer, { id: 'toolbar', flexDirection: 'row', height: 'auto', minHeight: 3, flexShrink: 0, gap: 1 });
   root.add(toolbar);
+  const toolbarActions = new BoxRenderable(renderer, { id: 'toolbar-actions', flexDirection: 'row', flexWrap: 'wrap', flexGrow: 1, flexBasis: 0, minWidth: 0, gap: 1 });
+  toolbar.add(toolbarActions);
   function button(parent: BoxRenderable, id: string, key: MessageKey, action: () => void, target: Renderable[] = mainFocus) {
     const box = new BoxRenderable(renderer, { id, height: 3, border: true, borderColor: colors.border,
       focusedBorderColor: colors.accent, focusable: true, paddingX: 1, flexShrink: 0,
@@ -87,25 +89,25 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     box.add(text); parent.add(box); target.push(box); actions.set(box, action); labels.push({ text, key });
     return { box, text };
   }
-  const sources = button(toolbar, 'sources', 'tuiSources', () => { void (options.syncSources ? refreshSources() : openSources()); });
-  const pause = button(toolbar, 'pause', 'pause', () => {
+  const sources = button(toolbarActions, 'sources', 'tuiSources', () => { void (options.syncSources ? refreshSources() : openSources()); });
+  const pause = button(toolbarActions, 'pause', 'pause', () => {
     if (model.paused) { model.resume(); renderer.clearSelection(); } else model.pause();
     refresh();
   });
-  button(toolbar, 'clear', 'clear', () => { model.clear(); offset = 0; cursor = 0; renderer.clearSelection(); refresh(); });
-  button(toolbar, 'save', 'tuiSave', () => { void save(); });
-  button(toolbar, 'quit', 'tuiQuit', () => options.quit?.());
-  const collapse = button(toolbar, 'toggle-sources', 'tuiHideSources', toggleSources);
+  button(toolbarActions, 'clear', 'clear', () => { model.clear(); offset = 0; cursor = 0; renderer.clearSelection(); refresh(); });
+  button(toolbarActions, 'save', 'tuiSave', () => { void save(); });
+  const collapse = button(toolbarActions, 'toggle-sources', 'tuiHideSources', toggleSources);
   collapse.box.visible = !!options.syncSources;
-  const maximize = button(toolbar, 'fullscreen', 'tuiFullscreen', toggleFullscreen);
+  const maximize = button(toolbarActions, 'fullscreen', 'tuiFullscreen', toggleFullscreen);
   const fullscreenBar = new BoxRenderable(renderer, { height: 3, flexShrink: 0, visible: false });
   root.add(fullscreenBar);
   button(fullscreenBar, 'exit-fullscreen', 'tuiExitFullscreen', toggleFullscreen);
-  const consoleButton = button(toolbar, 'javascript-console', 'consoleTitle', openConsole);
+  const consoleButton = button(toolbarActions, 'javascript-console', 'consoleTitle', openConsole);
   consoleButton.box.visible = !!options.acquireConsole;
-  button(toolbar, 'settings', 'settings', openSettings);
-  const flowsButton = button(toolbar, 'flows', 'flowsTabFlows', openFlows);
+  button(toolbarActions, 'settings', 'settings', openSettings);
+  const flowsButton = button(toolbarActions, 'flows', 'flowsTabFlows', openFlows);
   flowsButton.box.visible = !!options.flows;
+  button(toolbar, 'quit', 'tuiQuit', () => options.quit?.());
   const searchBox = new BoxRenderable(renderer, { height: 3, flexShrink: 0, border: true, borderColor: colors.border });
   const search = new InputRenderable(renderer, { id: 'search', width: '100%', placeholder: t('searchPlaceholder'), maxLength: 500,
     textColor: colors.text, backgroundColor: colors.panel, focusedBackgroundColor: colors.selected });
@@ -122,7 +124,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     } });
   content.add(sidebar);
   if (options.syncSources) {
-    toolbar.remove(sources.box); sidebar.add(sources.box);
+    toolbarActions.remove(sources.box); sidebar.add(sources.box);
     sources.box.width = '100%'; sources.box.minWidth = 0;
     mainFocus = mainFocus.filter(node => node !== sources.box);
   }
@@ -204,6 +206,13 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     try { scrollbar.scrollSize = items.length; scrollbar.viewportSize = size; scrollbar.scrollPosition = offset; }
     finally { updatingScrollbar = false; }
     const selected = model.selected;
+    // Discovery may drop a closed WebView while its captured rows remain visible.
+    const sourceKeys = new Set(selectedSources.map(sourceKey));
+    for (const item of items) {
+      if (sourceKeys.size > 1) break;
+      if (item.source) sourceKeys.add(item.source.key);
+    }
+    const showSource = sourceKeys.size > 1;
     for (let i = 0; i < rows.length; i++) {
       const record = items[offset + i];
       const line = rows[i]!;
@@ -214,11 +223,12 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
         const severity = normalizedLevel === 'ERROR' || normalizedLevel === 'FATAL' ? colors.error
           : normalizedLevel === 'WARN' ? colors.warn : normalizedLevel === 'DEBUG' || normalizedLevel === 'VERBOSE' ? colors.muted : colors.text;
         const level = fg(severity)(terminalText(record.level ?? '-').padEnd(7));
+        const origin = showSource ? record.source?.name ?? record.tag : record.source ? undefined : record.tag;
         line.content = new StyledText([
           fg(colors.text)(record.key === selected?.key ? '● ' : '  '),
           fg(colors.muted)(terminalText(record.timestamp.slice(11, 23)) + ' '),
           ['WARN', 'ERROR', 'FATAL'].includes(normalizedLevel) ? bold(level) : level,
-          fg(colors.source)(' ' + terminalText(record.source?.name ?? record.tag ?? '') + ' '),
+          fg(colors.source)(origin ? ' ' + terminalText(origin) + ' ' : ' '),
           fg(colors.text)(terminalText(record.message.replace(/\n/g, ' ↵ '))),
         ]);
       } else line.content = i === 0 ? t(model.query ? 'noMatches' : 'waiting') : '';
