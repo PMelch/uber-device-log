@@ -35,6 +35,42 @@ test('cancellation reaches the download, blocks duplicate mutations and ignores 
   expect(refreshed).toBe(1); manager.dispose();
 });
 
+test('global and project source activation persists independently after reopening the TUI', async () => {
+  const { createFlowSources } = await module();
+  const home = await mkdtemp(join(tmpdir(), 'udl-source-activation-'));
+  const directory = join(home, 'project');
+  await mkdir(directory);
+  let manager: ReturnType<typeof createFlowSources> | undefined;
+  try {
+    let registry = await FlowProject.create(directory, { home });
+    let snapshot = await registry.reload();
+    const openManager = () => createFlowSources({ project: async () => registry, changed: async () => { snapshot = await registry.reload(); } });
+    manager = openManager();
+    for (const scope of ['global', 'project'] as const) {
+      const file = join(home, `${scope}.blueprint`);
+      await writeFile(file, fixtureBundle(scope, `${scope}-flow`));
+      await manager.install(file, 'file', scope);
+      const source = snapshot.sources!.find(source => source.kind === 'bundle' && source.scope === scope)!;
+      await manager.toggle(source, snapshot.configRevision);
+      expect(manager.status.code).toBe('flowsBundleSaved');
+    }
+    manager.dispose();
+    registry = await FlowProject.create(directory, { home });
+    snapshot = await registry.reload();
+    manager = openManager();
+    expect(snapshot.blueprints.map(blueprint => blueprint.id).sort()).toEqual(['global-flow', 'project-flow']);
+    const global = snapshot.sources!.find(source => source.kind === 'bundle' && source.scope === 'global')!;
+    await manager.toggle(global, snapshot.configRevision);
+    expect(manager.status.code).toBe('flowsBundleSaved');
+    expect(snapshot.blueprints.map(blueprint => blueprint.id)).toEqual(['project-flow']);
+    registry = await FlowProject.create(directory, { home });
+    snapshot = await registry.reload();
+    expect(snapshot.sources!.find(source => source.id === global.id)!.enabled).toBe(false);
+    expect(snapshot.sources!.find(source => source.kind === 'bundle' && source.scope === 'project')!.enabled).toBe(true);
+    expect(snapshot.blueprints.map(blueprint => blueprint.id)).toEqual(['project-flow']);
+  } finally { manager?.dispose(); await rm(home, { recursive: true, force: true }); }
+});
+
 test('file chooser filters bundle files, supports directory navigation and path completion', async () => {
   const { browseBundleFiles } = await module(); const home = await mkdtemp(join(tmpdir(), 'udl-picker-'));
   try {

@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const zhCN = {
+  tuiUpdateInstructions: "关闭终端应用，更新本地检出的源代码；如果使用独立可执行文件，请重新构建。然后使用相同选项重新启动。",
   tuiFlowSourcesBack: "返回",
   tuiFlowSourcesHelp: "Tab：控件 · ↑↓：列表 · Enter：打开 · Esc：返回",
   tuiFlowPathHelp: "输入路径（支持 ~/）；选择文件可浏览目录或补全已输入的前缀。",

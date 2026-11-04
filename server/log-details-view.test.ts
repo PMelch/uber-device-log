@@ -18,11 +18,22 @@ test('details render translated metadata and explanations safely in every langua
         pinned: false, position: { left: '12px', top: '12px' }, locale: code,
       }) }));
       assert.ok(html.includes(translate(code, 'detailTabFields')), code);
-      assert.ok(html.includes(translate(code, 'detailGeneric')), code);
+      assert.ok(!html.includes(translate(code, 'detailGeneric')), code);
+      assert.ok(!html.includes('log-detail-explanation'), code);
+      assert.ok(html.includes(translate(code, 'detailPrivate').replaceAll('<', '&lt;').replaceAll('>', '&gt;')), code);
       assert.match(html, /role="dialog"/);
       assert.match(html, /&lt;script&gt;evil&lt;\/script&gt;/);
       assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
       assert.doesNotMatch(html, /<script>|<img /);
+      const specific = await renderToString(createSSRApp({ render: () => h(Details, {
+        record: {
+          entry: { key: 1, timestamp: '2026-09-30T08:53:00.000Z', message: 'java.lang.IllegalStateException: failed' },
+          device: { id: 'test', name: 'Phone', platform: 'android', state: 'connected' },
+        },
+        pinned: false, position: { left: '12px', top: '12px' }, locale: code,
+      }) }));
+      assert.ok(specific.includes('log-detail-explanation'), code);
+      assert.ok(specific.includes(translate(code, 'detailStack')), code);
     }
   } finally { await server.close(); }
 });

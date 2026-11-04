@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const de = {
+  tuiUpdateInstructions: "Schließe die Terminal-App, aktualisiere dein ausgechecktes Repository und baue die ausführbare Datei neu, falls du eine verwendest. Starte danach mit denselben Optionen neu.",
   tuiFlowSourcesBack: "Zurück",
   tuiFlowSourcesHelp: "Tab: Bedienfelder · ↑↓: Liste · Enter: öffnen · Esc: zurück",
   tuiFlowPathHelp: "Pfad eingeben (~/ möglich); Datei auswählen durchsucht oder ergänzt den Anfang.",

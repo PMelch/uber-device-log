@@ -31,4 +31,25 @@ document.querySelector('#copy')!.addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(command.textContent!); document.querySelector('#copy-status')!.textContent = translate(locale, 'siteCopied'); }
   catch { document.querySelector('#copy-status')!.textContent = translate(locale, 'siteCopyFallback'); const range = document.createRange(); range.selectNodeContents(command); getSelection()?.removeAllRanges(); getSelection()?.addRange(range); }
 });
+const viewButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-view]')];
+function showView(button: HTMLButtonElement) {
+  for (const item of viewButtons) {
+    const selected = item === button;
+    item.setAttribute('aria-pressed', String(selected));
+    document.getElementById(item.getAttribute('aria-controls')!)!.hidden = !selected;
+  }
+}
+for (const [index, button] of viewButtons.entries()) {
+  button.addEventListener('click', () => showView(button));
+  button.addEventListener('keydown', event => {
+    const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    if (!direction) return;
+    event.preventDefault();
+    const next = viewButtons[(index + direction + viewButtons.length) % viewButtons.length];
+    next.focus();
+    showView(next);
+  });
+}
+showView(viewButtons[0]);
+document.querySelector<HTMLElement>('.viewer-controls')!.hidden = false;
 render();

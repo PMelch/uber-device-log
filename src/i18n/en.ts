@@ -1,5 +1,6 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  tuiUpdateInstructions: "Close the terminal app, update your source checkout, and rebuild the executable if you use one. Then restart with the same options.",
   tuiFlowSourcesBack: "Back",
   tuiFlowSourcesHelp: "Tab: controls · ↑↓: list · Enter: open · Esc: back",
   tuiFlowPathHelp: "Enter a path (~/ supported); Choose file browses or completes the prefix.",

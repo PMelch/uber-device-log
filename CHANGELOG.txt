@@ -10,6 +10,10 @@ Unreleased
 ----------
 
 Added
+- Inspect terminal logs as structured diagnostic details, original text or JSON,
+  using the same parsers and explanations as the web viewer.
+- Show available updates at terminal startup with source-update instructions,
+  without blocking capture or automatically installing updates.
 - Manage global and project Flow sources in the TUI without a web server: search,
   inspect conflicts, enable bundles and install from URLs or a local file picker.
 - Add a terminal Semantic Flows screen with searchable live summaries, status and
@@ -18,7 +22,7 @@ Added
   and project blueprints as the web viewer, with capture-gap and timeout handling.
 - Add an optional terminal log viewer via `udl --tui` with direct device capture
   without a web server, combined native/WebView sources, mouse and Tab navigation,
-  literal search, paused inspection and JSON export. Project options remain usable;
+  literal/fuzzy search, paused inspection and JSON export. Project options remain usable;
   a host-specific TUI build is required. The synthetic demo remains available.
   Collapse the Sources panel with F6 or expand the log stream with F11; leaving
   fullscreen restores the previous panel state without interrupting capture.
@@ -37,6 +41,10 @@ Added
   command history and expandable result properties while log capture continues.
 
 Changed
+- Hide the Interpretation section in web and terminal log details when no specific
+  explanation matches the entry.
+- Present the web and terminal viewers in a manual website screenshot carousel,
+  with terminal setup guidance and a real TUI capture in the README.
 - Size each terminal Settings field and the Close button to its own content
   instead of stretching them across the screen.
 - Keep Settings and Quit together at the right edge while other toolbar actions wrap.

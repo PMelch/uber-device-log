@@ -73,3 +73,22 @@ test('settings trim live and frozen buffers and reorder without losing retained 
   assert.throws(() => state.setCapacity(0));
   assert.equal(state.capacity, 2);
 });
+
+test('search mode switches literal and fuzzy without changing capture or the frozen snapshot', async () => {
+  const state = await model();
+  state.ingest([record('Payment authorized'), record('unrelated')]);
+  state.setQuery('Paymnt');
+  assert.equal(state.rows().length, 0);
+  state.setSearchMode('fuzzy');
+  assert.equal(state.rows()[0].message, 'Payment authorized');
+  state.select(state.rows()[0].key);
+  state.ingest([record('Payment pending')]);
+  state.setSearchMode('literal');
+  assert.equal(state.selected, undefined);
+  assert.equal(state.rows().length, 0);
+  assert.equal(state.paused, true);
+  state.setSearchMode('fuzzy');
+  assert.equal(state.rows().length, 1);
+  state.resume();
+  assert.equal(state.rows().length, 2);
+});

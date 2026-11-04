@@ -22,7 +22,11 @@ test('Tab advances focus and a mouse click shares the same focus chain', async (
     await t.mockMouse.click(search.x + 2, search.y);
     expect(t.renderer.currentFocusedRenderable?.id).toBe('search');
     t.mockInput.pressTab();
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('search-mode');
+    t.mockInput.pressTab();
     expect(t.renderer.currentFocusedRenderable?.id).toBe('logs');
+    t.mockInput.pressTab({ shift: true });
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('search-mode');
     t.mockInput.pressTab({ shift: true });
     expect(t.renderer.currentFocusedRenderable?.id).toBe('search');
   } finally { t.app.dispose(); await t.dispose(); }
@@ -617,6 +621,8 @@ test('fullscreen keeps one keyboard-accessible search across all source logs and
       t.resize(width, 24); t.app.toggleFullscreen(); await t.renderOnce();
       expect(t.app.controls.search.parent!.visible).toBe(true);
       t.app.controls.logs.focus(); t.mockInput.pressTab({ shift: true });
+      expect(t.renderer.currentFocusedRenderable?.id).toBe('search-mode');
+      t.mockInput.pressTab({ shift: true });
       expect(t.renderer.currentFocusedRenderable?.id).toBe('search');
       if (!t.app.model.query) await t.mockInput.typeText('match');
       await t.renderOnce();
@@ -794,6 +800,87 @@ test('settings fields and Close size independently to their contents', async () 
           expect(field.x + field.width).toBeLessThanOrEqual(width - 2);
           expect(t.captureCharFrame()).toContain((field.getChildren()[0] as TextRenderable).plainText);
         }
+      }
+    } finally { t.app.dispose(); await t.dispose(); }
+  }
+});
+
+test('search mode is keyboard reachable, works in fullscreen and preserves the query', async () => {
+  const t = await setup();
+  try {
+    t.app.model.clear(); t.app.ingest([{ timestamp: '2026-11-04T12:00:00Z', message: 'Payment authorized' }]);
+    t.app.setQuery('Paymnt');
+    expect(t.app.model.rows()).toHaveLength(0);
+    const mode = t.renderer.root.findDescendantById('search-mode')!;
+    expect(mode).toBeDefined();
+    mode.focus(); t.mockInput.pressEnter();
+    expect(t.app.model.searchMode).toBe('fuzzy');
+    expect(t.app.model.rows()).toHaveLength(1);
+    t.app.toggleFullscreen(); await t.renderOnce();
+    expect(mode.visible).toBe(true);
+    mode.focus(); t.mockInput.pressEnter();
+    expect(t.app.model.searchMode).toBe('literal');
+    expect(t.app.model.query).toBe('Paymnt');
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('detail views switch parsed fields, original and JSON without changing the inspected snapshot', async () => {
+  const t = await setup();
+  try {
+    t.app.model.clear();
+    const record = { timestamp: '2026-11-04T12:00:00Z', level: 'ERROR', message: 'readFile /tmp/cart.json failed: java.io.FileNotFoundException: /tmp/cart.json: open failed: ENOENT (No such file or directory)' };
+    t.app.ingest([record]); t.app.model.select(t.app.model.rows()[0]!.key); t.app.setStatus('', true); await t.renderOnce();
+    const text = t.renderer.root.findDescendantById('detail-text') as TextRenderable;
+    expect(text.plainText).toContain('File path: /tmp/cart.json');
+    const selected = t.app.model.selected;
+    for (const mode of ['raw', 'json', 'fields']) {
+      t.renderer.root.findDescendantById(`detail-${mode}`)!.focus(); t.mockInput.pressEnter(); await t.renderOnce();
+      if (mode === 'json') expect(JSON.parse(text.plainText).original.message).toBe(record.message);
+      if (mode === 'raw') expect(text.plainText).not.toContain('Interpretation');
+      expect(t.app.model.selected).toBe(selected);
+    }
+    t.app.ingest([{ timestamp: '2026-11-04T12:00:01Z', message: 'new arrival' }]);
+    expect(t.app.model.selected).toBe(selected);
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('startup update remains available through capture statuses and opens rebuild instructions', async () => {
+  const t = await setup();
+  try {
+    t.app.setUpdate({ currentVersion: '0.10.0', latestVersion: '0.11.0', changelogUrl: 'https://example.test/changelog' });
+    t.app.setStatus('capture live', true); await t.renderOnce();
+    const notice = t.renderer.root.findDescendantById('update-notice')!;
+    expect(notice.visible).toBe(true);
+    expect(t.captureCharFrame()).toContain('0.10.0 → 0.11.0');
+    notice.focus(); t.mockInput.pressEnter(); await t.renderOnce();
+    expect(t.captureCharFrame()).toContain('rebuild');
+    expect(t.captureCharFrame()).not.toContain('npm install');
+    t.mockInput.pressEscape(); await Bun.sleep(50);
+    expect(t.app.model.paused).toBe(false);
+    expect(t.renderer.currentFocusedRenderable?.id).toBe('update-notice');
+  } finally { t.app.dispose(); await t.dispose(); }
+});
+
+test('search, detail tabs and update instructions fit narrow and wide terminals in every locale', async () => {
+  for (const locale of ['en', 'de', 'es', 'fr', 'it', 'ja', 'zh-CN'] as const) {
+    const t = await setup({ locale });
+    try {
+      t.app.model.select(t.app.model.rows()[0]!.key);
+      t.app.setUpdate({ currentVersion: '0.10.0', latestVersion: '0.11.0', changelogUrl: 'https://example.test/changelog' });
+      for (const width of [60, 140]) {
+        t.resize(width, 30); await t.renderOnce();
+        for (const id of ['search-mode', 'detail-fields', 'detail-raw', 'detail-json']) {
+          const node = t.renderer.root.findDescendantById(id)!;
+          expect(node.width).toBeGreaterThan(0);
+          expect(node.x).toBeGreaterThanOrEqual(0);
+          expect(node.x + node.width, `${locale} ${width} ${id}`).toBeLessThanOrEqual(width);
+        }
+        t.renderer.root.findDescendantById('update-notice')!.focus();
+        t.mockInput.pressEnter(); await t.renderOnce();
+        expect(t.captureCharFrame()).toContain('0.10.0 → 0.11.0');
+        const close = t.renderer.root.findDescendantById('close-update')!;
+        expect(close.x + close.width).toBeLessThanOrEqual(width);
+        t.mockInput.pressEscape(); await Bun.sleep(50);
       }
     } finally { t.app.dispose(); await t.dispose(); }
   }

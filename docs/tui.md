@@ -46,8 +46,8 @@ and WebViews belonging to one parent device. Selecting another parent clears the
 view and stops the old collectors. Disabling/re-enabling a source replaces its
 buffer. Explicitly enabling a source resumes the live view and clears the current
 selection while keeping the search query. Narrow terminals stack the source list above logs. Tab scrolls source
-controls into view; Enter or Space toggles the focused source. Search is currently
-a global literal search; per-source severity/tag/PID filters are not yet available.
+controls into view; Enter or Space toggles the focused source. Search is global, with a literal/fuzzy switch beside the input; per-source
+severity/tag/PID filters are not yet available.
 
 Open **JavaScript console · Alpha** to inspect a WebView without changing the
 selected log sources. Select a discovered WebView and explicitly choose its
@@ -129,9 +129,12 @@ inspection prerequisites still apply.
   freezes the view, so incoming records cannot shift the entries being read.
 - **Back to live** clears the inspected record and follows the newest entries.
   Capture continues while the view is frozen.
-- The detail panel scrolls independently and supports mouse text selection.
+- The detail panel offers structured **Details**, **Original**, and **JSON** views,
+  using the same diagnostic parsers and explanations as the web viewer.
+  The panel scrolls independently and supports mouse text selection.
   Terminal clipboard integration is not implemented by this prototype.
-- Search is literal and uses the shared search implementation. It includes
+- Switch between literal and fuzzy matching beside the search input, including
+  in fullscreen. Both modes use the shared web search implementation and include
   message text, timestamps, level, tag, and PID. Clear empties the view and live
   buffer without stopping capture; the current search is retained.
 - **Save JSON** saves the inspected whole record, or all filtered records when
@@ -145,6 +148,12 @@ them. Use at least 60 columns and 24 rows for a useful view. All seven catalogs
 are reused, including status descriptors that are translated on each render.
 Device identifiers and original logs remain unchanged. Terminal control bytes
 are escaped only in the rendered presentation.
+
+At startup, a background check looks for a newer stable version with a four-second
+timeout. When available, a notice opens source-update and executable-rebuild
+instructions plus the changelog URL. Capture continues during the check; failed
+or offline checks stay quiet. Quitting cancels a pending check. Updates are not
+installed automatically. `--help` does not perform a check.
 
 ## Build a standalone executable
 
@@ -171,7 +180,7 @@ reviewed `docs/architecture.md`, `src/App.vue`'s documented invariants,
 
 - `tui/model.ts` follows the existing bounded merge, immutable keys, separate
   live/frozen buffers, and whole-entry selection. Filtering caches by input array
-  and query; UI rendering creates only enough line elements for the viewport.
+  and query/matching mode; UI rendering creates only enough line elements for the viewport.
 - `tui/client.ts` adapts the existing `createLogStreams` lifecycle to Node/Bun's
   EventSource package. Explicit retry and stale-callback protection are reused.
 - `tui/app.ts` supplies focus order, source dialog, input, virtual log rows,
@@ -184,7 +193,7 @@ reviewed `docs/architecture.md`, `src/App.vue`'s documented invariants,
   No captured log text is translated.
 
 The terminal viewer still omits severity/tag/PID controls, multi-record range
-selection, Blueprint editing, clipboard commands, settings persistence, and update UI.
+selection, Blueprint editing, clipboard commands, and settings persistence.
 These remain follow-up features, not implied parity with the web application.
 
 ## Verify
@@ -197,7 +206,7 @@ npm run build
 npm run build:tui
 ```
 
-The TUI tests cover frozen snapshots with eviction, literal filtering, terminal
+The TUI tests cover frozen snapshots with eviction, literal/fuzzy filtering, structured detail views, startup update notices, terminal
 control escaping, mouse/Tab focus, source-dialog focus containment and selection,
 mouse text selection during arrivals, draggable scrolling with 100,000 records,
 resize, and a real loopback HTTP/SSE fixture. Tests require permission to bind
@@ -255,3 +264,11 @@ opens a source or file, and Escape returns. Mouse selection, wheels and scrollba
 work throughout. Below 90 columns, sources and details occupy separate screens.
 The source manager is available in direct local capture mode; editing YAML remains
 outside this terminal screen.
+
+## Documentation screenshot
+
+Run `bun scripts/capture-tui-screenshot.ts` to regenerate
+`docs/images/terminal-viewer.png`. It uses the actual TUI renderer with fixed,
+fictional device/log fixtures; it never connects to a device. Playwright converts
+the captured terminal cells and colors into a PNG. Set `CHROME_EXECUTABLE` to a
+local Chrome executable if Playwright's bundled browser is unavailable.

@@ -9,13 +9,14 @@
 
 **Android Logcat, iOS syslog & WebView consoles, in one place.**
 
-A browser-based **Android Logcat, iOS syslog and WebView console viewer**,
+An **Android Logcat, iOS syslog and WebView console viewer** with a web interface
+and an optional [terminal interface (TUI)](#terminal-interface-tui),
 with setup guidance for **macOS, Windows and Linux**. Connect a phone, find the message that matters,
 and share the relevant entries as plain text or structured JSON.
 Detailed [software setup guides](#guided-software-setup) are built into the app,
 with download links and copyable commands for the device tools you need.
 
-[Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Semantic Flows](#semantic-flows) · [Documentation](#documentation)
+[Website](https://uber-device-log.app) · [Get started](#get-started) · [Connect a device](#connect-a-device) · [Using the viewer](#using-the-viewer) · [Terminal interface](#terminal-interface-tui) · [Semantic Flows](#semantic-flows) · [Documentation](#documentation)
 
 **Android + iOS** · **Seven languages** · **GPL-3.0-only**
 
@@ -44,7 +45,9 @@ For opt-in diagnostics from existing Android logs, see the [Android diagnostic
 Blueprint bundles](blueprints/README.md). They recognize rendering, memory and
 stability signals without adding application instrumentation.
 
-**Minimum Node.js version: 22.12.0.** A browser and the device setup below are also required.
+**Minimum Node.js version: 22.12.0.** The web viewer also requires a browser.
+Both interfaces require the device setup below; the optional TUI has additional
+[build/runtime requirements](#terminal-interface-tui).
 Node.js must be installed and available on `PATH`, including when launching with `bunx`.
 Check your installed version with `node --version`.
 
@@ -103,10 +106,36 @@ Stop the running server before updating, then restart it; retain
 any custom command options such as `--port`. Offline checks fail silently. The
 request sends no logs or device information. Help/version commands do not check.
 
-### Terminal prototype
+### Terminal interface (TUI)
 
-An optional OpenTUI proof of concept supports mouse and keyboard navigation,
-a live demo and single-source device capture. See [TUI setup and limitations](docs/tui.md).
+Prefer to stay in your terminal? The optional TUI captures native Android or iOS
+logs and inspectable WebView consoles from the same device without starting a web
+server. Use the mouse or keyboard to choose sources, search the combined stream,
+pause for inspection, and export the selected record or filtered view as JSON.
+It also includes Semantic Flows and a WebView JavaScript console in local mode.
+
+![Über Device Log terminal interface showing combined native and WebView logs, severity colors and a selected payment timeout with full details](docs/images/terminal-viewer.png)
+
+*Actual TUI render with fictional demo logs. The view is paused for inspection;
+capture continues.*
+
+From a source checkout after `npm ci`, with **Bun 1.3.14 or newer** installed
+(**Bun 1.4+ on Windows arm64**):
+
+```sh
+npm run dev -- --tui
+# Include the project's Semantic Flows configuration:
+npm run dev -- --tui --project /path/to/project
+```
+
+For a synthetic demo without a connected device, run `npm run tui`.
+
+The TUI is an optional development prototype. Its executable is not bundled in
+the published npm package: `udl --tui` requires a host-specific local build.
+Search is global with a literal/fuzzy switch. Selected logs offer structured details,
+original text and JSON. A startup notice reports available updates. Per-source
+severity/tag/PID filters and Blueprint editing remain web features. See [TUI setup, controls and limitations](docs/tui.md)
+for build instructions and details.
 
 ### Run from source
 

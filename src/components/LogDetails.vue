@@ -63,7 +63,7 @@ function blur(event: FocusEvent) {
       <dl><template v-for="[label, value] in fields" :key="label"><dt>{{ t(label) }}</dt><dd>{{ value ?? t('detailUnavailable') }}</dd></template></dl>
       <p v-if="parsed.format === 'unrecognized'" class="log-detail-notice">{{ t('detailNoHeader') }}</p>
       <p v-if="parsed.deviceTimestamp" class="log-detail-notice">{{ t('detailTimeNote') }}</p>
-      <section class="log-detail-explanation"><h3>{{ t('detailInterpretation') }}</h3><p>{{ t(interpretations[parsed.interpretation]) }}</p></section>
+      <section v-if="parsed.interpretation !== 'generic'" class="log-detail-explanation"><h3>{{ t('detailInterpretation') }}</h3><p>{{ t(interpretations[parsed.interpretation]) }}</p></section>
       <p v-if="parsed.hasPrivateData" class="log-detail-notice">{{ t('detailPrivate') }}</p>
     </div>
     <pre v-else class="log-detail-raw">{{ view === 'raw' ? original : json }}</pre>

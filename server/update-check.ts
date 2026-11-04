@@ -50,7 +50,9 @@ export function createUpdateCheck(currentVersion: string, installation: Installa
   };
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout>;
+  let cancel!: () => void;
   const timeout = new Promise<never>((_, reject) => {
+    cancel = () => { clearTimeout(timer); controller.abort(); reject(new Error('Update check cancelled')); };
     timer = setTimeout(() => { controller.abort(); reject(new Error('Update check timed out')); }, timeoutMs);
   });
   const done = (async () => {
@@ -74,5 +76,5 @@ export function createUpdateCheck(currentVersion: string, installation: Installa
       clearTimeout(timer!);
     }
   })();
-  return { state, done };
+  return { state, done, cancel };
 }

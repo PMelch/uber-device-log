@@ -34,6 +34,20 @@ try {
         assert.equal(await element.textContent(), catalog[key]);
       }
       assert.equal(await page.locator('.flows-records').textContent(), originalLogs);
+      for (const view of ['terminal', 'web']) {
+        const button = page.locator(`[data-view="${view}"]`);
+        await button.click();
+        assert.equal(await button.getAttribute('aria-pressed'), 'true');
+        assert.equal(await page.locator('.viewer-slide:visible').count(), 1);
+        const slide = page.locator(`#viewer-${view}`);
+        assert.ok(await slide.isVisible());
+        const img = slide.locator('img');
+        await page.waitForFunction(id => { const image = document.querySelector(`#viewer-${id} img`); return image?.complete && image.naturalWidth > 0; }, view);
+        assert.equal(await img.getAttribute('alt'), catalog[view === 'web' ? 'siteScreenshot' : 'siteTerminalAlt']);
+        for (const element of await page.locator('#preview [data-t], .terminal-setup [data-t]').all()) {
+          assert.equal(await element.textContent(), catalog[await element.getAttribute('data-t')]);
+        }
+      }
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${locale} overflows at ${width}px`);
       for (const chapter of ['single-event', 'multipart', 'branching']) {
         const link = page.locator(`.flows-tutorials a[href$="/${chapter}/README.md"]`);
@@ -46,17 +60,25 @@ try {
   await page.reload();
   assert.equal(await page.locator('html').getAttribute('lang'), 'zh-CN');
   const reached = new Set();
-  for (let index = 0; index < 32; index++) {
+  for (let index = 0; index < 48; index++) {
     await page.keyboard.press('Tab');
     const href = await page.evaluate(() => document.activeElement?.getAttribute('href'));
     if (href) reached.add(href);
   }
   assert.ok(reached.has('#semantic-flows'));
   for (const href of await page.locator('.flows-tutorials a').evaluateAll(links => links.map(link => link.href))) assert.ok(reached.has(href), `Keyboard cannot reach ${href}`);
+  await page.locator('[data-view="web"]').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('[data-view="terminal"]').getAttribute('aria-pressed'), 'true');
+  await page.keyboard.press('ArrowLeft');
+  assert.equal(await page.locator('[data-view="web"]').getAttribute('aria-pressed'), 'true');
   const staticPage = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 1000 } });
   await staticPage.goto(url);
   assert.equal(await staticPage.locator('#flows-title').textContent(), websiteCatalogs.en.siteFlowsTitle);
   assert.equal(await staticPage.locator('.flows-tutorials a').count(), 3);
+  assert.equal(await staticPage.locator('.viewer-slide:visible').count(), 2);
+  assert.equal(await staticPage.locator('.viewer-controls:visible').count(), 0);
+  assert.ok((await staticPage.locator('.terminal-setup').textContent()).includes('Bun'));
   await staticPage.close();
   if (process.env.WEBSITE_SCREENSHOT_DIR) {
     await mkdir(process.env.WEBSITE_SCREENSHOT_DIR, { recursive: true });
@@ -64,6 +86,10 @@ try {
       await page.setViewportSize({ width, height: 1100 });
       await page.locator('#language').selectOption(locale);
       await page.locator('#semantic-flows').screenshot({ path: `${process.env.WEBSITE_SCREENSHOT_DIR}/${locale}-${width}.png` });
+      for (const view of ['web', 'terminal']) {
+        await page.locator(`[data-view="${view}"]`).click();
+        await page.locator('#preview').screenshot({ path: `${process.env.WEBSITE_SCREENSHOT_DIR}/preview-${view}-${locale}-${width}.png` });
+      }
     }
   }
   assert.deepEqual(errors, []);

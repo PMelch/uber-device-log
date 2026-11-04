@@ -60,3 +60,17 @@ test('registry data is validated and never becomes a command or external link', 
   assert.equal(detectInstallation('/custom/bun/node_modules/uber-device-log', { BUN_INSTALL_GLOBAL_DIR: '/custom/bun' }), 'bun-global');
   assert.equal(detectInstallation('C:\\Users\\alice\\AppData\\Roaming\\npm\\node_modules\\uber-device-log', {}), 'npm-global');
 });
+
+test('cancellation aborts the request and settles even when the transport ignores abort', async () => {
+  const { createUpdateCheck } = await import('./update-check.js');
+  let signal: AbortSignal | null | undefined;
+  const check = createUpdateCheck('0.8.0', 'unknown', async (_url, init) => {
+    signal = init?.signal;
+    return new Promise(() => {});
+  });
+  check.cancel(); check.cancel();
+  assert.equal(signal?.aborted, true);
+  await check.done;
+  assert.equal(check.state.status, 'unavailable');
+  assert.equal(check.state.latestVersion, null);
+});

@@ -12,6 +12,7 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  tuiUpdateInstructions: c("Terminal startup update notice dialog.", "Explain how to update this source-built terminal app: quit, update the source checkout, rebuild if using the standalone executable, restart preserving options. Do not claim npm installs the TUI. No placeholders."),
   tuiFlowSourcesBack: c("Terminal Blueprint sources navigation button.", "Return from source details to the source list, or from the file picker to the installation form. Does not close the Flow workspace."),
   tuiFlowSourcesHelp: c("Terminal Blueprint sources footer.", "Keyboard guide: Tab changes controls, arrows navigate source/file rows, Enter opens them, Escape returns or closes. Keep key names verbatim."),
   tuiFlowPathHelp: c("Terminal bundle path input.", "Explains path completion: open the file chooser to browse a directory or complete a filename prefix. The tilde denotes the home directory and must remain verbatim."),
@@ -359,8 +360,8 @@ export const translationContext = {
   searchPlaceholder: c('Placeholder in the log search field.', 'Search message content or technical metadata; tag means a log source label, not a social hashtag.'),
   fuzzySearch: c('Small badge beside the search input on desktop.', 'Search tolerates approximate spellings; use a concise label.'),
   searchMode: c('Accessible name of the menu beside the log search field.', 'Choose approximate matching or literal substring matching. Changing mode only filters the view; capture continues.'),
-  literalSearch: c('Search-mode menu option and selected value.', 'Match the entire trimmed query as a contiguous substring, case-insensitively, in one message or metadata field. No typo tolerance, regular expressions or query syntax.'),
-  approximateSearch: c('Search-mode menu option and selected value.', 'Existing fuzzy search: tolerate approximate spellings and require every whitespace-separated term to match somewhere in the record.'),
+  literalSearch: c('Web search-mode menu and terminal global-search switch.', 'Match the entire trimmed query as a contiguous substring, case-insensitively, in one message or metadata field. No typo tolerance, regular expressions or query syntax.'),
+  approximateSearch: c('Web search-mode menu and terminal global-search switch.', 'Existing fuzzy search: tolerate approximate spellings and require every whitespace-separated term to match somewhere in the record.'),
   tagFilter: c('Label for the Android tag filter below search.', 'Match the entire structured Android logcat tag, case-sensitively. Leading/trailing input whitespace is ignored. Empty means any tag; never search the message body for this filter.'),
   pidFilter: c('Label for the Android PID filter below search.', 'Match an exact numeric process identifier in structured Android metadata, not a number in message text. Empty means any PID. PID remains the technical abbreviation; entered digits remain verbatim.'),
   metadataFilterHint: c('Help below Android tag and PID fields.', 'Tag and PID filters combine with search and severity. Tags are case-sensitive whole-field matches. These fields are disabled and ignored for iOS because this capture source lacks structured Android metadata.'),
@@ -453,9 +454,9 @@ export const translationContext = {
   detailPinned: c("Detail overlay status after pinning.", "Overlay remains on this record while capture continues; no row-selection meaning."),
   detailPin: c("Detail overlay action.", "Keep this message snapshot open after the pointer leaves."),
   detailClose: c("Detail overlay close-button accessible name.", "Dismiss only the message details and restore focus to its info button if available."),
-  detailTabFields: c("Detail overlay view selector.", "Parsed metadata and cautious human-readable interpretation."),
-  detailTabRaw: c("Detail overlay view selector.", "Original record rendered in the existing plain-text format; preserve original data."),
-  detailTabJson: c("Detail overlay view selector.", "Structured single-record diagnostic data. JSON is a format name, not translated."),
+  detailTabFields: c("Web detail overlay and terminal detail view selector.", "Parsed metadata and cautious human-readable interpretation."),
+  detailTabRaw: c("Web detail overlay and terminal detail view selector.", "Original record rendered in the existing plain-text format; preserve original data."),
+  detailTabJson: c("Web detail overlay and terminal detail view selector.", "Structured single-record diagnostic data. JSON is a format name, not translated."),
   detailReceived: c("iOS detail metadata label.", "Timestamp assigned by this computer when the relay message arrived, not the device clock."),
   detailTimestamp: c("Android detail metadata label.", "Timestamp supplied by Android logcat."),
   detailDeviceTime: c("iOS detail metadata label.", "Timestamp text in the original syslog envelope; contains neither year nor timezone."),
@@ -507,6 +508,16 @@ export const translationContext = {
 
 /** Public website copy is separate from the application catalogs and npm bundle. */
 export const websiteTranslationContext = {
+  siteViewsTitle: c("Public landing page: browser and terminal showcase.", "Heading introducing screenshots of the browser viewer and the optional terminal prototype. No placeholders."),
+  siteViewsLabel: c("Public landing page: browser and terminal showcase.", "Accessible label of the group of two buttons that select the displayed screenshot. No placeholders."),
+  siteWebView: c("Public landing page: browser and terminal showcase.", "Button selecting the browser screenshot and its matching screenshot heading. No placeholders."),
+  siteTerminalView: c("Public landing page: browser and terminal showcase.", "Button selecting the terminal screenshot and its matching heading. TUI is the terminal user interface acronym; retain TUI. No placeholders."),
+  siteTerminalAlt: c("Public landing page: browser and terminal showcase.", "Accessible description of an actual terminal screenshot using fictional demo logs, showing source selection and the log stream. No placeholders."),
+  siteTerminalCaption: c("Public landing page: browser and terminal showcase.", "Caption of terminal screenshot: optional terminal prototype, with fictional demo logs. Do not imply published package availability. No placeholders."),
+  siteTerminalTitle: c("Public landing page: browser and terminal showcase.", "Heading for optional terminal interface setup information. No placeholders."),
+  siteTerminalBody: c("Public landing page: browser and terminal showcase.", "Describes native and WebView logs directly in the terminal with shared text search, pause and JSON export, without claiming browser feature parity. No placeholders."),
+  siteTerminalSetup: c("Public landing page: browser and terminal showcase.", "Explains that the TUI is an optional source prototype requiring a repository checkout, installed dependencies and Bun 1.3.14 or newer, not included in the published npm package. Launch command is displayed separately verbatim. No placeholders."),
+  siteTerminalDocs: c("Public landing page: browser and terminal showcase.", "Link to terminal setup and keyboard documentation on GitHub, written in English. No placeholders."),
   siteFlowsBundlesTitle: c("Public landing page: Android Blueprint downloads.", "Public landing page, ready-made Android Blueprint callout before the authoring tutorials. Heading offering existing Android diagnostic Blueprints, not creating a new Blueprint. Preserve Android and Blueprint. No placeholders."),
   siteFlowsBundlesBody: c("Public landing page: Android Blueprint downloads.", "Explain the repository offers downloadable bundles for Android UI performance, memory and stability based on existing Logcat records, with installation instructions. No application instrumentation required; do not imply automatic installation or activation. Explain that downloaded files can be installed in Blueprint sources and must then be enabled. GitHub documentation is English. Preserve Android, Logcat and GitHub. No placeholders."),
   siteFlowsBundlesLink: c("Public landing page: Android Blueprint downloads.", "Link action to the blueprints directory and its download README in the GitHub repository. Opens the collection with download links and installation instructions, not a direct binary download. Preserve Android and GitHub. No placeholders."),

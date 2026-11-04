@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const it = {
+  tuiUpdateInstructions: "Chiudi l’applicazione terminale, aggiorna la copia locale del repository e ricompila l’eseguibile, se ne usi uno. Poi riavvia con le stesse opzioni.",
   tuiFlowSourcesBack: "Indietro",
   tuiFlowSourcesHelp: "Tab: controlli · ↑↓: elenco · Enter: apri · Esc: indietro",
   tuiFlowPathHelp: "Inserisci un percorso (~/ supportato); Scegli file consente di esplorare o completare il prefisso.",

@@ -1,4 +1,6 @@
 import { createFlowSources } from './flow-sources';
+import { createTuiUpdateNotice } from './update-notice';
+import { version } from '../package.json';
 import { parseArgs } from 'node:util';
 import { resolve } from 'node:path';
 import { writeFile } from 'node:fs/promises';
@@ -59,9 +61,10 @@ Ctrl+C or Quit exits the client. The separately running server stays active.`);
   const renderer = await createCliRenderer({ exitOnCtrlC: false, useMouse: true, enableMouseMovement: true }).catch(error => { local?.close(); client?.close(); throw error; });
   let timer: ReturnType<typeof setInterval> | undefined;
   let closed = false;
+  let updateNotice: ReturnType<typeof createTuiUpdateNotice> | undefined;
   const cleanup = () => {
     if (closed) return;
-    closed = true; clearInterval(timer); client?.close(); local?.close(); app?.dispose(); flows?.dispose();
+    closed = true; updateNotice?.dispose(); clearInterval(timer); client?.close(); local?.close(); app?.dispose(); flows?.dispose();
     process.off('SIGTERM', quit); process.off('SIGINT', quit);
   };
   function quit() { cleanup(); renderer.destroy(); }
@@ -93,6 +96,7 @@ Ctrl+C or Quit exits the client. The separately running server stays active.`);
       let sequence = capacity;
       timer = setInterval(() => { app?.ingest(demoMessages(sequence, 10)); sequence += 10; }, 100);
     } else app.setStatus({ code: 'selectDevice' }, false);
+    updateNotice = createTuiUpdateNotice(version, notice => app?.setUpdate(notice));
     await renderer.closed;
   } finally { quit(); }
 }

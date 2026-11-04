@@ -13,6 +13,8 @@ import { bufferSizes, type MessageOrder } from '../src/preferences';
 import { logLevel } from '../shared/log-view';
 import { sourceKey } from './local-client';
 import { createLogModel, terminalText } from './model';
+import { renderLogDetails, type DetailView } from './log-details';
+import type { TuiUpdateNotice } from './update-notice';
 
 export interface TuiOptions {
   flows?: TuiFlows;
@@ -38,6 +40,9 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   const model = createLogModel(options.capacity);
   let locale = options.locale ?? 'en';
   let sourceName = '';
+  let updateNotice: TuiUpdateNotice | undefined;
+  let detailView: DetailView = 'fields';
+  let detailKey: number | undefined;
   let available: Device[] = [];
   let selectedSources: Device[] = [];
   let viewParent: Device | undefined;
@@ -110,10 +115,16 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   flowsButton.box.visible = !!options.flows;
   button(toolbarEnd, 'settings', 'settings', openSettings);
   button(toolbarEnd, 'quit', 'tuiQuit', () => options.quit?.());
-  const searchBox = new BoxRenderable(renderer, { height: 3, flexShrink: 0, border: true, borderColor: colors.border });
+  const searchRow = new BoxRenderable(renderer, { height: 3, flexShrink: 0, flexDirection: 'row', gap: 1 });
+  root.add(searchRow);
+  const searchBox = new BoxRenderable(renderer, { height: 3, flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 8, border: true, borderColor: colors.border });
   const search = new InputRenderable(renderer, { id: 'search', width: '100%', placeholder: t('searchPlaceholder'), maxLength: 500,
     textColor: colors.text, backgroundColor: colors.panel, focusedBackgroundColor: colors.selected });
-  searchBox.add(search); root.add(searchBox); mainFocus.push(search);
+  searchBox.add(search); searchRow.add(searchBox); mainFocus.push(search);
+  const searchMode = button(searchRow, 'search-mode', 'literalSearch', () => {
+    model.setSearchMode(model.searchMode === 'literal' ? 'fuzzy' : 'literal');
+    offset = 0; cursor = 0; renderer.clearSelection(); refresh();
+  });
   search.on(InputRenderableEvents.INPUT, () => setQuery(search.value));
   const content = new BoxRenderable(renderer, { id: 'content', flexGrow: 1, minHeight: 4, flexDirection: 'row', gap: 1 });
   root.add(content);
@@ -166,7 +177,26 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   const details = new ScrollBoxRenderable(renderer, { id: 'details', flexGrow: 1, height: '100%', minWidth: 0,
     border: true, borderColor: colors.border, focusedBorderColor: colors.accent, scrollX: false, scrollY: true });
   const detailText = new TextRenderable(renderer, { id: 'detail-text', width: '100%', wrapMode: 'word', fg: colors.text, selectable: true });
-  details.add(detailText); content.add(details); mainFocus.push(details);
+  const detailModes = new BoxRenderable(renderer, { flexDirection: 'row', flexWrap: 'wrap', height: 'auto', minHeight: 1, flexShrink: 0 });
+  details.add(detailModes); details.add(detailText); content.add(details); mainFocus.push(details);
+  const detailTabs = (['fields', 'raw', 'json'] as const).map(view => {
+    const tab = new BoxRenderable(renderer, { id: `detail-${view}`, height: 1, flexShrink: 0, focusable: true,
+      onMouseDown(event) { if (event.button !== 0) return; event.preventDefault(); event.stopPropagation(); tab.focus(); selectView(); } });
+    const text = new TextRenderable(renderer, { height: 1, selectable: false });
+    tab.add(text);
+    const selectView = () => { detailView = view; details.scrollTo(0); renderer.clearSelection(); refresh(); };
+    tab.on('focused', () => { details.scrollTo(0); paintDetailTabs(); });
+    tab.on('blurred', paintDetailTabs);
+    detailModes.add(tab); mainFocus.push(tab); actions.set(tab, selectView);
+    return { view, tab, text };
+  });
+  const updateButton = new BoxRenderable(renderer, { id: 'update-notice', height: 1, focusable: true, visible: false,
+    onMouseDown(event) { if (event.button !== 0) return; event.preventDefault(); updateButton.focus(); openUpdate(); } });
+  const updateLine = new TextRenderable(renderer, { height: 1, selectable: false });
+  updateButton.add(updateLine);
+  root.add(updateButton, 1); mainFocus.push(updateButton); actions.set(updateButton, openUpdate);
+  updateButton.on('focused', () => { if (disposed) return; updateButton.backgroundColor = colors.selected; });
+  updateButton.on('blurred', () => { if (disposed) return; updateButton.backgroundColor = colors.background; });
   const stateLine = new TextRenderable(renderer, { height: 1, fg: colors.accent, selectable: false });
   const statusLine = new TextRenderable(renderer, { height: 1, fg: colors.muted, selectable: false });
   const help = new TextRenderable(renderer, { height: 2, fg: colors.muted, wrapMode: 'word', selectable: false });
@@ -255,6 +285,15 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     }
     paintPause();
   }
+  function paintDetailTabs() {
+    if (disposed) return;
+    const keys = { fields: 'detailTabFields', raw: 'detailTabRaw', json: 'detailTabJson' } as const;
+    for (const { view, tab, text } of detailTabs) {
+      text.content = view === detailView ? `[${t(keys[view])}]` : ` ${t(keys[view])} `;
+      text.fg = view === detailView || tab.focused ? colors.accent : colors.text;
+      tab.backgroundColor = tab.focused ? colors.selected : colors.background;
+    }
+  }
   function refresh() {
     if (disposed) return;
     for (const label of labels) label.text.content = t(label.key);
@@ -265,12 +304,21 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     sources.text.content = t(options.syncSources ? 'tuiRefreshSources' : options.demo === false ? 'tuiSources' : 'tuiDemo');
     pause.text.content = t(model.paused ? 'backToLive' : 'pause');
     updatePause();
-    searchBox.title = t('literalSearch'); search.placeholder = t('searchPlaceholder');
+    searchBox.title = t(model.searchMode === 'literal' ? 'literalSearch' : 'approximateSearch'); search.placeholder = t('searchPlaceholder');
+    searchMode.box.title = t('searchMode');
+    searchMode.text.content = t(model.searchMode === 'literal' ? 'literalSearch' : 'approximateSearch');
     details.title = t('message');
     details.visible = !fullscreen && (!options.syncSources || renderer.width >= 100 || !!model.selected);
     collapse.text.content = t(sourcesCollapsed ? 'tuiShowSources' : 'tuiHideSources');
     const selected = model.selected;
-    detailText.content = selected ? terminalText(JSON.stringify({ timestamp: selected.timestamp, level: selected.level, tag: selected.tag, pid: selected.pid, source: selected.source, truncated: selected.truncated }, null, 2) + '\n\n' + selected.message) : t('tuiInspectHint');
+    if (detailKey !== selected?.key) { detailKey = selected?.key; detailView = 'fields'; details.scrollTo(0); }
+    detailModes.visible = !!selected;
+    paintDetailTabs();
+    const selectedDevice = selected?.source ? [...selectedSources, ...available].find(device => sourceKey(device) === selected.source!.key) : viewParent;
+    detailText.content = selected ? renderLogDetails(selected, detailView, locale, selectedDevice) : t('tuiInspectHint');
+    updateButton.visible = !!updateNotice && !fullscreen;
+    updateLine.fg = colors.warn;
+    updateLine.content = updateNotice ? terminalText(translate(locale, 'updateAvailable', { current: updateNotice.currentVersion, latest: updateNotice.latestVersion })) : '';
     stateLine.content = `${t(model.paused ? capturing ? 'pausedActive' : 'pausedStopped' : capturing ? 'liveCapture' : 'notCapturing')} · ${translate(locale, 'messageCount', { count: model.liveCount })}`;
     statusLine.content = terminalText(translateMessage(locale, status) || sourceName);
     help.content = t('tuiHelp');
@@ -456,6 +504,22 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
     refreshSettings = undefined;
     modal.destroyRecursively(); modal = undefined; modalFocus = []; modalScroller = undefined;
     restoreFocus?.focus();
+  }
+  function openUpdate() {
+    if (!updateNotice || modal || consolePanel || flowsPanel || disposed) return;
+    restoreFocus = renderer.currentFocusedRenderable;
+    root.visible = false;
+    modal = new BoxRenderable(renderer, { id: 'update-dialog', width: '100%', height: '100%', border: true,
+      title: terminalText(translate(locale, 'updateAvailable', { current: updateNotice.currentVersion, latest: updateNotice.latestVersion })),
+      backgroundColor: colors.background, borderColor: colors.accent, paddingX: 1 });
+    renderer.root.add(modal);
+    const close = button(modal, 'close-update', 'updateDismiss', () => { root.visible = true; closeModal(); }, modalFocus);
+    close.box.maxWidth = '100%'; close.box.alignSelf = 'flex-start';
+    const body = new ScrollBoxRenderable(renderer, { flexGrow: 1, minHeight: 1, scrollX: false, scrollY: true });
+    modal.add(body); modalScroller = body; modalFocus.push(body);
+    body.add(new TextRenderable(renderer, { width: '100%', wrapMode: 'word', selectable: true, fg: colors.text,
+      content: terminalText(`${translate(locale, 'updateAvailable', { current: updateNotice.currentVersion, latest: updateNotice.latestVersion })}\n\n${t('tuiUpdateInstructions')}\n\n${t('updateChangelog')}\n${updateNotice.changelogUrl}`) }));
+    close.box.focus();
   }
   function openSettings() {
     if (modal || consolePanel || flowsPanel || disposed) return;
@@ -651,7 +715,7 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   layout(); setTheme(themeMode); mainFocus[0]!.focus();
   if (options.syncSources) void refreshSources();
   return {
-    model, openSettings, openFlows, openConsole, get consolePanel() { return consolePanel; }, setTheme, get theme() { return colors; }, refreshSources, toggleSource, toggleSources, toggleFullscreen, controls: { sidebar, collapsedSources, collapse: collapse.box, maximize: maximize.box, search, logs, pause: pause.box, sources: sources.box, details, rows, scrollbar }, setQuery,
+    model, setUpdate(notice: TuiUpdateNotice) { if (!disposed) { updateNotice = notice; refresh(); } }, openSettings, openFlows, openConsole, get consolePanel() { return consolePanel; }, setTheme, get theme() { return colors; }, refreshSources, toggleSource, toggleSources, toggleFullscreen, controls: { sidebar, collapsedSources, collapse: collapse.box, maximize: maximize.box, search, logs, pause: pause.box, sources: sources.box, details, rows, scrollbar }, setQuery,
     ingest(messages: LogMessage[]) { if (!disposed) { options.flows?.ingest(messages); model.ingest(messages); refresh(); } },
     setStatus(value: UiMessage | string, live = capturing) { status = value; capturing = live; refresh(); },
     dispose() {

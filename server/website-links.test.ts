@@ -10,6 +10,7 @@ test('feature website links target the available branch; main builds keep main l
   for (const ref of ['feature/semantic-flows', 'main']) {
     const result = websiteRepositoryLinks(html, ref);
     assert.ok(result.includes(`${prefix}/tree/${ref}/blueprints`));
+    assert.ok(result.includes(`${prefix}/blob/${ref}/docs/tui.md`));
     for (const chapter of ['single-event', 'multipart', 'branching']) {
       assert.ok(result.includes(`${prefix}/blob/${ref}/tutorials/semantic-flows/${chapter}/README.md`));
     }

@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const fr = {
+  tuiUpdateInstructions: "Fermez l’application de terminal, mettez à jour votre copie locale du dépôt et recompilez l’exécutable si vous en utilisez un. Relancez ensuite avec les mêmes options.",
   tuiFlowSourcesBack: "Retour",
   tuiFlowSourcesHelp: "Tab : commandes · ↑↓ : liste · Enter : ouvrir · Esc : retour",
   tuiFlowPathHelp: "Saisissez un chemin (~/ accepté) ; Choisir un fichier permet de parcourir ou compléter le préfixe.",
