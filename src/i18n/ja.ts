@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const ja = {
+  tuiFlowSourcesBack: "戻る",
+  tuiFlowSourcesHelp: "Tab: 操作項目 · ↑↓: 一覧 · Enter: 開く · Esc: 戻る",
+  tuiFlowPathHelp: "パスを入力（~/ 対応）。ファイル選択でフォルダーを参照するか、入力した先頭部分を補完できます。",
+
   tuiPrototype: "OpenTUI プロトタイプ",
   tuiDemo: "デモ",
   tuiFlowsHelp: "Tab: 操作項目 · ↑↓: 移動 · Enter: 詳細 · Esc: 戻る",

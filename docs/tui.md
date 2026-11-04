@@ -230,4 +230,28 @@ analysis recovers from a failed worker and starts a fresh recognition history.
 
 The terminal build includes `tui/flow-worker.ts` as a second executable entrypoint;
 keep it in custom build commands. Demo and legacy `--server` modes do not expose
-the Flows screen. Blueprint editing and bundle management remain follow-up work.
+the Flows screen. Blueprint editing remains follow-up work; bundle management
+is available through Blueprint sources.
+
+## Manage Flow sources
+
+In local mode (`udl --tui`), open **Flows → Blueprint sources**. Search global and
+project sources, inspect metadata, included/active definitions and conflicts, and
+enable or disable bundles. Standalone YAML sources remain automatically loaded.
+The manager shares the analysis registry and writes configuration directly; no
+HTTP server is started. External edits are refreshed without losing selection.
+
+**Install a bundle** accepts a URL or local `.blueprint` path. **Choose file**
+browses directories and completes the entered path prefix; `~/` is supported.
+Select global or project scope (project requires `--project`). Installation uses
+the same validation, 4 MiB limit, conflict checks and disabled-by-default policy
+as the web viewer. Cancel aborts pending transfers; if publication already
+completed, the refreshed inventory reflects that result. Existing files are not
+overwritten. A stale activation revision requires reviewing the refreshed state
+and retrying.
+
+Tab/Shift+Tab changes controls; arrows and PageUp/PageDown navigate lists, Enter
+opens a source or file, and Escape returns. Mouse selection, wheels and scrollbars
+work throughout. Below 90 columns, sources and details occupy separate screens.
+The source manager is available in direct local capture mode; editing YAML remains
+outside this terminal screen.

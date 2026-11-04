@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const de = {
+  tuiFlowSourcesBack: "Zurück",
+  tuiFlowSourcesHelp: "Tab: Bedienfelder · ↑↓: Liste · Enter: öffnen · Esc: zurück",
+  tuiFlowPathHelp: "Pfad eingeben (~/ möglich); Datei auswählen durchsucht oder ergänzt den Anfang.",
+
   tuiPrototype: "OpenTUI-Prototyp",
   tuiDemo: "Demo",
   tuiFlowsHelp: "Tab: Bedienelemente · ↑↓: navigieren · Enter: ansehen · Esc: zurück",

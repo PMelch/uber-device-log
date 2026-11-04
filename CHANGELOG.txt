@@ -10,6 +10,8 @@ Unreleased
 ----------
 
 Added
+- Manage global and project Flow sources in the TUI without a web server: search,
+  inspect conflicts, enable bundles and install from URLs or a local file picker.
 - Add a terminal Semantic Flows screen with searchable live summaries, status and
   completeness indicators, an event timeline, masked payloads and explicit raw-log
   inspection. Analyze selected sources in an isolated worker using the same global

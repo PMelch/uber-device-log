@@ -1,3 +1,4 @@
+import { createFlowSources } from './flow-sources';
 import { parseArgs } from 'node:util';
 import { resolve } from 'node:path';
 import { writeFile } from 'node:fs/promises';
@@ -69,8 +70,10 @@ Ctrl+C or Quit exits the client. The separately running server stays active.`);
   process.once('SIGTERM', quit); process.once('SIGINT', quit);
   try {
     if (local) {
-      let registry: FlowProject | undefined;
-      flows = createTuiFlows({ load: async () => { registry ??= await FlowProject.create(project?.directory); return registry.reload(); } });
+      let registry: Promise<FlowProject> | undefined;
+      const getProject = () => registry ??= FlowProject.create(project?.directory).catch(error => { registry = undefined; throw error; });
+      const sources = createFlowSources({ project: getProject, changed: async () => { await flows?.reload(true); } });
+      flows = createTuiFlows({ sources, load: async () => (await getProject()).reload() });
       void flows.reload();
     }
     app = createTui(renderer, {

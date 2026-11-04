@@ -1,3 +1,4 @@
+import { createFlowSourcesPanel } from './flow-sources-panel';
 import { BoxRenderable, TextRenderable, InputRenderable, InputRenderableEvents, ScrollBoxRenderable, ScrollBarRenderable,
   StyledText, fg, bold, type CliRenderer, type Renderable, type KeyEvent } from '@opentui/core';
 import type { FlowInstance, FlowOutcome } from '../shared/flow-types';
@@ -16,6 +17,7 @@ export function createFlowsPanel(renderer: CliRenderer, options: {
 }) {
   const t = (key: MessageKey) => translate(options.locale(), key);
   let disposed = false, info = false, selectedId = '', observation = 0, reveal = false, raw = false, query = '';
+  let sourcesPanel: ReturnType<typeof createFlowSourcesPanel> | undefined;
   const presentations = new WeakMap<FlowInstance, ReturnType<typeof flowPresentation>>();
   function presentation(instance: FlowInstance) { let value = presentations.get(instance); if (!value) { value = flowPresentation(instance); presentations.set(instance, value); } return value; }
   const actions = new Map<Renderable, () => void>();
@@ -31,6 +33,12 @@ export function createFlowsPanel(renderer: CliRenderer, options: {
     box.add(text); parent.add(box); focus.push(box); actions.set(box, action); labels.set(text, label); return box;
   }
   const close = button(toolbar, 'flows-close', () => t('close'), options.close);
+  const sourcesButton = button(toolbar, 'flows-sources', () => t('flowsBlueprintSources'), () => {
+    if (!options.flows.sources || sourcesPanel) return;
+    root.visible = false;
+    sourcesPanel = createFlowSourcesPanel(renderer, { ...options, close() { sourcesPanel?.dispose(); sourcesPanel = undefined; root.visible = true; sourcesButton.focus(); update(); } });
+  });
+  sourcesButton.visible = !!options.flows.sources;
   const back = button(toolbar, 'flows-back', () => t('flowsBack'), () => { info = false; selectedId = ''; reveal = raw = false; update(); flowList.box.focus(); });
   button(toolbar, 'flows-info', () => t('flowsInfo'), () => { info = !info; update(); if (info) information.focus(); });
   const reloadButton = button(toolbar, 'flows-reload', () => t('flowsReload'), () => { void options.flows.reload(); });
@@ -118,6 +126,7 @@ export function createFlowsPanel(renderer: CliRenderer, options: {
   function visible(node: Renderable) { let current: Renderable | null = node; while (current) { if (!current.visible) return false; current = current.parent as Renderable | null; } return true; }
   function update() {
     if (disposed) return;
+    if (sourcesPanel) { sourcesPanel.update(); return; }
     const c = options.colors(), flows = options.flows;
     const selected = flows.state.instances.find(item => item.id === selectedId);
     if (selectedId && !selected) { selectedId = ''; reveal = raw = false; flowList.box.focus(); }
@@ -173,6 +182,7 @@ export function createFlowsPanel(renderer: CliRenderer, options: {
     }
   }
   function onKey(key: KeyEvent) {
+    if (sourcesPanel) return;
     if (key.name === 'escape') { key.preventDefault(); key.stopPropagation(); if (info) { info = false; update(); close.focus(); } else if (selectedId) { selectedId = ''; reveal = raw = false; update(); flowList.box.focus(); } else options.close(); return; }
     if (key.name === 'tab') {
       key.preventDefault(); key.stopPropagation(); const nodes = focus.filter(visible); const index = nodes.indexOf(renderer.currentFocusedRenderable!);
@@ -186,5 +196,5 @@ export function createFlowsPanel(renderer: CliRenderer, options: {
   const unsubscribe = options.flows.subscribe(update);
   const clock = setInterval(() => { if (selectedId && !disposed) update(); }, 1000);
   update(); close.focus();
-  return { update, dispose() { disposed = true; clearInterval(clock); unsubscribe(); renderer.keyInput.off('keypress', onKey); renderer.off('resize', update); root.destroyRecursively(); actions.clear(); labels.clear(); } };
+  return { update, dispose() { sourcesPanel?.dispose(); disposed = true; clearInterval(clock); unsubscribe(); renderer.keyInput.off('keypress', onKey); renderer.off('resize', update); root.destroyRecursively(); actions.clear(); labels.clear(); } };
 }

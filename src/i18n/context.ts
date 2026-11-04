@@ -12,6 +12,9 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  tuiFlowSourcesBack: c("Terminal Blueprint sources navigation button.", "Return from source details to the source list, or from the file picker to the installation form. Does not close the Flow workspace."),
+  tuiFlowSourcesHelp: c("Terminal Blueprint sources footer.", "Keyboard guide: Tab changes controls, arrows navigate source/file rows, Enter opens them, Escape returns or closes. Keep key names verbatim."),
+  tuiFlowPathHelp: c("Terminal bundle path input.", "Explains path completion: open the file chooser to browse a directory or complete a filename prefix. The tilde denotes the home directory and must remain verbatim."),
   tuiPrototype: c("Terminal header.", "Identifies the experimental OpenTUI proof of concept. OpenTUI remains verbatim."),
   tuiDemo: c("Terminal source button.", "Synthetic demo source; no actual device is being captured."),
   tuiFlowsHelp: c("Terminal Flows footer.", "Keyboard guide for the flow list and event timeline. Tab changes controls, arrow keys move through flows or events, Enter opens the highlighted item, Escape returns to the list or closes Flows. Keep key names verbatim."),

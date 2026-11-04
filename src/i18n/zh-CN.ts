@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const zhCN = {
+  tuiFlowSourcesBack: "返回",
+  tuiFlowSourcesHelp: "Tab：控件 · ↑↓：列表 · Enter：打开 · Esc：返回",
+  tuiFlowPathHelp: "输入路径（支持 ~/）；选择文件可浏览目录或补全已输入的前缀。",
+
   tuiPrototype: "OpenTUI 原型",
   tuiDemo: "演示",
   tuiFlowsHelp: "Tab：控件 · ↑↓：浏览 · Enter：查看 · Esc：返回",

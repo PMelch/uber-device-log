@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const it = {
+  tuiFlowSourcesBack: "Indietro",
+  tuiFlowSourcesHelp: "Tab: controlli · ↑↓: elenco · Enter: apri · Esc: indietro",
+  tuiFlowPathHelp: "Inserisci un percorso (~/ supportato); Scegli file consente di esplorare o completare il prefisso.",
+
   tuiPrototype: "Prototipo OpenTUI",
   tuiDemo: "Dimostrazione",
   tuiFlowsHelp: "Tab: controlli · ↑↓: naviga · Enter: ispeziona · Esc: indietro",

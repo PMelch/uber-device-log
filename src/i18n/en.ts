@@ -1,5 +1,9 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  tuiFlowSourcesBack: "Back",
+  tuiFlowSourcesHelp: "Tab: controls · ↑↓: list · Enter: open · Esc: back",
+  tuiFlowPathHelp: "Enter a path (~/ supported); Choose file browses or completes the prefix.",
+
   tuiPrototype: "OpenTUI prototype",
   tuiDemo: "Demo",
   tuiFlowsHelp: "Tab: controls · ↑↓: navigate · Enter: inspect · Esc: back",

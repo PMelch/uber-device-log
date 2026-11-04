@@ -1,5 +1,9 @@
 import type { Messages } from './en';
 export const es = {
+  tuiFlowSourcesBack: "Volver",
+  tuiFlowSourcesHelp: "Tab: controles · ↑↓: lista · Enter: abrir · Esc: volver",
+  tuiFlowPathHelp: "Introduce una ruta (admite ~/); Elegir archivo permite explorar o completar el prefijo.",
+
   tuiPrototype: "Prototipo OpenTUI",
   tuiDemo: "Demostración",
   tuiFlowsHelp: "Tab: controles · ↑↓: navegar · Enter: inspeccionar · Esc: volver",

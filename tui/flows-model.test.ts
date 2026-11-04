@@ -76,3 +76,12 @@ test('worker failure remains actionable across registry failures and recovery un
     await until(() => !flows.error);
   } finally { flows.dispose(); }
 });
+
+test('forced reload after a mutation waits for an older in-flight read then loads fresh state', async () => {
+  const { createTuiFlows } = await import('./flows-model'); let finish!: (value: FlowSnapshot) => void, calls = 0;
+  const flows = createTuiFlows({ pollMs: 0, load: () => ++calls === 1 ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({ ...snapshot(), revision: 'v2' }) });
+  try {
+    const first = flows.reload(); await Promise.resolve(); const fresh = flows.reload(true);
+    finish(snapshot()); await Promise.all([first, fresh]); expect(flows.snapshot?.revision).toBe('v2'); expect(calls).toBe(2);
+  } finally { flows.dispose(); }
+});

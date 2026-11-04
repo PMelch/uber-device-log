@@ -1,10 +1,11 @@
+import type { FlowSources } from './flow-sources';
 import { createFlowAnalysis, type FlowWorkerLike } from '../src/flow-analysis';
 import type { FlowEngineState, FlowSnapshot } from '../shared/flow-types';
 import type { LogMessage } from '../shared/types';
 import type { UiMessage } from '../src/i18n';
 
 /** Session recognition uses the web worker's bounded queue, watchdog and epoch barriers. */
-export function createTuiFlows(options: { load(): Promise<FlowSnapshot>; pollMs?: number; worker?: () => FlowWorkerLike }) {
+export function createTuiFlows(options: { sources?: FlowSources; load(): Promise<FlowSnapshot>; pollMs?: number; worker?: () => FlowWorkerLike }) {
   let snapshot: FlowSnapshot | undefined;
   let state: FlowEngineState = { instances: [], gaps: 0 };
   let error: UiMessage | undefined;
@@ -20,9 +21,9 @@ export function createTuiFlows(options: { load(): Promise<FlowSnapshot>; pollMs?
     error() { workerFailed = true; loading = false; notify(); },
     activated() { loading = false; notify(); },
   });
-  function reload(): Promise<void> {
+  function reload(fresh = false): Promise<void> {
     if (disposed) return Promise.resolve();
-    if (pending) return pending;
+    if (pending) return fresh ? pending.then(() => reload()) : pending;
     clearTimeout(poll);
     if (!snapshot) loading = true;
     notify();
@@ -53,6 +54,7 @@ export function createTuiFlows(options: { load(): Promise<FlowSnapshot>; pollMs?
   }
   const tick = setInterval(() => { if (snapshot?.enabled && !disposed) analysis.tick(); }, 500);
   return {
+    sources: options.sources,
     get snapshot() { return snapshot; }, get state() { return state; }, get error(): UiMessage | undefined { return workerFailed ? { code: 'flowsWorkerError' } : error; }, get loading() { return loading; },
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     reload,
@@ -69,7 +71,7 @@ export function createTuiFlows(options: { load(): Promise<FlowSnapshot>; pollMs?
     interrupt() { if (!disposed) { cold = []; coldBytes = 0; coldGap = false; analysis.interrupt(); } },
     clear() { if (!disposed) { cold = []; coldBytes = 0; coldGap = false; analysis.clear(); } },
     restart() { if (!disposed) { workerFailed = false; analysis.restart(); notify(); } },
-    dispose() { disposed = true; clearTimeout(poll); clearInterval(tick); analysis.dispose(); listeners.clear(); cold = []; },
+    dispose() { disposed = true; options.sources?.dispose(); clearTimeout(poll); clearInterval(tick); analysis.dispose(); listeners.clear(); cold = []; },
   };
 }
 export type TuiFlows = ReturnType<typeof createTuiFlows>;
