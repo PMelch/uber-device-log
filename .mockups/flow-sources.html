@@ -1,0 +1,62 @@
+<style>
+#udl-source-mock {--udl-bg:light-dark(#fafbfc,#161b22);--udl-fg:light-dark(#202b38,#d5dde7);--udl-muted:light-dark(#536477,#9ba9b9);--udl-line:light-dark(#8998a8,#536173);--udl-selected:light-dark(#dcebf5,#243b4c);--udl-accent:light-dark(#075c84,#88c7eb);--udl-warn:light-dark(#895300,#edc16a);font:14px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--udl-fg);background:var(--udl-bg);padding:16px;box-sizing:border-box;}
+#udl-source-mock *{box-sizing:border-box} #udl-source-mock [hidden]{display:none!important}
+#udl-source-mock .chrome{padding-right:95px;color:var(--udl-muted);padding-bottom:12px;border-bottom:1px solid var(--udl-line)}
+#udl-source-mock .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0}
+#udl-source-mock h2{font:inherit;font-weight:600;margin:0;flex:1} #udl-source-mock h3{font:inherit;font-weight:600;margin:8px 0}
+#udl-source-mock button,#udl-source-mock input,#udl-source-mock select{font:inherit;color:var(--udl-fg);background:var(--udl-bg);border:1px solid var(--udl-line);border-radius:0;padding:6px 9px;max-width:100%}
+#udl-source-mock button:focus-visible,#udl-source-mock input:focus-visible,#udl-source-mock select:focus-visible{outline:2px solid var(--udl-accent);outline-offset:2px}
+#udl-source-mock button:disabled{opacity:.55} #udl-source-mock .layout{display:grid;grid-template-columns:minmax(230px,2fr) minmax(0,3fr);gap:16px;min-height:365px}
+#udl-source-mock .browser{min-width:0} #udl-source-mock .detail{min-width:0;border:1px solid var(--udl-line);padding:14px;overflow-wrap:anywhere}
+#udl-source-mock .search{width:100%} #udl-source-mock .group{margin:14px 0 6px;color:var(--udl-muted)}
+#udl-source-mock .source{display:block;width:100%;text-align:left;border:0;padding:9px 8px;margin:2px 0} #udl-source-mock .source[aria-pressed=true]{background:var(--udl-selected);color:var(--udl-accent)}
+#udl-source-mock .sub{display:block;color:var(--udl-muted);font-size:12px} #udl-source-mock .warn{color:var(--udl-warn)}
+#udl-source-mock dl{margin:18px 0;display:grid;grid-template-columns:75px 1fr;gap:8px} #udl-source-mock dt{color:var(--udl-muted)} #udl-source-mock dd{margin:0}
+#udl-source-mock .inventory{padding:0;list-style:none} #udl-source-mock .inventory li{margin:6px 0}
+#udl-source-mock footer{border-top:1px solid var(--udl-line);margin-top:16px;padding-top:10px;color:var(--udl-muted);font-size:12px}
+#udl-source-mock .install{border:1px solid var(--udl-line);padding:16px;min-height:365px} #udl-source-mock label{display:block;margin:12px 0} #udl-source-mock label input{display:block;width:100%;margin-top:5px}
+#udl-source-mock .status{min-height:24px;color:var(--udl-accent)} #udl-source-mock .back{display:none}
+#udl-source-mock.compact .layout{grid-template-columns:1fr} #udl-source-mock.compact .detail{display:none} #udl-source-mock.compact.details .detail{display:block} #udl-source-mock.compact.details .browser{display:none} #udl-source-mock.compact.details .back{display:inline-block}
+@media(max-width:620px){#udl-source-mock .layout{grid-template-columns:1fr} #udl-source-mock .detail{display:none} #udl-source-mock.details .detail{display:block} #udl-source-mock.details .browser{display:none} #udl-source-mock.details .back{display:inline-block} #udl-source-mock{padding:10px} }
+@media(pointer:coarse){#udl-source-mock button,#udl-source-mock input,#udl-source-mock select{min-height:44px}}
+</style>
+<div id="udl-source-mock" aria-label="Flow Sources TUI Entwurf">
+<div class="chrome">Über Device Log · TUI<br>Semantic Flows / Quellen · Projekt: shop-app</div>
+<div class="toolbar"><h2>Blueprint-Quellen</h2><button class="back cursor-interaction" type="button">← Liste</button><button class="add cursor-interaction" type="button">[ + Installieren ]</button></div>
+<div class="layout">
+<section class="browser" aria-label="Quellenliste"><input class="search" type="search" aria-label="Quellen durchsuchen" placeholder="/ Quellen durchsuchen"><div class="items"></div></section>
+<section class="detail" aria-label="Details zur ausgewählten Quelle"><div class="toolbar"><h3 class="name"></h3><button class="toggle cursor-interaction" type="button"></button></div><p class="description"></p><dl><dt>Quelle</dt><dd class="kind"></dd><dt>Pfad</dt><dd class="path"></dd><dt>ID</dt><dd class="id"></dd></dl><p class="counts"></p><p class="diagnostic warn"></p><h3>Enthaltene Blueprints</h3><ul class="inventory"></ul></section>
+</div>
+<form class="install" hidden><h3>Bundle installieren</h3><label>Quelle <select class="method"><option value="file">Lokale Datei</option><option value="url">URL</option></select></label><label><span class="location-label">Dateipfad (.blueprint)</span><input class="location" required value="~/Downloads/payment-flows.blueprint" aria-label="Dateipfad oder URL"></label><label>Ziel <select class="scope"><option>Projekt: shop-app</option><option>Global</option></select></label><p class="sub">.blueprint · maximal 4 MiB · Validierung vor Installation</p><div class="toolbar"><button class="cursor-interaction" type="submit">[ Installieren ]</button><button class="cancel cursor-interaction" type="button">[ Abbrechen ]</button></div></form>
+<div class="status" role="status"></div>
+<footer>Tab / Shift+Tab: Fokus · ↑ ↓: Quelle · Enter: Details · Esc: Zurück<br>Mockup · Beispieldaten · Klicks und Änderungen werden nur hier simuliert</footer>
+</div>
+<script>
+(()=>{
+const root=document.getElementById('udl-source-mock'),q=s=>root.querySelector(s);
+const sources=[
+{id:'global:mobile-core',name:'Mobile Core',scope:'Global',kind:'Bundle',enabled:true,ids:['app.start','network.request'],description:'Start und Netzwerkereignisse für mobile Apps.',path:'~/.udl/bundles/mobile-core.blueprint'},
+{id:'project:checkout',name:'Checkout',scope:'Projekt',kind:'Bundle',enabled:true,ids:['checkout.start','payment.authorize','checkout.finish'],description:'Vom Warenkorb bis zur bestätigten Bestellung.',path:'.udl/bundles/checkout.blueprint'},
+{id:'project:payment-debug',name:'Payment Debug',scope:'Projekt',kind:'Bundle',enabled:true,ids:['payment.authorize'],description:'Zusätzliche Diagnose für den Bezahlvorgang.',path:'.udl/bundles/payment-debug.blueprint'},
+{id:'project:loose',name:'Lokale Blueprints',scope:'Projekt',kind:'YAML-Verzeichnis',enabled:true,ids:['session.refresh'],description:'Einzelne YAML-Dateien; immer geladen.',path:'.udl/flows/'}];
+let selected=sources[1];
+const active=id=>sources.filter(s=>s.enabled&&s.ids.includes(id)).length===1;
+function filtered(){const term=q('.search').value.toLocaleLowerCase('de');return sources.filter(s=>[s.name,s.id,s.scope,s.kind,s.path,s.description].join(' ').toLocaleLowerCase('de').includes(term));}
+function render(){
+const entries=filtered(); if(!entries.includes(selected))selected=entries[0];
+q('.items').replaceChildren();for(const scope of ['Global','Projekt']){const members=entries.filter(s=>s.scope===scope);if(!members.length)continue;const group=document.createElement('div');group.className='group';group.textContent=scope.toUpperCase()+' · '+members.length;q('.items').append(group);for(const item of members){const b=document.createElement('button');b.type='button';b.className='source cursor-interaction';b.setAttribute('aria-pressed',String(item===selected));b.textContent=(item===selected?'▸ ':'  ')+item.name;const meta=document.createElement('span');meta.className='sub';meta.textContent=(item.enabled?'[an]':'[aus]')+' · '+item.kind+' · '+item.ids.length+' Blueprints';b.append(meta);b.onclick=()=>{selected=item;root.classList.add('details');render();};b.onkeydown=e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const next=entries[Math.max(0,Math.min(entries.length-1,entries.indexOf(item)+(e.key==='ArrowDown'?1:-1)))];selected=next;render();const index=entries.indexOf(next);q('.items').querySelectorAll('button')[index].focus();}};q('.items').append(b);}}
+q('.detail').hidden=!selected;if(!selected){q('.items').textContent='Keine passenden Quellen.';return;}
+q('.name').textContent=selected.name;q('.description').textContent=selected.description;q('.kind').textContent=selected.scope+' · '+selected.kind;q('.path').textContent=selected.path;q('.id').textContent=selected.id;
+q('.toggle').textContent=selected.kind==='Bundle'?(selected.enabled?'[ Deaktivieren ]':'[ Aktivieren ]'):'Immer geladen';q('.toggle').disabled=selected.kind!=='Bundle';
+const conflicts=selected.enabled?selected.ids.filter(id=>!active(id)):[];
+q('.counts').textContent=(selected.enabled?selected.ids.filter(active).length:0)+' aktiv / '+selected.ids.length+' enthalten';q('.diagnostic').textContent=conflicts.length?'! ID-Konflikt: '+conflicts.join(', ')+'. Betroffene Blueprints sind in keiner Quelle aktiv.':'';
+q('.inventory').replaceChildren();for(const id of selected.ids){const li=document.createElement('li');li.textContent=(selected.enabled?(active(id)?'✓ ':'! '):'– ')+id;q('.inventory').append(li);}}
+function closeInstall(){q('.install').hidden=true;q('.layout').hidden=false;q('.add').hidden=false;q('.add').focus();}
+q('.search').oninput=render;q('.toggle').onclick=()=>{selected.enabled=!selected.enabled;render();q('.status').textContent='Aktivierung im Mockup geändert.';};
+q('.add').onclick=()=>{q('.layout').hidden=true;q('.install').hidden=false;q('.add').hidden=true;q('.location').focus();};q('.cancel').onclick=closeInstall;
+q('.method').onchange=()=>{const file=q('.method').value==='file';q('.location-label').textContent=file?'Dateipfad (.blueprint)':'Bundle-URL';q('.location').value=file?'~/Downloads/payment-flows.blueprint':'https://example.org/payment-flows.blueprint';};
+q('.install').onsubmit=e=>{e.preventDefault();closeInstall();q('.status').textContent='Simulation: Bundle validiert und installiert in '+q('.scope').value+'.';};
+q('.back').onclick=()=>{root.classList.remove('details');q('.search').focus();};root.onkeydown=e=>{if(e.key==='Escape'){if(!q('.install').hidden)closeInstall();else{root.classList.remove('details');q('.search').focus();}}};render();
+if(globalThis.Tweak){const state={compact:false};const tweak=new Tweak({container:root,onChange:()=>{root.classList.toggle('compact',state.compact);root.classList.remove('details');}});tweak.addToggle(state,'compact',{label:'Schmales Terminal: Liste und Details getrennt'});}
+})();
+</script>

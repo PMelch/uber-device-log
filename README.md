@@ -51,10 +51,6 @@ Both interfaces require the device setup below; the optional TUI has additional
 Node.js must be installed and available on `PATH`, including when launching with `bunx`.
 Check your installed version with `node --version`.
 
-> **Release status:** The npm package is prepared but has not been published yet.
-> Until the first release, use [Run from source](#run-from-source).
-> The following package commands become available after publication.
-
 Run without a global installation:
 
 ```sh
@@ -88,11 +84,9 @@ from the launch directory. On startup, UDL creates `.udl/` and an empty
 `.udl/config.yaml` if missing, preserving existing configuration. This file stores project settings, including the Blueprint directory and bundle
 activation settings. Invalid paths or initialization
 failures stop startup. Without `--project`, the instance runs without a project
-and creates no project configuration. From source, use
-`npm run dev -- --project /path/to/project`.
+and creates no project configuration.
 
-With a one-off launcher, use `npx uber-device-log --port 4311` or
-`bunx uber-device-log --port 4311`. Both require Node.js; omit Bun's `--bun` flag.
+Both one-off launchers require Node.js; omit Bun's `--bun` flag when using `bunx`.
 
 At each server start, a background check queries the public npm registry for the
 latest stable version (four-second timeout). If an update is available, the app
@@ -119,16 +113,14 @@ It also includes Semantic Flows and a WebView JavaScript console in local mode.
 *Actual TUI render with fictional demo logs. The view is paused for inspection;
 capture continues.*
 
-From a source checkout after `npm ci`, with **Bun 1.3.14 or newer** installed
-(**Bun 1.4+ on Windows arm64**):
+After creating a host-specific local build and making its `udl` command available
+(see [TUI build instructions](docs/tui.md)):
 
 ```sh
-npm run dev -- --tui
+udl --tui
 # Include the project's Semantic Flows configuration:
-npm run dev -- --tui --project /path/to/project
+udl --tui --project /path/to/project
 ```
-
-For a synthetic demo without a connected device, run `npm run tui`.
 
 The TUI is an optional development prototype. Its executable is not bundled in
 the published npm package: `udl --tui` requires a host-specific local build.
@@ -139,6 +131,8 @@ for build instructions and details.
 
 ### Run from source
 
+For development, clone the repository and start the development server:
+
 ```sh
 git clone https://github.com/PMelch/uber-device-log.git
 cd uber-device-log
@@ -148,6 +142,22 @@ npm run dev
 
 Open **http://127.0.0.1:4310**. See the [technical guide](docs/technical.md#run)
 for production builds and development commands.
+
+Pass development options after `--`, for example
+`npm run dev -- --project /path/to/project`.
+
+To develop the TUI, install **Bun 1.3.14 or newer** (**Bun 1.4+ on Windows arm64**)
+and run:
+
+```sh
+npm run dev -- --tui
+npm run dev -- --tui --project /path/to/project
+```
+
+For a synthetic demo without a connected device, run `npm run tui`.
+
+To use `udl --tui` with this checkout, follow the [TUI build instructions](docs/tui.md),
+then run `npm link` from the checkout to make its `udl` command available globally.
 
 ## Connect a device
 
@@ -285,10 +295,9 @@ Enable a project using `.udl/config.yaml` and a blueprint directory. The include
 messages. From the checkout root:
 
 ```sh
-npm run dev -- --project=./test_flow_project
-# Or after building:
-npm run build
-node bin/uber-device-log.mjs --flows=./test_flow_project
+udl --project ./test_flow_project
+# Or use the alias:
+udl --flows ./test_flow_project
 ```
 
 `--project` and `--flows` are aliases for the project directory, resolved relative
@@ -356,8 +365,7 @@ confirm host pairing and the required Apple device services.
 
 **The port is already in use**
 
-Stop the previous app process, or use `udl --port 4311`. When running from source,
-set the `PORT` environment variable instead.
+Stop the previous app process, or use `udl --port 4311`.
 
 **`udl` is not found after installation**
 

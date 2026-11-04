@@ -9,6 +9,10 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Fixed
+- Use installed CLI commands in README usage examples and reserve development
+  commands for source development; remove the outdated pre-publication notice.
+
 0.11.0 - 2026-11-04
 -------------------
 
