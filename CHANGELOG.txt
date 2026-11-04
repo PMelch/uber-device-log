@@ -9,6 +9,10 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Changed
+- Show the shorter npx and bunx TUI commands without an extra argument separator
+  in the website, README and CLI help. Both forms remain supported.
+
 0.11.1 - 2026-11-04
 -------------------
 

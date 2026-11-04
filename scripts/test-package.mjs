@@ -169,6 +169,7 @@ try {
     await new Promise(resolve => download.close(resolve));
   }
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log']);
+  await smokeTui('npx', ['--offline', '--no', '--', 'uber-device-log'], installed);
   await smokeTui('npx', ['--offline', '--no', '--', 'uber-device-log', '--'], installed);
   cpSync(join(root, 'test_flow_project'), join(temporary, 'fixture-project'), { recursive: true });
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], 'fixture-project', true);
@@ -178,6 +179,7 @@ try {
   assert.equal(existsSync(join(temporary, project, '.udl')), false, 'Help must not initialize projects');
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], project);
   await smoke('bunx', ['--no-install', 'uber-device-log']);
+  await smokeTui('bunx', ['--no-install', 'uber-device-log'], installed);
   await smokeTui('bunx', ['--no-install', 'uber-device-log', '--'], installed);
   // bunx against an npm installation does not verify Bun's own dependency resolver.
   const bunDirectory = join(temporary, 'bun-install');

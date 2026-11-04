@@ -15,8 +15,8 @@ Usage: udl [options]
        udl install-blueprint <file-or-url> --project <dir>
        npx uber-device-log --port 4311
        bunx uber-device-log --port 4311
-       npx uber-device-log@latest -- --tui
-       bunx uber-device-log@latest -- --tui
+       npx uber-device-log@latest --tui
+       bunx uber-device-log@latest --tui
 
 Options:
   -p, --port <number>  HTTP port (default: PORT environment variable or 4310)

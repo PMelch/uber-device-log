@@ -119,8 +119,8 @@ The npm package includes the optional TUI. Install **Bun 1.3.14 or newer**
 ```sh
 udl --tui
 # Or without a global installation:
-bunx uber-device-log@latest -- --tui
-npx uber-device-log@latest -- --tui
+bunx uber-device-log@latest --tui
+npx uber-device-log@latest --tui
 # Include the project's Semantic Flows configuration:
 udl --tui --project /path/to/project
 ```

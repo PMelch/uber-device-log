@@ -6,8 +6,8 @@ Node.js 22.12+ remains required for the CLI. No checkout or local build is neede
 
 ```sh
 udl --tui
-bunx uber-device-log@latest -- --tui
-npx uber-device-log@latest -- --tui
+bunx uber-device-log@latest --tui
+npx uber-device-log@latest --tui
 udl --tui --project /path/to/project
 ```
 
