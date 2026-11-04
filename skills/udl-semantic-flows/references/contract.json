@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "viewerPackageVersion": "0.10.0",
+  "viewerPackageVersion": "0.11.0",
   "compatibility": "Snapshot of the source contract, including unreleased changes. This package version is provenance, not a minimum supported release. Validate with a viewer that implements these features.",
   "contractDigest": "94227a2cfbe11c364e54c9c1cdc04d97ef4216feeb5e0e22fe00c334d6b20fe8",
   "sourceFingerprints": {

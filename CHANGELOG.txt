@@ -9,6 +9,9 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+0.11.0 - 2026-11-04
+-------------------
+
 Added
 - Inspect terminal logs as structured diagnostic details, original text or JSON,
   using the same parsers and explanations as the web viewer.
@@ -58,7 +61,7 @@ Fixed
   and stop only their capture while keeping remaining sources and captured logs.
 - Start the terminal interface directly from source with `npm run dev -- --tui`,
   including project options, without launching the web server or requiring a build.
-- Discover Android WebViews reliably in the terminal interface when the ADB tunnel
+- Discover Android WebViews reliably in web and terminal interfaces when the ADB tunnel
   opens asynchronously; support both source and bundled Bun adapter imports.
 
 0.10.0 - 2026-11-03
