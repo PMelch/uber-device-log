@@ -1,6 +1,6 @@
 import type { Messages } from './en';
 export const ja = {
-  tuiUpdateInstructions: "ターミナルアプリを終了し、チェックアウトしたソースを更新してください。実行ファイルを使用している場合は再ビルドし、同じオプションで起動し直してください。",
+  tuiUpdateInstructions: "ターミナルアプリを終了し、パッケージマネージャーで uber-device-log を更新してください。ソースからインストールした場合は、リポジトリを更新して再ビルドしてください。その後、同じオプションで起動し直してください。",
   tuiFlowSourcesBack: "戻る",
   tuiFlowSourcesHelp: "Tab: 操作項目 · ↑↓: 一覧 · Enter: 開く · Esc: 戻る",
   tuiFlowPathHelp: "パスを入力（~/ 対応）。ファイル選択でフォルダーを参照するか、入力した先頭部分を補完できます。",

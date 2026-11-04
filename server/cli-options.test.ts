@@ -37,3 +37,9 @@ test('TUI accepts project and port without enabling HTTP', () => {
   assert.equal(options.tui, true);
   assert.equal(options.project, resolve('.'));
 });
+test('one-off launchers may forward a leading option separator', () => {
+  for (const args of [['--tui'], ['--tui', '--project', 'project with spaces'], ['--help'], ['install-blueprint', 'example.blueprint', '--global']]) {
+    assert.deepEqual(parseCliOptions(['--', ...args]), parseCliOptions(args));
+  }
+  assert.throws(() => parseCliOptions(['--', '--unknown']));
+});

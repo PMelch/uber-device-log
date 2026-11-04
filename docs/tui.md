@@ -1,22 +1,19 @@
 # Terminal log viewer
 
-During development, start the TUI directly from source (Bun required):
+The npm package includes the terminal interface and its Flow worker. Install Bun
+1.3.14 or newer (Bun 1.4+ on Windows arm64) and make `bun` available on `PATH`.
+Node.js 22.12+ remains required for the CLI. No checkout or local build is needed:
 
 ```sh
-npm run dev -- --tui
-npm run dev -- --tui --project .
+udl --tui
+bunx uber-device-log@latest -- --tui
+npx uber-device-log@latest -- --tui
+udl --tui --project /path/to/project
 ```
 
-No compiled executable is required. Restart the TUI to apply source changes.
-Without `--tui`, `npm run dev` keeps the web server's tsx watcher.
-
-For the package-style entry point, build the web/server and host-specific terminal executable:
-
-```sh
-npm run build
-npm run build:tui
-node bin/uber-device-log.mjs --tui --project .
-```
+Install the global `udl` command with `npm install --global uber-device-log`, or
+use either one-off launcher above. The package manager installs the OpenTUI native
+library for the host platform. Keep optional dependencies enabled during installation.
 
 `udl --tui` starts direct native/WebView collectors without starting the HTTP
 server. `--project` and `--flows` initialize the same project context; `--port`
@@ -68,16 +65,36 @@ levels are colored and bold, source names use an accent, and message text stays
 neutral. Level labels and selection markers remain available in monochrome.
 Appearance changes apply to the current session without changing captured data.
 
-The executable is a local build, not part of the published npm distribution.
-Use Bun 1.3.14 or newer as below. If an older macOS Bun creates an executable
+A standalone executable is an optional development build; the npm package instead
+ships JavaScript run by Bun. Use Bun 1.3.14 or newer as below. If an older macOS Bun creates an executable
 with an invalid signature, rebuild using a supported Bun, or ad-hoc sign the
 local binary with `codesign --force --sign - build/udl-tui`.
 
 ## Development demo and HTTP client
 
-The TUI uses **OpenTUI Core 0.8.2** with its direct TypeScript API. This is an
-optional development prototype on `feature/tui`, not a replacement for the web
-viewer or a published package command. No React or Solid renderer is needed.
+The TUI uses **OpenTUI Core 0.8.2** with its direct TypeScript API. No React or Solid renderer is needed.
+
+## Run from source
+
+After `npm ci`, start the TUI directly with Bun:
+
+```sh
+npm run dev -- --tui
+npm run dev -- --tui --project .
+```
+
+Restart the TUI to apply source changes. To test the package-style launcher:
+
+```sh
+npm run build
+npm run build:tui:package
+npm link
+udl --tui --project .
+```
+
+For an optional standalone executable, use `npm run build:tui`, then run
+`./build/udl-tui --local` (`build/udl-tui.exe --local` on Windows). This executable
+includes Bun and is separate from the npm launcher.
 
 ## Run the demo
 
@@ -94,9 +111,8 @@ count, retains at most that many records, and adds 100 fictional records per
 second. It does not contact a phone. Supported locales are `en`, `es`, `de`,
 `fr`, `it`, `ja`, and `zh-CN`; the Language field in Settings lets you choose between them.
 
-The web application retains its existing Node requirement. OpenTUI's development
-dependency declares Node >=26.4, so installing this development checkout under
-older Node may emit an engine warning. The documented TUI runner is Bun.
+The web application retains its existing Node requirement. OpenTUI declares Node >=26.4 for its Node runtime, so installing the package or
+development checkout under older Node may emit an engine warning. The documented TUI runner is Bun.
 
 ## Connect to UDL
 

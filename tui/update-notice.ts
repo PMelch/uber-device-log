@@ -1,6 +1,6 @@
 import { createUpdateCheck } from '../server/update-check';
 
-/** The terminal app is built from source; npm update commands do not install it. */
+/** Version details shared by packaged and source terminal installations. */
 export interface TuiUpdateNotice {
   currentVersion: string;
   latestVersion: string;

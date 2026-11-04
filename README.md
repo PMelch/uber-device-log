@@ -113,21 +113,24 @@ It also includes Semantic Flows and a WebView JavaScript console in local mode.
 *Actual TUI render with fictional demo logs. The view is paused for inspection;
 capture continues.*
 
-After creating a host-specific local build and making its `udl` command available
-(see [TUI build instructions](docs/tui.md)):
+The npm package includes the optional TUI. Install **Bun 1.3.14 or newer**
+(**Bun 1.4+ on Windows arm64**) and make `bun` available on `PATH`, then run:
 
 ```sh
 udl --tui
+# Or without a global installation:
+bunx uber-device-log@latest -- --tui
+npx uber-device-log@latest -- --tui
 # Include the project's Semantic Flows configuration:
 udl --tui --project /path/to/project
 ```
 
-The TUI is an optional development prototype. Its executable is not bundled in
-the published npm package: `udl --tui` requires a host-specific local build.
+No repository checkout or local build is required. `udl --tui` starts the packaged
+TUI with Bun; the web viewer continues to use Node.js.
 Search is global with a literal/fuzzy switch. Selected logs offer structured details,
 original text and JSON. A startup notice reports available updates. Per-source
 severity/tag/PID filters and Blueprint editing remain web features. See [TUI setup, controls and limitations](docs/tui.md)
-for build instructions and details.
+for runtime requirements and details.
 
 ### Run from source
 
@@ -156,8 +159,9 @@ npm run dev -- --tui --project /path/to/project
 
 For a synthetic demo without a connected device, run `npm run tui`.
 
-To use `udl --tui` with this checkout, follow the [TUI build instructions](docs/tui.md),
-then run `npm link` from the checkout to make its `udl` command available globally.
+To test the packaged TUI from this checkout, run `npm run build`,
+`npm run build:tui:package` and `npm link`, then use `udl --tui`.
+`npm run build:tui` remains available for a standalone executable.
 
 ## Connect a device
 

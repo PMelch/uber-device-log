@@ -1,6 +1,8 @@
 import { resolve } from 'node:path';
 
 export function parseCliOptions(args: string[], environmentPort?: string) {
+  // npx and bunx can forward the separator after the package name.
+  if (args[0] === '--') args = args.slice(1);
   let portText = environmentPort ?? '4310';
   let project: string | undefined;
   let help = false;

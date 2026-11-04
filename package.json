@@ -1,6 +1,6 @@
 {
   "name": "uber-device-log",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
@@ -11,7 +11,7 @@
     "build:debug": "vue-tsc --noEmit && NODE_ENV=development vite build --mode development --outDir dist-debug",
     "start": "node bin/uber-device-log.mjs",
     "test": "node --import tsx --test server/*.test.ts",
-    "prepack": "npm run build",
+    "prepack": "npm run build && npm run build:tui:package",
     "prepublishOnly": "npm test",
     "test:package": "node scripts/test-package.mjs",
     "blueprints:build": "node --import tsx scripts/build-blueprint-bundles.mjs",
@@ -26,14 +26,19 @@
     "tui": "bun tui/index.ts",
     "test:tui": "bun test tui/*.test.ts",
     "typecheck:tui": "tsc -p tsconfig.tui.json",
-    "build:tui": "bun build --compile ./tui/index.ts ./tui/flow-worker.ts --outfile build/udl-tui"
+    "build:tui": "bun build --compile ./tui/index.ts ./tui/flow-worker.ts --outfile build/udl-tui",
+    "build:tui:package": "bun build ./tui/index.ts ./tui/flow-worker.ts --target=bun --packages=external --outdir build/tui"
   },
   "dependencies": {
     "@devicefarmer/adbkit": "^3.3.9",
     "@devicefarmer/adbkit-logcat": "2.1.3",
+    "@opentui/core": "0.8.2",
     "@tanstack/vue-virtual": "^3.13.52",
     "appium-ios-device": "^3.1.26",
+    "eventsource": "5.1.4",
     "express": "^5.3.0",
+    "fuse.js": "^7.5.0",
+    "vue": "^3.5.44",
     "yaml": "^2.9.1",
     "yauzl": "3.4.0"
   },
@@ -43,22 +48,18 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
-    "@opentui/core": "0.8.2",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.6",
     "@typescript-eslint/parser": "8.55.0",
     "@vitejs/plugin-vue": "^6.0.10",
     "eslint": "9.39.5",
     "eslint-plugin-vue": "10.6.2",
-    "eventsource": "5.1.4",
-    "fuse.js": "^7.5.0",
     "playwright": "1.62.1",
     "prettier": "3.9.10",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "typescript-eslint": "8.55.0",
     "vite": "^8.3.5",
-    "vue": "^3.5.44",
     "vue-eslint-parser": "10.2.0",
     "vue-tsc": "^3.3.14"
   },
@@ -72,6 +73,7 @@
     "bin/",
     "build/server/*.js",
     "build/shared/*.js",
+    "build/tui/*.js",
     "dist/",
     "README.md"
   ],

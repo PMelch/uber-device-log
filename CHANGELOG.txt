@@ -9,9 +9,18 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+0.11.1 - 2026-11-04
+-------------------
+
 Fixed
-- Use installed CLI commands in README usage examples and reserve development
-  commands for source development; remove the outdated pre-publication notice.
+- Include the terminal interface and Flow worker in the npm package so `udl --tui`
+  runs without a checkout or local build. Bun 1.3.14+ remains required (1.4+ on
+  Windows arm64); runtime dependencies are installed for the user's platform.
+- Accept the forwarded `--` separator for `npx uber-device-log@latest -- --tui`
+  and `bunx uber-device-log@latest -- --tui`.
+- Use CLI commands in README and website usage examples, explain the packaged TUI
+  and its Bun requirement in all seven languages, and update terminal upgrade
+  guidance for package installations. Remove the outdated README publication notice.
 
 0.11.0 - 2026-11-04
 -------------------

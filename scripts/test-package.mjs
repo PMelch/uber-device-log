@@ -8,6 +8,7 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isBuiltin } from 'node:module';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -96,20 +97,54 @@ async function smoke(command, args, project, withFlows = false) {
     }
   }
 }
+async function smokeTui(command, args, installed) {
+  // Pipes deliberately exercise real dependency/native loading and CLI forwarding,
+  // then the TUI's non-interactive guard, without needing hardware or a terminal.
+  await assert.rejects(promisify(execFile)(command, [...args, '--tui'], { cwd: temporary, timeout: 15000 }), error => {
+    assert.equal(error.code, 1);
+    assert.match(error.stderr, /An interactive terminal is required/);
+    assert.doesNotMatch(error.stderr, /Cannot find|missing|ModuleNotFound|dlopen/);
+    return true;
+  });
+  const workerPath = join(installed, 'build/tui/flow-worker.js');
+  const script = `const worker = new Worker(${JSON.stringify(workerPath)});
+    const timeout = setTimeout(() => { console.error('Worker timed out'); process.exit(1); }, 5000);
+    worker.onerror = error => { console.error(error); process.exit(1); };
+    worker.onmessage = ({ data }) => {
+      if (data.error || data.id !== 1 || data.activatedRevision !== 'package-smoke') process.exit(1);
+      console.log('Packaged flow worker activated'); clearTimeout(timeout); worker.terminate();
+    };
+    worker.postMessage({ id: 1, type: 'snapshot', blueprints: [], revision: 'package-smoke' });`;
+  assert.match(run('bun', ['--eval', script], temporary), /Packaged flow worker activated/);
+  console.log(`PASS ${command}: installed TUI loads native dependencies and its packaged flow worker`);
+}
+
 try {
   run('npm', ['run', 'build']);
+  run('npm', ['run', 'build:tui:package']);
   const [pack] = JSON.parse(run('npm', ['pack', '--ignore-scripts', '--json', '--pack-destination', temporary]));
   assert.equal((pack.bundled || []).length, 0, 'Dependencies must be installed on the target host, not bundled');
   for (const file of pack.files) {
-    assert.ok(/^(package\.json|README\.md|LICENSE|bin\/[^/]+\.mjs|build\/(server|shared)\/[^/]+\.js|dist\/.*)$/.test(file.path), `Unexpected package file: ${file.path}`);
+    assert.ok(/^(package\.json|README\.md|LICENSE|bin\/[^/]+\.mjs|build\/(server|shared|tui)\/[^/]+\.js|dist\/.*)$/.test(file.path), `Unexpected package file: ${file.path}`);
     assert.ok(!/(^|\/)(\.env[^/]*|\.npmrc|.*\.(pem|key))$/.test(file.path), `Sensitive package file: ${file.path}`);
     assert.ok(!/\.test\.[^/]+$/.test(file.path), `Application test in archive: ${file.path}`);
   }
+  for (const path of ['build/tui/index.js', 'build/tui/flow-worker.js']) assert.ok(pack.files.some(file => file.path === path), `Missing TUI entry: ${path}`);
   console.log(`PASS archive allowlist: ${pack.files.length} files`);
   run('npm', ['install', '--omit=dev', '--no-audit', '--no-fund', join(temporary, pack.filename)], temporary);
   const installed = join(temporary, 'node_modules', 'uber-device-log');
   inspectDependencySecurity(join(temporary, 'node_modules'));
+  await smokeTui('node', [join(installed, 'bin/uber-device-log.mjs')], installed);
   const manifest = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
+  // A transitive/peer install must not hide a missing direct TUI dependency.
+  for (const entry of ['index.js', 'flow-worker.js']) {
+    const source = readFileSync(join(installed, 'build/tui', entry), 'utf8');
+    for (const [, specifier] of source.matchAll(/\bfrom ["']([^"']+)["']/g)) {
+      if (specifier.startsWith('.') || isBuiltin(specifier) || specifier.startsWith('bun:')) continue;
+      const name = specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0];
+      assert.ok(manifest.dependencies[name], `TUI imports undeclared runtime dependency: ${name}`);
+    }
+  }
   assert.equal(manifest.bin['uber-device-log'], 'bin/uber-device-log.mjs');
   assert.equal(manifest.bin.udl, manifest.bin['uber-device-log']);
   assert.ok(!existsSync(join(temporary, 'node_modules', 'vite')));
@@ -134,6 +169,7 @@ try {
     await new Promise(resolve => download.close(resolve));
   }
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log']);
+  await smokeTui('npx', ['--offline', '--no', '--', 'uber-device-log', '--'], installed);
   cpSync(join(root, 'test_flow_project'), join(temporary, 'fixture-project'), { recursive: true });
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], 'fixture-project', true);
   const project = 'example project';
@@ -142,6 +178,7 @@ try {
   assert.equal(existsSync(join(temporary, project, '.udl')), false, 'Help must not initialize projects');
   await smoke('npx', ['--offline', '--no', '--', 'uber-device-log'], project);
   await smoke('bunx', ['--no-install', 'uber-device-log']);
+  await smokeTui('bunx', ['--no-install', 'uber-device-log', '--'], installed);
   // bunx against an npm installation does not verify Bun's own dependency resolver.
   const bunDirectory = join(temporary, 'bun-install');
   mkdirSync(bunDirectory);
@@ -149,6 +186,7 @@ try {
   run('bun', ['add', join(temporary, pack.filename)], bunDirectory);
   inspectDependencySecurity(join(bunDirectory, 'node_modules'));
   await smoke('node', [join(bunDirectory, 'node_modules/uber-device-log/bin/uber-device-log.mjs')]);
+  await smokeTui('node', [join(bunDirectory, 'node_modules/uber-device-log/bin/uber-device-log.mjs')], join(bunDirectory, 'node_modules/uber-device-log'));
   const prefix = join(temporary, 'global');
   run('npm', ['install', '--global', '--prefix', prefix, '--omit=dev', '--no-audit', '--no-fund', join(temporary, pack.filename)], temporary);
   inspectDependencySecurity(join(prefix, process.platform === 'win32' ? 'node_modules' : 'lib/node_modules'));
@@ -157,6 +195,7 @@ try {
   assert.equal(run(globalCommand, ['--version'], tmpdir()).trim(), manifest.version);
   assert.match(run(globalCommand, ['--help'], tmpdir()), /Usage: udl/);
   await smoke(globalCommand, []);
+  await smokeTui(globalCommand, [], join(prefix, process.platform === 'win32' ? 'node_modules/uber-device-log' : 'lib/node_modules/uber-device-log'));
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

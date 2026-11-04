@@ -1,6 +1,6 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
-  tuiUpdateInstructions: "Close the terminal app, update your source checkout, and rebuild the executable if you use one. Then restart with the same options.",
+  tuiUpdateInstructions: "Close the terminal app and update uber-device-log with your package manager. For a source installation, update and rebuild your checkout. Then restart with the same options.",
   tuiFlowSourcesBack: "Back",
   tuiFlowSourcesHelp: "Tab: controls · ↑↓: list · Enter: open · Esc: back",
   tuiFlowPathHelp: "Enter a path (~/ supported); Choose file browses or completes the prefix.",

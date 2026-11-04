@@ -56,17 +56,27 @@ npm pack --dry-run
 `test:package` installs an actual local tarball in a temporary directory without
 devDependencies, tests help/version, starts it through npx and bunx, installs it globally into a temporary prefix,
 starts the global `udl` command from outside the project, and verifies
-frontend assets, the discovery API and the Origin guard. It does not require
+frontend assets, the discovery API and the Origin guard. It also exercises
+`udl --tui`, npx/bunx with the forwarded `--` separator, native OpenTUI loading
+(without an interactive terminal) and the packaged Flow worker. Run an interactive
+terminal smoke check before release as well. It does not require
 physical devices; device capture still needs a separate hardware check.
 
 The application's `files` allowlist includes only the CLI, compiled server/shared
-JavaScript, built frontend/assets and README; npm additionally includes package.json
+JavaScript, bundled TUI/Flow-worker JavaScript, built frontend/assets and README; npm additionally includes package.json
 and LICENSE. Application tests, design previews, local configs and credentials are
 excluded. The icon license is bundled with the built frontend. Application source
 maps are not shipped.
 
 Dependencies, including `appium-ios-device`, are installed on the target host;
 no dependency trees or build-host native binaries are bundled in the archive.
+OpenTUI, EventSource, Fuse and Vue are runtime dependencies. OpenTUI installs its
+host-specific native library through optional dependencies; do not omit optional
+dependencies when testing the TUI. Its Node engine metadata may warn under older
+Node releases, but the terminal entry executes with Bun 1.3.14+ (1.4+ on Windows
+arm64), while the web CLI still supports Node 22.12+.
+`npm run build:tui:package` builds portable JavaScript; `npm run build:tui`
+remains a separate, host-specific standalone developer build.
 Keep both lockfiles synchronized with the security overrides. These overrides
 protect the development checkout, not downstream installs of this package.
 Appium currently pins shell-quote 1.10.0 upstream, so fresh npm/Bun installations
@@ -79,7 +89,7 @@ The 2026-10-21 follow-up audit records the Vite and follow-redirects updates;
 the checkout still reports node-forge and its adbkit parent as two high entries
 for one unpatched advisory. A successful package smoke test does not resolve it.
 
-`prepack` rebuilds automatically; `prepublishOnly` runs the unit/regression tests.
+`prepack` rebuilds the web/server and the Bun-targeted TUI JavaScript automatically; `prepublishOnly` runs the unit/regression tests.
 Do not use `--ignore-scripts` for release publishing or packing.
 
 ## Authenticate outside this repository
