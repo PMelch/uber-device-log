@@ -76,6 +76,8 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   root.add(toolbar);
   const toolbarActions = new BoxRenderable(renderer, { id: 'toolbar-actions', flexDirection: 'row', flexWrap: 'wrap', flexGrow: 1, flexBasis: 0, minWidth: 0, gap: 1 });
   toolbar.add(toolbarActions);
+  const toolbarEnd = new BoxRenderable(renderer, { id: 'toolbar-end', flexDirection: 'row', flexShrink: 0, gap: 1 });
+  toolbar.add(toolbarEnd);
   function button(parent: BoxRenderable, id: string, key: MessageKey, action: () => void, target: Renderable[] = mainFocus) {
     const box = new BoxRenderable(renderer, { id, height: 3, border: true, borderColor: colors.border,
       focusedBorderColor: colors.accent, focusable: true, paddingX: 1, flexShrink: 0,
@@ -104,10 +106,10 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   button(fullscreenBar, 'exit-fullscreen', 'tuiExitFullscreen', toggleFullscreen);
   const consoleButton = button(toolbarActions, 'javascript-console', 'consoleTitle', openConsole);
   consoleButton.box.visible = !!options.acquireConsole;
-  button(toolbarActions, 'settings', 'settings', openSettings);
   const flowsButton = button(toolbarActions, 'flows', 'flowsTabFlows', openFlows);
   flowsButton.box.visible = !!options.flows;
-  button(toolbar, 'quit', 'tuiQuit', () => options.quit?.());
+  button(toolbarEnd, 'settings', 'settings', openSettings);
+  button(toolbarEnd, 'quit', 'tuiQuit', () => options.quit?.());
   const searchBox = new BoxRenderable(renderer, { height: 3, flexShrink: 0, border: true, borderColor: colors.border });
   const search = new InputRenderable(renderer, { id: 'search', width: '100%', placeholder: t('searchPlaceholder'), maxLength: 500,
     textColor: colors.text, backgroundColor: colors.panel, focusedBackgroundColor: colors.selected });
@@ -315,6 +317,10 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
   }
   function layout() {
     const wide = renderer.width >= 100;
+    toolbar.flexDirection = wide ? 'row' : 'column';
+    toolbarEnd.alignSelf = wide ? 'flex-start' : 'flex-end';
+    toolbarActions.flexBasis = wide ? 0 : 'auto';
+    toolbarActions.width = wide ? 'auto' : '100%';
     sidebar.visible = !!options.syncSources && !sourcesCollapsed && !fullscreen;
     collapsedSources.visible = !!options.syncSources && sourcesCollapsed && !fullscreen;
     collapsedSources.width = wide ? 6 : '100%';
@@ -464,14 +470,14 @@ export function createTui(renderer: CliRenderer, options: TuiOptions = {}) {
       } });
     renderer.root.add(modal);
     const close = button(modal, 'close-settings', 'settingsClose', () => { root.visible = true; closeModal(); }, modalFocus);
-    close.box.maxWidth = '100%';
+    close.box.maxWidth = '100%'; close.box.alignSelf = 'flex-start';
     const list = new ScrollBoxRenderable(renderer, { flexGrow: 1, minHeight: 1, scrollX: false, scrollY: true });
     modal.add(list); modalScroller = list;
     const updates: (() => void)[] = [];
     type Choice = { id: string; label(): string; selected(): boolean; change(): void };
     function field(id: string, title: MessageKey, choices: Choice[]) {
       const item = button(list, id, title, () => openPicker(item.box, title, choices), modalFocus);
-      item.box.width = '100%'; item.box.minWidth = 0; item.box.title = t(title);
+      item.box.alignSelf = 'flex-start'; item.box.maxWidth = '100%'; item.box.minWidth = 0; item.box.title = t(title);
       item.text.wrapMode = 'none';
       updates.push(() => {
         item.box.title = t(title);

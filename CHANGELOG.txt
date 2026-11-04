@@ -37,7 +37,9 @@ Added
   command history and expandable result properties while log capture continues.
 
 Changed
-- Keep the terminal Quit button at the right edge while other toolbar actions wrap.
+- Size each terminal Settings field and the Close button to its own content
+  instead of stretching them across the screen.
+- Keep Settings and Quit together at the right edge while other toolbar actions wrap.
 - Hide the source column in web and terminal log lists when only one source is
   selected, leaving more room for messages; restore it for combined sources.
 

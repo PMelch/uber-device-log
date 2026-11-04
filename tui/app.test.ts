@@ -748,14 +748,53 @@ test('Quit stays at the right edge beside wrapping toolbar actions', async () =>
       for (const width of [160, 100, 60, 40]) {
         t.resize(width, 40); await t.renderOnce();
         expect(quit.x + quit.width).toBe(width - 1);
-        expect(quit.y).toBe(toolbar.y);
+        expect(quit.y).toBeGreaterThanOrEqual(toolbar.y);
         const settings = t.renderer.root.findDescendantById('settings')!;
-        expect(settings.x + settings.width).toBeLessThan(quit.x);
+        expect(settings.x + settings.width + 1).toBe(quit.x);
+        expect(settings.y).toBe(quit.y);
+        expect(t.app.controls.pause.border).toBe(true);
+        const actions = t.renderer.root.findDescendantById('toolbar-actions')!;
+        if (width >= 100) for (const action of actions.getChildren().filter(child => child.visible)) expect(action.x + action.width).toBeLessThanOrEqual(settings.x);
       }
-      await t.mockMouse.click(quit.x + 1, quit.y + 1);
+      await t.mockMouse.click(quit.x + 1, quit.y + Math.floor(quit.height / 2));
       expect(quitCount).toBe(1);
       quit.focus(); t.mockInput.pressTab({ shift: true });
       expect(t.renderer.currentFocusedRenderable?.id).toBe('settings');
+    } finally { t.app.dispose(); await t.dispose(); }
+  }
+});
+
+test('console action keeps its maturity label in narrow real-source toolbars', async () => {
+  for (const locale of ['en', 'de', 'es', 'fr', 'it', 'ja', 'zh-CN'] as const) {
+    const t = await setup({ locale, syncSources() {}, acquireConsole: async () => { throw new Error('unused'); } });
+    try {
+      for (const width of [60, 70, 100, 120]) {
+        t.resize(width, 35); await t.renderOnce();
+        const consoleButton = t.renderer.root.findDescendantById('javascript-console')!;
+        const label = consoleButton.getChildren()[0] as TextRenderable;
+        expect(t.captureCharFrame()).toContain(label.plainText);
+      }
+    } finally { t.app.dispose(); await t.dispose(); }
+  }
+});
+
+test('settings fields and Close size independently to their contents', async () => {
+  for (const locale of ['en', 'de', 'es', 'fr', 'it', 'ja', 'zh-CN'] as const) {
+    const t = await setup({ locale });
+    try {
+      t.app.openSettings();
+      for (const width of [120, 60, 40]) {
+        t.resize(width, 30); await t.renderOnce();
+        const fields = ['language', 'theme', 'order', 'capacity'].map(id => t.renderer.root.findDescendantById(`settings-${id}`)!);
+        const close = t.renderer.root.findDescendantById('close-settings')!;
+        expect(new Set(fields.map(field => field.width)).size).toBeGreaterThan(1);
+        expect(close.width).toBeLessThan(width - 4);
+        if (width === 120) expect(fields[0]!.width).toBeLessThan(70);
+        for (const field of fields) {
+          expect(field.x + field.width).toBeLessThanOrEqual(width - 2);
+          expect(t.captureCharFrame()).toContain((field.getChildren()[0] as TextRenderable).plainText);
+        }
+      }
     } finally { t.app.dispose(); await t.dispose(); }
   }
 });
