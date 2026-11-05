@@ -10,6 +10,8 @@ Unreleased
 ----------
 
 Added
+- Show a localized loading label during web startup and an animated spinner
+  while the terminal interface initializes.
 - Search running Android processes by package/process name and apply a selected PID
   directly to the source filter, with refresh and support for secondary processes
   and system process names containing spaces. The compact search dialog keeps

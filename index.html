@@ -4,10 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      #app-startup { position:fixed; inset:0; display:grid; place-items:center; color:#707580; background:#fff; font:14px/1.5 system-ui,sans-serif; }
+      @media(prefers-color-scheme:dark) { #app-startup { color:#a5a5af; background:#151517; } }
+    </style>
     <title>Über Device Log</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app"><div id="app-startup" role="status" aria-live="polite"><!--app-loading-label--></div></div>
+    <!--app-loading-script-->
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

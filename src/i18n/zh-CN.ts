@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const zhCN = {
+  appLoading: "正在加载…",
   processFind: "查找 PID",
   processSearch: "软件包、进程名称或 PID",
   processHint: "重启应用后，PID 可能会改变。",

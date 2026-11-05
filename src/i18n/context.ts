@@ -12,6 +12,7 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  appLoading: c("Initial web page before Vue mounts and terminal startup spinner.", "Brief status while the application initializes, not device discovery or log capture. Shown before the main interface is ready."),
   processFind: c("Android process search dialog.", "Entry button beside the Android PID filter and dialog title. Find a running app process ID. Keep short."),
   processSearch: c("Android process search dialog.", "Search input label and placeholder. Filter running processes by literal package/process name or numeric PID; not installed app display names."),
   processHint: c("Android process search dialog footer.", "Persistent concise reminder that restarting an app can change its PID. Refresh and select the new PID when needed."),

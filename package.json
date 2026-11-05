@@ -27,7 +27,7 @@
     "test:tui": "bun test tui/*.test.ts",
     "typecheck:tui": "tsc -p tsconfig.tui.json",
     "build:tui": "bun build --compile ./tui/index.ts ./tui/flow-worker.ts --outfile build/udl-tui",
-    "build:tui:package": "bun build ./tui/index.ts ./tui/flow-worker.ts --target=bun --packages=external --outdir build/tui"
+    "build:tui:package": "node scripts/build-tui-package.mjs"
   },
   "dependencies": {
     "@devicefarmer/adbkit": "^3.3.9",

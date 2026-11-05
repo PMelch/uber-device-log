@@ -493,3 +493,6 @@ body { margin: 0; }
 #precision-design .precision-commandbar .command-clear { display:inline-flex; align-items:center; width:44px; height:44px; padding:0; box-shadow:none; }
 #precision-design .precision-commandbar .command-clear svg { width:18px; height:18px; }
 #precision-design .precision-commandbar .command-clear:hover:not(:disabled) { color:var(--pl-error); background:var(--pl-error-bg); border-color:var(--pl-error); }
+@media(max-width:380px) {
+  #precision-design .precision-commandbar .command-primary { width:64px; padding:6px; }
+}

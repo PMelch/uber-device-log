@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const it = {
+  appLoading: "Caricamento…",
   processFind: "Cerca PID",
   processSearch: "Pacchetto, nome del processo o PID",
   processHint: "Il PID può cambiare dopo il riavvio dell’app.",

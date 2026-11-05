@@ -1,5 +1,6 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  appLoading: "Loading…",
   processFind: "Find PID",
   processSearch: "Package, process name or PID",
   processHint: "The PID may change after restarting the app.",

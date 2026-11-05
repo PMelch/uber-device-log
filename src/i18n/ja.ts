@@ -1,5 +1,6 @@
 import type { Messages } from './en';
 export const ja = {
+  appLoading: "読み込み中…",
   processFind: "PID を検索",
   processSearch: "パッケージ、プロセス名、または PID",
   processHint: "アプリを再起動すると PID が変わることがあります。",
