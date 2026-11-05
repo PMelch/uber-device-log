@@ -16,6 +16,8 @@ Added
   search and actions visible while large process lists scroll independently.
 
 Changed
+- Make clearing the log viewer directly available through a compact trash icon
+  in the toolbar, including on mobile screens.
 - Refine source filter menus with separate search controls, grouped PID lookup,
   aligned severity choices and a compact reset footer with a reset icon.
 - Show the shorter npx and bunx TUI commands without an extra argument separator

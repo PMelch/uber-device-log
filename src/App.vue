@@ -681,6 +681,9 @@ onUnmounted(() => {
             </svg>
             <span class="pause-label">{{ t(paused ? 'backToLive' : 'pause') }}</span>
           </button>
+          <button class="precision-action command-clear" :disabled="!messages.length && !visibleMessages.length" :aria-label="t('clear')" :title="t('clear')" @click="clearView">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" /></svg>
+          </button>
           <OverlayPanel :label="t('moreActions')" :width="320" panel-class="command-popover">
             <template #trigger><span aria-hidden="true">•••</span></template>
             <template #default="{ close }">
@@ -703,7 +706,6 @@ onUnmounted(() => {
                 <h3>{{ t('actionSession') }}</h3>
                 <button v-if="paused" class="precision-action" :aria-label="t(selectionMode ? 'resumeSelection' : 'backToLive')" :title="selectionMode ? t('resumeSelection') : undefined" @click="togglePause(); close(true)">{{ t('backToLive') }}</button>
                 <button class="precision-action" :disabled="!currentDevice" @click="start(); close(true)">↻ {{ t('reconnect') }}</button>
-                <button class="precision-action" :disabled="!messages.length && !visibleMessages.length" @click="clearView(); close(true)">{{ t('clear') }}</button>
                 </section>
                 <details class="command-help"><summary>{{ t('actionHelp') }}</summary>
                 <p>{{ t(rangePending ? 'rangeHint' : selectionMode ? 'frozenHint' : 'selectionHint') }}</p>

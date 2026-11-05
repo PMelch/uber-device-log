@@ -384,7 +384,7 @@ export const translationContext = {
   liveCapture: c('Console capture indicator.', 'Device logs are actively collected and the displayed view is not paused.'),
   notCapturing: c('Console capture indicator.', 'There is currently no active log collection.'),
   reconnect: c('Console action button.', 'Open a fresh connection to the selected device; starts a new capture and clears the previous view.'),
-  clear: c('Console action button.', 'Empty retained logs in the viewer only. This never deletes device logs or stops capture.'),
+  clear: c('Log toolbar trash icon button, accessible label and tooltip.', 'Empty retained logs in the viewer only. This never deletes device logs or stops capture.'),
   backToLive: c('Pause/resume toggle when the view is paused.', 'Leave the frozen snapshot, clear selection and show the current live buffer.'),
   pause: c('Pause/resume toggle when the view is live.', 'Freeze only the displayed snapshot; collection continues in the background.'),
   doneSelecting: c('Log actions menu while selecting.', 'Leave selection mode and clear marks. Does not resume the paused view.'),

@@ -69,6 +69,7 @@ try {
     await page.setViewportSize({ width, height: 1100 });
     await page.goto(url);
     await page.waitForSelector('.entry'); await page.waitForTimeout(250);
+    assert.equal(await page.locator('.precision-commandbar > .command-clear').count(), 1, 'clear is directly available without opening a menu');
     const baseline = await geometry();
     const sourceHeight = await page.locator('.source-filters').evaluate(el => el.getBoundingClientRect().height);
     await page.locator('.source-filters .overlay-trigger').click();
@@ -140,6 +141,16 @@ try {
     await page.getByRole('button', { name: 'Back to live', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('.command-context').textContent.includes('1,000'));
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${width}: horizontal overflow`);
+    const clear = page.locator('.precision-commandbar > .command-clear');
+    assert.equal(await clear.isVisible(), true);
+    assert.equal(await clear.innerText(), '', 'clear uses only an icon');
+    await clear.focus(); await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.querySelector('.command-context').textContent.includes('0'));
+    assert.equal(await page.locator('.entry').count(), 0);
+    assert.equal(await clear.isDisabled(), true);
+    for (const client of clients) deliver(client, 1);
+    await page.waitForSelector('.entry');
+    assert.equal(await clear.isEnabled(), true, 'capture continues after clearing the viewer');
     console.log(`${width}px: fixed rows, filters, selection, export, copy fallback, pause and retention passed`);
   }
   // Long translations, language switching with a retained selection and status.
