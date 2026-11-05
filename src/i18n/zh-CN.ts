@@ -1,5 +1,15 @@
 import type { Messages } from './en';
 export const zhCN = {
+  processFind: "查找 PID",
+  processSearch: "软件包、进程名称或 PID",
+  processHint: "重启应用后，PID 可能会改变。",
+  processMatches: "匹配：{count} / {total}",
+  processSelectHint: "选择进程以替换 PID 筛选条件",
+  processRefresh: "刷新进程",
+  processLoading: "正在加载进程…",
+  processEmpty: "没有匹配的进程。请在设备上打开应用并刷新列表。",
+  processApply: "使用 {name} 的 PID {pid}",
+  processUnavailable: "无法加载进程。请检查 Android 连接后重试。",
   tuiUpdateInstructions: "关闭终端应用，并使用包管理器更新 uber-device-log。如果从源代码安装，请更新本地仓库并重新构建。然后使用相同选项重新启动。",
   tuiFlowSourcesBack: "返回",
   tuiFlowSourcesHelp: "Tab：控件 · ↑↓：列表 · Enter：打开 · Esc：返回",

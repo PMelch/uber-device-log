@@ -12,6 +12,16 @@ const platformDetail = { platform: 'Platform name Android or iOS; retain verbati
 const detail = { detail: 'Original technical diagnostic or HTTP status; retain verbatim, even if in another language.' };
 
 export const translationContext = {
+  processFind: c("Android process search dialog.", "Entry button beside the Android PID filter and dialog title. Find a running app process ID. Keep short."),
+  processSearch: c("Android process search dialog.", "Search input label and placeholder. Filter running processes by literal package/process name or numeric PID; not installed app display names."),
+  processHint: c("Android process search dialog footer.", "Persistent concise reminder that restarting an app can change its PID. Refresh and select the new PID when needed."),
+  processMatches: c("Android process search dialog above the results.", "Matching running processes out of the fetched total. Use a count label that works with zero, one and many.", { count: "Number of processes matching the current search; locale-formatted integer, no unit.", total: "Total number of fetched running processes; locale-formatted integer, no unit." }),
+  processSelectHint: c("Android process search dialog above the results.", "Selecting a result immediately replaces this source's PID filter. Other filters stay unchanged. Keep concise."),
+  processRefresh: c("Android process search dialog.", "Dialog button. Reload the current running process list from the selected Android device."),
+  processLoading: c("Android process search dialog.", "Dialog status. Waiting for the current process list from ADB."),
+  processEmpty: c("Android process search dialog.", "Dialog empty state. No running process matches; the app may not be running."),
+  processApply: c("Android process search dialog.", "Accessible label for each process result button. Apply this process ID as this source\u2019s PID filter and close the dialog.", { name: "Original package/process name; preserve verbatim.", pid: "Numeric process identifier, not a count or quantity; preserve verbatim without locale formatting." }),
+  processUnavailable: c("Android process search dialog.", "Dialog error and server fallback. Device discovery or process reading failed, including disconnected, unauthorized and unsupported Android devices. Retry after checking connection."),
   tuiUpdateInstructions: c("Terminal startup update notice dialog.", "Tell users to close the terminal app, update uber-device-log with their package manager (or update and rebuild their source checkout), then restart with the same options. Applies to packaged and source installations. The package name uber-device-log stays verbatim. No placeholders."),
   tuiFlowSourcesBack: c("Terminal Blueprint sources navigation button.", "Return from source details to the source list, or from the file picker to the installation form. Does not close the Flow workspace."),
   tuiFlowSourcesHelp: c("Terminal Blueprint sources footer.", "Keyboard guide: Tab changes controls, arrows navigate source/file rows, Enter opens them, Escape returns or closes. Keep key names verbatim."),

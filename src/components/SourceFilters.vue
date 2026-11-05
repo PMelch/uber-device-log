@@ -11,6 +11,7 @@ import PrecisionMenu from './PrecisionMenu.vue';
 import { webViewLabel } from '../webview-label';
 import OverlayPanel from './OverlayPanel.vue';
 import InspectorAction from './InspectorAction.vue';
+import ProcessSearch from './ProcessSearch.vue';
 const statusBadge = ref<InstanceType<typeof FeatureStatusBadge>>();
 const consoleDescriptionId = useId();
 const consoleStatus = featureStatuses.javascriptConsole;
@@ -56,13 +57,15 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
       <span v-if="summary.length" class="source-filter-summary" role="group" :title="summary.join(' · ')" :aria-label="summary.join(' · ')"><span v-for="item in summary" :key="item" class="source-filter-chip" aria-hidden="true">{{ item }}</span></span>
       <button v-if="source.webview" class="source-console-button" :aria-label="consoleStatus ? t('featureStatusLabel', { feature: t('consoleTitle'), status: t(featureStatusCopy[consoleStatus].label) }) : t('consoleTitle')" :aria-describedby="consoleStatus ? consoleDescriptionId : undefined" @keydown.esc.stop.prevent="statusBadge?.hide()" @focus="statusBadge?.show()" @blur="statusBadge?.hide()" @pointerenter="statusBadge?.show()" @pointerleave="statusBadge?.hide()" @click="statusBadge?.hide(); emit('console')"><span aria-hidden="true">&gt;_</span><FeatureStatusBadge ref="statusBadge" :status="consoleStatus" :t="t" passive :description-id="consoleDescriptionId" /></button>
       <InspectorAction v-if="source.webview" :source="source" :device-name="deviceName" :t="t" compact />
-      <OverlayPanel :label="t('sourceFilterPanel', { source: displayName })">
+      <OverlayPanel panel-class="source-filter-panel" :label="t('sourceFilterPanel', { source: displayName })">
         <template #trigger><span :class="{ 'source-filter-active': active }">{{ active ? t('activeFilters', { count: activeCount }) : t('filters') }}</span><span aria-hidden="true">⌄</span></template>
         <template #default="{ close }">
         <header class="overlay-heading"><strong>{{ t('sourceFilterPanel', { source: displayName }) }}</strong><button type="button" class="precision-action" :aria-label="t('closeFilters')" @click="close(true)">×</button></header>
       <div class="precision-searchbar source-search">
-        <span aria-hidden="true">⌕</span>
+        <svg class="source-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg>
         <input :value="modelValue.text" type="search" :aria-label="t('sourceFilter', { source: displayName })" :placeholder="t('searchPlaceholder')" @input="update({ text: input($event) })" @keydown.esc="update({ text: '' })" />
+      </div>
+      <div class="source-search-options">
         <PrecisionMenu :label="t('searchMode')">
           <template #selected>{{ t(modelValue.mode === 'fuzzy' ? 'approximateSearch' : 'literalSearch') }}</template>
           <button :aria-pressed="modelValue.mode === 'fuzzy'" @click="update({ mode: 'fuzzy' })">{{ t('approximateSearch') }}</button>
@@ -70,12 +73,14 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
         </PrecisionMenu>
         <button v-if="modelValue.text" class="precision-searchclear" @click="update({ text: '' })">{{ t('clearFilter') }}</button>
       </div>
-      <button class="precision-action" :disabled="!active" @click="update({ text: '', tag: '', pid: '', levels: [...logLevels] })">{{ t('resetLogFilters') }}</button>
+
     <details v-if="nativeAndroid" class="source-advanced">
       <summary>{{ t('advancedSourceFilters') }}</summary>
       <div class="precision-metadata-filters source-metadata">
       <div class="precision-field"><label :for="`${id}-tag`">{{ t('tagFilter') }}</label><input :id="`${id}-tag`" :value="modelValue.tag" :aria-describedby="`${id}-hint`" type="text" spellcheck="false" @input="update({ tag: input($event) })" @keydown.esc="update({ tag: '' })" /></div>
-      <div class="precision-field"><label :for="`${id}-pid`">{{ t('pidFilter') }}</label><input :id="`${id}-pid`" :value="modelValue.pid" :aria-invalid="invalidPid" :aria-describedby="invalidPid ? `${id}-error ${id}-hint` : `${id}-hint`" type="text" inputmode="numeric" @input="update({ pid: input($event) })" @keydown.esc="update({ pid: '' })" /></div>
+      <div class="precision-field"><label :for="`${id}-pid`">{{ t('pidFilter') }}</label><div class="source-pid-control"><input :id="`${id}-pid`" :value="modelValue.pid" :aria-invalid="invalidPid" :aria-describedby="invalidPid ? `${id}-error ${id}-hint` : `${id}-hint`" type="text" inputmode="numeric" @input="update({ pid: input($event) })" @keydown.esc="update({ pid: '' })" />
+      <ProcessSearch :device-name="deviceName || displayName" :device-id="source.deviceId" :t="t" @select="update({ pid: $event })" />
+      </div></div>
       <p :id="`${id}-hint`">{{ t('metadataFilterHint') }}</p>
       <p v-if="invalidPid" :id="`${id}-error`" class="precision-filter-error" role="status">{{ t('pidFilterInvalid') }}</p>
     </div>
@@ -86,6 +91,9 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
       <button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="nativeIos" :aria-pressed="!nativeIos && modelValue.levels.includes(level)" @click="toggle(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button>
       <span v-if="nativeIos" :id="`${id}-ios`" class="precision-ios-note">{{ t('iosNote') }}</span>
     </div>
+      <footer class="source-filter-footer">
+      <button class="precision-action" :disabled="!active" @click="update({ text: '', tag: '', pid: '', levels: [...logLevels] })"><svg class="source-reset-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7a6.5 6.5 0 1 1-.4 5M4 3v4h4"/></svg><span>{{ t('resetLogFilters') }}</span></button>
+      </footer>
         </template>
       </OverlayPanel>
     </div>
@@ -105,16 +113,47 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 .source-filter-name .precision-platform { flex: 0 0 18px; }
 .source-filter-active { color: var(--pl-accent); }
 @media(max-width:700px) { #precision-design .source-filter-main :deep(> .overlay-trigger) { width: auto; max-width: 42%; } .source-filter-main { gap: 6px; } }
-#precision-design .source-search { padding: 8px; gap: 8px; min-width: 0; border: 1px solid var(--pl-line); background: var(--pl-panel); border-radius: 8px; margin-bottom: 8px; }
-#precision-design .source-search input { flex: 1 1 180px; width: 100%; }
-#precision-design .source-search :deep(summary) { min-height: 36px; padding: 6px 8px; font-size: 12px; }
-#precision-design .source-metadata input { background: var(--pl-panel); border-color: var(--pl-line); }
-#precision-design .source-metadata input[aria-invalid=true] { border-color: var(--pl-error); }
-.source-advanced { margin-top: 8px; }
-#precision-design .source-advanced > summary { min-height: 40px; padding: 6px; border: 0; background: none; font-size: 12px; white-space: normal; }
-.source-advanced > summary::before { content: '▸'; display: inline-block; transition: transform 160ms ease; }
-.source-advanced[open] > summary::before { transform: rotate(90deg); }
-.source-metadata { margin-top: 4px; }
-#precision-design .source-levels { padding: 10px 0 0; border-bottom: 0; flex-wrap: wrap; margin-top: 4px; }
-@media(prefers-reduced-motion:reduce) { .source-advanced > summary::before { transition: none; } }
+#precision-design .source-filters :deep(.source-filter-panel) { padding:20px; border-radius:16px; }
+#precision-design .source-filters .overlay-heading { margin:0 0 18px; gap:12px; }
+#precision-design .source-filters .overlay-heading strong { font-size:15px; line-height:1.4; }
+#precision-design .source-filters .overlay-heading button { min-width:32px; min-height:32px; padding:0; border:0; background:transparent; box-shadow:none; color:var(--pl-soft); }
+#precision-design .source-search { display:flex; flex-wrap:nowrap; padding:0 12px; gap:10px; min-width:0; height:42px; border:1px solid var(--pl-line); background:var(--pl-wash); border-radius:9px; margin:0; }
+#precision-design .source-search:focus-within { border-color:var(--pl-accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--pl-accent) 12%,transparent); }
+#precision-design .source-search .source-search-icon { width:18px; height:18px; flex-shrink:0; color:var(--pl-soft); }
+#precision-design .source-search input { flex:1; min-width:0; width:100%; padding:0; border:0; outline:none; box-shadow:none; background:transparent; font-size:13px; }
+#precision-design .source-search-options { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 0 16px; }
+#precision-design .source-search-options :deep(summary) { min-height:30px; padding:4px 8px; border:0; border-radius:6px; background:transparent; box-shadow:none; font-size:11px; color:var(--pl-soft); }
+#precision-design .source-search-options :deep(summary:hover) { background:var(--pl-wash); }
+#precision-design .source-search-options .precision-searchclear { padding:4px 8px; font-size:11px; white-space:normal; }
+#precision-design .source-advanced { margin:0; border-top:1px solid var(--pl-line); }
+#precision-design .source-advanced > summary { display:flex; align-items:center; gap:8px; min-height:42px; padding:10px 0; border:0; border-radius:0; background:transparent; box-shadow:none; font-size:12px; font-weight:600; white-space:normal; }
+#precision-design .source-advanced > summary::before { content:'▸'; display:inline-block; color:var(--pl-soft); transition:transform 160ms ease; }
+#precision-design .source-advanced[open] > summary::before { transform:rotate(90deg); }
+#precision-design .source-metadata { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; padding:0 0 16px; margin:0; border:0; }
+#precision-design .source-metadata .precision-field { display:block; min-width:0; }
+#precision-design .source-metadata label { display:block; margin:0 0 6px; font-size:11px; font-weight:500; color:var(--pl-soft); }
+#precision-design .source-metadata input { box-sizing:border-box; width:100%; min-width:0; height:38px; padding:8px 10px; border:1px solid var(--pl-line); border-radius:8px; background:var(--pl-panel); color:var(--pl-text); font-size:13px; }
+#precision-design .source-metadata input[aria-invalid=true] { border-color:var(--pl-error); }
+#precision-design .source-pid-control { display:flex; align-items:center; gap:8px; min-width:0; }
+#precision-design .source-pid-control > input { flex:1; min-width:0; width:0; }
+#precision-design .source-pid-control > :deep(.precision-action) { flex-shrink:0; min-height:38px; padding:8px 12px; border:1px solid var(--pl-line); border-radius:8px; background:var(--pl-wash); color:var(--pl-accent); font-size:12px; }
+#precision-design .source-metadata > p { margin:0; font-size:11px; line-height:1.5; color:var(--pl-soft); }
+#precision-design .source-metadata > .precision-filter-error { color:var(--pl-error); }
+#precision-design .source-levels { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:14px 0 16px; border-top:1px solid var(--pl-line); border-bottom:0; margin:0; }
+#precision-design .source-levels .precision-severitylabel { grid-column:span 2; font-size:12px; font-weight:600; color:var(--pl-text); align-self:center; }
+#precision-design .source-levels .precision-severity { min-width:0; min-height:32px; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px; white-space:normal; overflow-wrap:anywhere; border-radius:7px; font:11px/1.4 system-ui,sans-serif; }
+#precision-design .source-levels .precision-ios-note { grid-column:1/-1; }
+#precision-design .source-filter-footer { border-top:1px solid var(--pl-line); padding:12px 0 0; display:flex; justify-content:flex-end; }
+#precision-design .source-filter-footer .precision-action { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:6px 10px; font-size:11px; color:var(--pl-soft); border:1px solid var(--pl-line); border-radius:7px; background:var(--pl-panel); }
+#precision-design .source-reset-icon { width:15px; height:15px; flex-shrink:0; }
+#precision-design .source-filter-footer .precision-action:not(:disabled):hover { color:var(--pl-text); background:var(--pl-wash); }
+@media(max-width:600px) {
+  #precision-design .source-filters :deep(.source-filter-panel) { padding:16px; }
+  #precision-design .source-search input,#precision-design .source-metadata input { font-size:16px; }
+}
+@media(pointer:coarse) {
+  #precision-design .source-filters .overlay-heading button,#precision-design .source-search-options :deep(summary),#precision-design .source-search-options .precision-searchclear,#precision-design .source-levels .precision-severity,#precision-design .source-filter-footer .precision-action,#precision-design .source-pid-control > :deep(.precision-action) { min-height:44px; }
+  #precision-design .source-filters .overlay-heading button { min-width:44px; }
+}
+@media(prefers-reduced-motion:reduce) { #precision-design .source-advanced > summary::before { transition:none; } }
 </style>

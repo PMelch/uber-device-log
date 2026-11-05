@@ -1,5 +1,15 @@
 import type { Messages } from './en';
 export const ja = {
+  processFind: "PID を検索",
+  processSearch: "パッケージ、プロセス名、または PID",
+  processHint: "アプリを再起動すると PID が変わることがあります。",
+  processMatches: "一致: {count} / {total}",
+  processSelectHint: "選択すると PID フィルターを置き換えます",
+  processRefresh: "プロセスを更新",
+  processLoading: "プロセスを読み込み中…",
+  processEmpty: "一致するプロセスがありません。デバイスでアプリを開き、一覧を更新してください。",
+  processApply: "{name} の PID {pid} を使用",
+  processUnavailable: "プロセスを読み込めませんでした。Android の接続を確認して、もう一度お試しください。",
   tuiUpdateInstructions: "ターミナルアプリを終了し、パッケージマネージャーで uber-device-log を更新してください。ソースからインストールした場合は、リポジトリを更新して再ビルドしてください。その後、同じオプションで起動し直してください。",
   tuiFlowSourcesBack: "戻る",
   tuiFlowSourcesHelp: "Tab: 操作項目 · ↑↓: 一覧 · Enter: 開く · Esc: 戻る",

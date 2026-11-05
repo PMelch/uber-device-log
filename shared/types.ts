@@ -62,3 +62,8 @@ export interface LogSourceMetadata {
   deviceId: string;
   webview?: WebView;
 }
+
+export interface AndroidProcess {
+  pid: number;
+  name: string;
+}

@@ -1,3 +1,4 @@
+import { processRoutes } from './process-routes.js';
 import { inspectorRoutes } from './inspector-routes.js';
 import { readFileSync } from 'node:fs';
 import { createUpdateCheck, detectInstallation } from './update-check.js';
@@ -80,6 +81,8 @@ app.get('/api/logs', async (request, response) => {
   active.add(stop);
   response.once('close', () => active.delete(stop));
 });
+
+app.use('/api/processes', processRoutes());
 
 const inspectors = inspectorRoutes();
 app.use('/api/inspector', inspectors.router);

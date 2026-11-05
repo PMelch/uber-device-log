@@ -1,5 +1,14 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  processFind: "Find PID",
+  processSearch: "Package, process name or PID",
+  processHint: "The PID may change after restarting the app.",
+  processMatches: "Matches: {count} / {total}",
+  processSelectHint: "Select to replace the PID filter",
+  processRefresh: "Refresh processes",
+  processLoading: "Loading processes…",
+  processEmpty: "No matching processes. Open the app on the device and refresh.",
+  processApply: "Use PID {pid} for {name}",
   tuiUpdateInstructions: "Close the terminal app and update uber-device-log with your package manager. For a source installation, update and rebuild your checkout. Then restart with the same options.",
   tuiFlowSourcesBack: "Back",
   tuiFlowSourcesHelp: "Tab: controls · ↑↓: list · Enter: open · Esc: back",

@@ -1,5 +1,15 @@
 import type { Messages } from './en';
 export const de = {
+  processFind: "PID suchen",
+  processSearch: "Paket, Prozessname oder PID",
+  processHint: "Nach einem App-Neustart kann sich die PID ändern.",
+  processMatches: "Treffer: {count} / {total}",
+  processSelectHint: "Auswahl ersetzt den PID-Filter",
+  processRefresh: "Prozesse aktualisieren",
+  processLoading: "Prozesse werden geladen…",
+  processEmpty: "Keine passenden Prozesse. Öffne die App auf dem Gerät und aktualisiere die Liste.",
+  processApply: "PID {pid} für {name} verwenden",
+  processUnavailable: "Prozesse konnten nicht geladen werden. Prüfe die Android-Verbindung und versuche es erneut.",
   tuiUpdateInstructions: "Schließe die Terminal-App und aktualisiere uber-device-log mit deinem Paketmanager. Bei einer Installation aus dem Quellcode aktualisiere dein Repository und baue es neu. Starte danach mit denselben Optionen neu.",
   tuiFlowSourcesBack: "Zurück",
   tuiFlowSourcesHelp: "Tab: Bedienfelder · ↑↓: Liste · Enter: öffnen · Esc: zurück",

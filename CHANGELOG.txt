@@ -9,7 +9,15 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Added
+- Search running Android processes by package/process name and apply a selected PID
+  directly to the source filter, with refresh and support for secondary processes
+  and system process names containing spaces. The compact search dialog keeps
+  search and actions visible while large process lists scroll independently.
+
 Changed
+- Refine source filter menus with separate search controls, grouped PID lookup,
+  aligned severity choices and a compact reset footer with a reset icon.
 - Show the shorter npx and bunx TUI commands without an extra argument separator
   in the website, README and CLI help. Both forms remain supported.
 

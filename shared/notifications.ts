@@ -1,5 +1,6 @@
 /** Stable codes keep server events translatable without reconnecting a stream. */
 export const notificationMessages = {
+  processUnavailable: "Could not load processes. Check the Android connection and try again.",
   inspectorInvalid: "Invalid inspector request. Select an available Android WebView.",
   inspectorBusy: "Too many inspector sessions. Try again later.",
   inspectorUnavailable: "The inspector could not connect. Refresh the device list and try again.",

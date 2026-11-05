@@ -1,3 +1,4 @@
+import { discoverAndroidProcesses } from './android-processes.js';
 import { openAndroidInspector } from './android-inspector.js';
 import { createWebViewHub } from './webview-hub.js';
 import * as adbkit from '@devicefarmer/adbkit';
@@ -19,7 +20,7 @@ const Adb = adbkit.Adb ?? (adbkit.default as unknown as typeof import('@devicefa
 const adb = Adb.createClient({ bin: process.env.ADB_PATH || 'adb', timeout: 5000 });
 export const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
-async function androidDevices(): Promise<Device[]> {
+export async function androidDevices(): Promise<Device[]> {
   return (await adb.listDevicesWithPaths()).map((device: DeviceWithPath) => ({
     id: device.id,
     name: device.model?.replaceAll('_', ' ') || device.id,
@@ -123,3 +124,5 @@ export async function openInspector(device: Device) {
   if (device.platform !== 'android' || !device.webview) throw new Error('An Android WebView is required');
   return openAndroidInspector(adb.getDevice(device.id), device.webview);
 }
+
+export const listAndroidProcesses = (id: string) => discoverAndroidProcesses(adb.getDevice(id));
