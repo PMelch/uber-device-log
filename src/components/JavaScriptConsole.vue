@@ -6,6 +6,7 @@ import { translate, type Locale } from '../i18n';
 import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
 import { webViewLabel } from '../webview-label';
+import PostMessageLog from './PostMessageLog.vue';
 import ConsoleValue from './ConsoleValue.vue';
 import InspectorAction from './InspectorAction.vue';
 import FeatureStatusBadge from './FeatureStatusBadge.vue';
@@ -13,6 +14,7 @@ import { featureStatuses } from '../feature-status';
 const props = defineProps<{ sources: LogSource[]; initial: string; locale: Locale }>();
 const emit = defineEmits<{ close: [] }>();
 const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, key, params);
+const messages = ref(false);
 const panel = ref<HTMLDialogElement>();
 const editor = ref<HTMLTextAreaElement>();
 const selected = ref(props.initial), session = ref(''), context = ref(''), code = ref('');
@@ -113,12 +115,15 @@ onUnmounted(() => { disposed = true; ++generation; clearTimeout(timer); release(
     <header><div><span class="console-icon" aria-hidden="true">&gt;_</span><strong>{{ t('consoleTitle') }}</strong><FeatureStatusBadge :status="featureStatuses.javascriptConsole" :t="t" /></div><button :aria-label="t('close')" @click="emit('close')">×</button></header>
     <section class="console-targets">
       <label>{{ t('consoleTarget') }}<select v-model="selected" :disabled="busy"><option v-for="source in sources" :key="source.key" :value="source.key">{{ webViewLabel(source.device.webview!).name }} · {{ source.device.name }}</option></select></label>
-      <label>{{ t('consoleContext') }}<select v-model="context" :disabled="busy || !state.connected" @change="error = undefined"><option value="" disabled>{{ t('consoleChoose') }}</option><option v-for="item in state.contexts" :key="item.key" :value="item.key">{{ scopeLabel(item) }}</option></select></label>
+      <label v-show="!messages">{{ t('consoleContext') }}<select v-model="context" :disabled="busy || !state.connected" @change="error = undefined"><option value="" disabled>{{ t('consoleChoose') }}</option><option v-for="item in state.contexts" :key="item.key" :value="item.key">{{ scopeLabel(item) }}</option></select></label>
       <InspectorAction v-if="target?.device.webview" :key="target.key" :source="{ key: target.key, name: target.device.name, platform: target.device.platform, deviceId: target.device.id, webview: target.device.webview }" :t="t" />
-      <p class="console-scope">{{ t('consoleScope') }}</p>
+      <p v-show="!messages" class="console-scope">{{ t('consoleScope') }}</p>
       <div class="console-status"><span :class="{ connected: state.connected && state.contexts.length }">●</span>{{ t(state.connected && state.contexts.length ? 'consoleReady' : 'consoleWaiting') }}<button :disabled="busy || connecting" @click="connect">{{ t('reconnect') }}</button></div>
     </section>
-    <div class="console-output" aria-live="polite">
+    <p v-if="messages && error" class="console-error" role="alert">{{ t(error) }}</p>
+    <div class="console-mode"><button :aria-pressed="!messages" @click="messages = false">{{ t('consoleTitle') }}</button><button :aria-pressed="messages" @click="messages = true">{{ t('messageTitle') }}</button><FeatureStatusBadge :status="featureStatuses.postMessageLog" :t="t" /></div>
+    <PostMessageLog v-if="messages && session" :key="session" :session="session" :context="context" :state="state" :locale="locale" />
+    <div v-show="!messages" class="console-output" aria-live="polite">
       <div v-if="!results.length" class="console-empty"><span aria-hidden="true">{ }</span><p>{{ t('consoleEmpty') }}</p><button v-for="example in ['document.title', 'window.location.href', 'Object.keys(window)']" :key="example" @click="code = example; editor?.focus()"><code>{{ example }}</code></button></div>
       <article v-for="(result, index) in results" :key="index" :class="{ 'console-exception': result.exception }">
         <div class="console-result-meta"><span>{{ result.scope }}</span><span>{{ result.value.type }} · {{ result.elapsed }} ms</span></div>
@@ -128,7 +133,7 @@ onUnmounted(() => { disposed = true; ++generation; clearTimeout(timer); release(
         <button class="console-copy" @click="copy(index)">{{ t(copied === index ? 'copiedAction' : 'consoleCopy') }}</button>
       </article>
     </div>
-    <footer>
+    <footer v-show="!messages">
       <p v-if="error" class="console-error" role="alert">{{ t(error) }}</p>
       <div class="console-editor"><textarea ref="editor" v-model="code" :aria-label="t('consoleCode')" spellcheck="false" maxlength="16384" placeholder="document.title" @keydown.enter="($event.metaKey || $event.ctrlKey) && ($event.preventDefault(), execute())" /></div>
       <div class="console-actions"><select :aria-label="t('consoleHistory')" value="" @change="code = ($event.target as HTMLSelectElement).value; ($event.target as HTMLSelectElement).value = ''"><option value="" disabled>{{ t('consoleHistory') }}</option><option v-for="(command, index) in history" :key="index" :value="command">{{ command }}</option></select><button class="console-clear" :disabled="busy || clearing" @click="clearResults">{{ t('consoleClear') }}</button><button class="console-run" :disabled="!ready || !code.trim()" title="⌘ / Ctrl + Enter" @click="execute">{{ t(busy ? 'consoleRunning' : 'consoleRun') }} <span aria-hidden="true">↵</span></button></div>
@@ -158,6 +163,8 @@ select { width: 100%; min-width: 0; margin-top: 4px; padding: 9px; border: 1px s
 .console-scope { font-size: 11px; color: var(--pl-soft); margin: 8px 0; }
 .console-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pl-soft); }
 .console-status > span { color: #b68328; }.console-status .connected { color: #24874c; }.console-status button { margin-left: auto; padding: 3px 6px; }
+.console-mode { display: flex; align-items: center; gap: 6px; padding: 4px 20px; }
+.console-mode button[aria-pressed=true] { background: var(--console-tint, #edf3ff); color: var(--pl-accent); }
 .console-output { flex: 1; min-height: 60px; overflow: auto; padding: 16px 20px; }
 .console-empty { padding: 20px 0; color: var(--pl-soft); }.console-empty > span { font: 26px monospace; color: #9babca; }.console-empty button { display: block; border: 1px solid var(--pl-line); margin: 6px 0; font-size: 12px; color: var(--pl-text); }
 article { border: 1px solid var(--pl-line); border-radius: 9px; margin-bottom: 12px; padding: 12px; overflow-wrap: anywhere; }.console-exception { background: var(--console-error-bg, #fff4f4); border-color: #efc6c6; }

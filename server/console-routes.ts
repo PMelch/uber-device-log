@@ -2,13 +2,14 @@ import { notification } from '../shared/notifications.js';
 import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { acquireWebView, listDevices } from './devices.js';
+import type { MessageMonitor } from './postmessage.js';
 import { ConsoleError } from './runtime-console.js';
 
 export function consoleRoutes(dependencies = { acquireWebView, listDevices }) {
   let opening = 0;
   const router = express.Router();
-  const sessions = new Map<string, Awaited<ReturnType<typeof acquireWebView>> & { touched: number }>();
-  const remove = (id: string) => { sessions.get(id)?.runtime.releaseOwner(id); sessions.get(id)?.release(); sessions.delete(id); };
+  const sessions = new Map<string, Awaited<ReturnType<typeof acquireWebView>> & { touched: number; messages: MessageMonitor }>();
+  const remove = (id: string) => { void sessions.get(id)?.messages.stop(); sessions.get(id)?.runtime.releaseOwner(id); sessions.get(id)?.release(); sessions.delete(id); };
   const timer = setInterval(() => { for (const [id, s] of sessions) if (Date.now() - s.touched > 120_000) remove(id); }, 30_000);
   timer.unref();
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
@@ -28,7 +29,7 @@ export function consoleRoutes(dependencies = { acquireWebView, listDevices }) {
       const session = await dependencies.acquireWebView({ ...device, webview });
       if (res.destroyed) { session.release(); return; }
       const token = randomUUID();
-      sessions.set(token, { ...session, touched: Date.now() });
+      sessions.set(token, { ...session, touched: Date.now(), messages: session.runtime.createMessageMonitor(token) });
       // Context enumeration can continue while the panel displays its connecting state.
       void session.runtime.enable();
       res.json({ id: token, ...session.runtime.state() });
@@ -39,6 +40,28 @@ export function consoleRoutes(dependencies = { acquireWebView, listDevices }) {
     const s = sessions.get(req.params.id);
     if (!s) { res.status(409).json(notification('consoleUnavailable')); return; }
     s.touched = Date.now(); res.json(s.runtime.state());
+  });
+  router.post('/:id/messages', async (req, res) => {
+    const s = sessions.get(req.params.id);
+    if (!s) { res.status(409).json(notification('consoleUnavailable')); return; }
+    s.touched = Date.now();
+    if (req.body?.revision !== s.runtime.revision) { res.status(409).json(notification('consoleStale')); return; }
+    try { res.json(await s.messages.start(req.body.revision)); }
+    catch { res.status(409).json(notification('consoleBusy')); }
+  });
+  router.get('/:id/messages', async (req, res) => {
+    const s = sessions.get(req.params.id);
+    if (!s) { res.status(409).json(notification('consoleUnavailable')); return; }
+    s.touched = Date.now();
+    try { res.json(await s.messages.poll()); }
+    catch { res.status(409).json(notification('consoleUnavailable')); }
+  });
+  router.delete('/:id/messages', async (req, res) => {
+    const s = sessions.get(req.params.id);
+    if (!s) { res.status(409).json(notification('consoleUnavailable')); return; }
+    s.touched = Date.now();
+    try { res.json(await s.messages.finish()); }
+    catch { res.status(409).json(notification('consoleBusy')); }
   });
   router.post('/:id/execute', async (req, res) => {
     const s = sessions.get(req.params.id);

@@ -9,6 +9,11 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Added
+- Alpha postMessage monitor for inspectable Android and iOS WebViews, with
+  context and direction filters, bounded payload previews, capture coverage,
+  paused viewing, search and JSON export of displayed messages.
+
 Fixed
 - Keep pinned log details open during live capture and automatic scrolling on
   iOS and Android, even after the original row leaves the virtualized view.
