@@ -21,7 +21,14 @@ try {
     const emit = (name,pid,text) => fixture.emitNative({ message: 'Nov 6 07:50:00 iPhone '+name+'['+pid+'] <Notice>: '+text });
     emit('MyApp',0,'first'); emit('Other',2,'other');
     await page.locator('.source-filters .overlay-trigger').first().click();
-    await page.locator('.source-advanced summary').click();
+    assert.equal(await page.locator('.source-advanced').evaluate(el => el.open), true);
+    assert.equal(await page.locator('.source-levels, .precision-ios-note').count(), 0);
+    assert.equal(await page.locator('input[id$="-process"]').isVisible(), true);
+    assert.equal(await page.locator('input[id$="-pid"]').isVisible(), true);
+    const panel = page.locator('.source-filter-panel');
+    await panel.waitFor({ state: 'visible' });
+    await panel.evaluate(async el => { await Promise.all(el.getAnimations().map(animation => animation.finished)); });
+    await panel.screenshot({ path: '/tmp/ios-process-screenshots/filters-'+locale+'-'+width+'.png' });
     const trigger = page.getByRole('button', { name: t('iosProcessFind'), exact:true });
     await trigger.click();
     const dialog = page.getByRole('dialog');

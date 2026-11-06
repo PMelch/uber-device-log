@@ -13,6 +13,8 @@ Added
 - Filter native iOS logs by observed process name across PID changes, with an
   optional exact PID. The Android-style searchable picker lists names from
   retained logs, not running processes; original syslog text stays unchanged.
+  Native iOS process controls open immediately in source filters, without an
+  unsupported severity section; Android and WebView severity controls remain.
 - Show a localized loading label during web startup and an animated spinner
   while the terminal interface initializes.
 - Search running Android processes by package/process name and apply a selected PID

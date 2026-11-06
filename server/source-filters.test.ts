@@ -29,7 +29,12 @@ test('source filters scope accessible names, native metadata and levels to each 
     const iosWeb = await render({ ...device, platform: 'ios', webview: {id:'2',socket:'PID:42',title:'Slot',url:''} });
     assert.doesNotMatch(iosWeb, /precision-severity[^>]*disabled/);
     const ios = await render({ ...device, platform: 'ios' });
-    assert.match(ios, /precision-severity[^>]*disabled/);
+    assert.doesNotMatch(ios, /source-levels|precision-severity|precision-ios-note/);
+    assert.match(ios, /<details[^>]*class="source-advanced"[^>]*open/);
+    assert.doesNotMatch(native, /<details[^>]*open/);
+    assert.match(native, /source-levels/);
+    assert.match(web, /source-levels/);
+    assert.match(iosWeb, /source-levels/);
     assert.match(ios, /inputmode="numeric"/);
     assert.match(ios, /Beobachtete Prozesse/);
     assert.match(ios, /Prozessname/);

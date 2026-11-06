@@ -76,7 +76,7 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
         <button v-if="modelValue.text" class="precision-searchclear" @click="update({ text: '' })">{{ t('clearFilter') }}</button>
       </div>
 
-    <details v-if="nativeAndroid || nativeIos" class="source-advanced">
+    <details v-if="nativeAndroid || nativeIos" class="source-advanced" :open="nativeIos">
       <summary>{{ t('advancedSourceFilters') }}</summary>
       <div class="precision-metadata-filters source-metadata">
       <div v-if="nativeAndroid" class="precision-field"><label :for="`${id}-tag`">{{ t('tagFilter') }}</label><input :id="`${id}-tag`" :value="modelValue.tag" :aria-describedby="`${id}-hint`" type="text" spellcheck="false" @input="update({ tag: input($event) })" @keydown.esc="update({ tag: '' })" /></div>
@@ -88,11 +88,10 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
       <p v-if="invalidPid" :id="`${id}-error`" class="precision-filter-error" role="status">{{ t('pidFilterInvalid') }}</p>
     </div>
     </details>
-    <div class="precision-severitybar source-levels" role="group" :aria-label="t('sourceLevels', { source: displayName })" :aria-describedby="nativeIos ? `${id}-ios` : undefined">
+    <div v-if="!nativeIos" class="precision-severitybar source-levels" role="group" :aria-label="t('sourceLevels', { source: displayName })">
       <span class="precision-severitylabel">{{ t('levels') }}</span>
-      <button class="precision-severity" :disabled="nativeIos" :aria-pressed="!nativeIos && modelValue.levels.length === logLevels.length" @click="update({ levels: [...logLevels] })">{{ t('all') }}</button>
-      <button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :disabled="nativeIos" :aria-pressed="!nativeIos && modelValue.levels.includes(level)" @click="toggle(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button>
-      <span v-if="nativeIos" :id="`${id}-ios`" class="precision-ios-note">{{ t('iosNote') }}</span>
+      <button class="precision-severity" :aria-pressed="modelValue.levels.length === logLevels.length" @click="update({ levels: [...logLevels] })">{{ t('all') }}</button>
+      <button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :aria-pressed="modelValue.levels.includes(level)" @click="toggle(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button>
     </div>
       <footer class="source-filter-footer">
       <button class="precision-action" :disabled="!active" @click="update({ text: '', tag: '', pid: '', processName: '', levels: [...logLevels] })"><svg class="source-reset-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7a6.5 6.5 0 1 1-.4 5M4 3v4h4"/></svg><span>{{ t('resetLogFilters') }}</span></button>
@@ -145,7 +144,6 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 #precision-design .source-levels { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:14px 0 16px; border-top:1px solid var(--pl-line); border-bottom:0; margin:0; }
 #precision-design .source-levels .precision-severitylabel { grid-column:span 2; font-size:12px; font-weight:600; color:var(--pl-text); align-self:center; }
 #precision-design .source-levels .precision-severity { min-width:0; min-height:32px; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px; white-space:normal; overflow-wrap:anywhere; border-radius:7px; font:11px/1.4 system-ui,sans-serif; }
-#precision-design .source-levels .precision-ios-note { grid-column:1/-1; }
 #precision-design .source-filter-footer { border-top:1px solid var(--pl-line); padding:12px 0 0; display:flex; justify-content:flex-end; }
 #precision-design .source-filter-footer .precision-action { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:6px 10px; font-size:11px; color:var(--pl-soft); border:1px solid var(--pl-line); border-radius:7px; background:var(--pl-panel); }
 #precision-design .source-reset-icon { width:15px; height:15px; flex-shrink:0; }
