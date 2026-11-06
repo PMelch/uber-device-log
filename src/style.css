@@ -496,3 +496,16 @@ body { margin: 0; }
 @media(max-width:380px) {
   #precision-design .precision-commandbar .command-primary { width:64px; padding:6px; }
 }
+
+/* Native iOS header ink; no opacity so selected and wash rows stay readable. */
+#precision-design { --ios-muted:#59616c; --ios-device:#245a9b; --ios-process:#086b66; --ios-subsystem:#6c5878; --ios-pid:#765321; --ios-info:#27623d; --ios-warning:#805000; --ios-error:#a52c35; --ios-fatal:#8e2865; }
+:root[data-theme=dark] #precision-design { --ios-muted:#b3b8c2; --ios-device:#96c2ff; --ios-process:#78d4c7; --ios-subsystem:#c5afd5; --ios-pid:#dfc08b; --ios-info:#9cd5a9; --ios-warning:#f0c579; --ios-error:#ffa5ad; --ios-fatal:#f0a4d2; }
+#precision-design [data-ios-token=timestamp], #precision-design [data-ios-token=level] { color:var(--ios-muted); }
+#precision-design [data-ios-token=device], #precision-design [data-ios-token=debug] { color:var(--ios-device); }
+#precision-design [data-ios-token=process] { color:var(--ios-process); }
+#precision-design [data-ios-token=subsystem] { color:var(--ios-subsystem); }
+#precision-design [data-ios-token=pid] { color:var(--ios-pid); }
+#precision-design [data-ios-token=info], #precision-design [data-ios-token=notice] { color:var(--ios-info); }
+#precision-design [data-ios-token=warning] { color:var(--ios-warning); }
+#precision-design [data-ios-token=error] { color:var(--ios-error); }
+#precision-design [data-ios-token=fatal] { color:var(--ios-fatal); }
