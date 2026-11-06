@@ -1,3 +1,4 @@
+import { parseIosProcess } from '../shared/ios-processes.js';
 import { discoverAndroidProcesses } from './android-processes.js';
 import { openAndroidInspector } from './android-inspector.js';
 import { createWebViewHub } from './webview-hub.js';
@@ -113,7 +114,7 @@ export const openLogs: OpenLogs = async (device, onMessage, onEnd) => {
   service._socketClient.on('error', error => onEnd(notification('streamError', { platform: 'iOS', detail: errorText(error) })));
   service._socketClient.on('close', () => onEnd(notification('streamEnded', { platform: 'iOS' })));
   service._decoder.on('error', error => onEnd(notification('decodeError', { detail: errorText(error) })));
-  service.start(message => onMessage({ timestamp: new Date().toISOString(), message }));
+  service.start(message => onMessage({ timestamp: new Date().toISOString(), message, ...parseIosProcess(message) }));
   return () => {
     service._socketClient.destroy();
     service._decoder.destroy();

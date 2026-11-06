@@ -30,6 +30,10 @@ test('source filters scope accessible names, native metadata and levels to each 
     assert.doesNotMatch(iosWeb, /precision-severity[^>]*disabled/);
     const ios = await render({ ...device, platform: 'ios' });
     assert.match(ios, /precision-severity[^>]*disabled/);
-    assert.doesNotMatch(ios, /inputmode="numeric"/);
+    assert.match(ios, /inputmode="numeric"/);
+    assert.match(ios, /Beobachtete Prozesse/);
+    assert.match(ios, /Prozessname/);
+    assert.doesNotMatch(ios, /Exakte Android-PID/);
+    assert.doesNotMatch(iosWeb, /Beobachtete Prozesse|inputmode="numeric"/);
   } finally { await server.close(); }
 });

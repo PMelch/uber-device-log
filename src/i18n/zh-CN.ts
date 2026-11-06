@@ -1,6 +1,14 @@
 import type { Messages } from './en';
 export const zhCN = {
   appLoading: "正在加载…",
+  iosProcessPid: "精确PID（可选）",
+  iosProcessSearch: "进程名称或PID",
+  iosProcessFind: "已观测的进程",
+  iosProcessName: "进程名称",
+  iosProcessHint: "来自保留日志的观测结果（最多1000个名称），并非正在运行的进程列表。按名称选择可跟随PID变化。",
+  iosProcessSelect: "选择名称；清除PID筛选",
+  iosProcessEmpty: "没有匹配的已观测进程。请采集更多日志。",
+  iosProcessApply: "使用进程 {name}",
   processFind: "查找 PID",
   processSearch: "软件包、进程名称或 PID",
   processHint: "重启应用后，PID 可能会改变。",

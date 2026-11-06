@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue';
 import { useVirtualizer, defaultRangeExtractor } from '@tanstack/vue-virtual';
 import type { Device, DeviceList, LogMessage, LogSourceMetadata } from '../shared/types';
+import { observedIosProcesses, parseIosProcess } from '../shared/ios-processes';
 import { logLevel } from '../shared/log-view';
 import { defaultSourceFilter, createSourceFilterer, mergeSourceMessages, type SourceFilter } from '../shared/log-sources';
 import { createLogStreams, createLogBatcher, type StreamSource, type LogStream } from './log-streams';
@@ -73,6 +74,10 @@ watch(paused, () => { receivedSincePause.value = 0; }, { flush: 'sync' });
 const visibleMessages = computed(() => pausedMessages.value ?? messages.value);
 const includedKeys = ref<string[]>([]);
 const sourceFilters = ref<Record<string, SourceFilter>>({});
+const observedProcesses = computed(() => Object.fromEntries(
+  selectedSources.value.filter(source => source.device.platform === 'ios' && !source.device.webview)
+    .map(source => [source.key, observedIosProcesses(messages.value, source.key)]),
+));
 const capturedSources = ref<Record<string, Device>>({});
 const sourceStates = ref<Record<string, { live: boolean; message: UiMessage }>>({});
 const capturing = computed(() => Object.values(sourceStates.value).some(state => state.live));
@@ -340,7 +345,7 @@ function receiveLogs(source: StreamSource, batch: LogMessage[]) {
   if (paused.value) receivedSincePause.value += batch.length;
   recordIncoming(batch.length);
   const origin = metadata(source);
-  const rows = batch.map(message => ({ ...message, source: origin, key: nextKey++ }));
+  const rows = batch.map(message => ({ ...message, ...(origin.platform === 'ios' && !origin.webview ? parseIosProcess(message.message) : {}), source: origin, key: nextKey++ }));
   // Recognition sees every delivery before display batching/retention can discard records.
   if (rows.some(message => message.truncated)) flows.gap();
   flows.ingest(rows);
@@ -658,7 +663,7 @@ onUnmounted(() => {
           </div>
           <p v-show="activeTab === 'logs'" class="precision-source-hint">{{ t('combinedHint') }}</p>
           <template v-for="source in selectedSources" :key="source.key">
-            <SourceFilters v-show="activeTab === 'logs'" :source="metadata(source)" :device-name="source.device.name" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
+            <SourceFilters v-show="activeTab === 'logs'" :observed="observedProcesses[source.key]" :source="metadata(source)" :device-name="source.device.name" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
             <p v-if="sourceStates[source.key] && !sourceStates[source.key]!.live" class="precision-source-status" role="status">{{ sourceLabel(source) }} · {{ localizeMessage(sourceStates[source.key]!.message) }}</p>
           </template>
         </section>

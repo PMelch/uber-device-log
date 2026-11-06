@@ -25,6 +25,7 @@ export function filterLogMetadata<T extends LogMessage>(messages: T[], platform:
 }
 export function formatLogMessages(messages: readonly LogMessage[]): string {
   return messages.map(entry => {
+    if (entry.processName !== undefined) return `${entry.timestamp} ${entry.message}`;
     const tag = `${entry.tag ?? ''}${entry.pid !== undefined ? `[${entry.pid}]` : ''}`;
     const metadata = [entry.level, tag].filter(Boolean).join(' ');
     return `${entry.timestamp} ${metadata ? `${metadata}: ` : ''}${entry.message}`;

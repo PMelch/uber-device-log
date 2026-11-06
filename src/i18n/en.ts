@@ -1,6 +1,14 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
   appLoading: "Loading…",
+  iosProcessPid: "Exact PID (optional)",
+  iosProcessSearch: "Process name or PID",
+  iosProcessFind: "Observed processes",
+  iosProcessName: "Process name",
+  iosProcessHint: "Observed in retained logs (up to 1000 names), not running processes. Name selection follows PID changes.",
+  iosProcessSelect: "Select a name; clears the PID filter",
+  iosProcessEmpty: "No matching observed processes. Capture more logs.",
+  iosProcessApply: "Use process {name}",
   processFind: "Find PID",
   processSearch: "Package, process name or PID",
   processHint: "The PID may change after restarting the app.",

@@ -36,7 +36,7 @@ export function serializeLogExport(messages: readonly LogMessage[], device: Devi
       schemaVersion: 2,
       device: { id: device.id, name: device.name, platform: device.platform },
       sources: [...new Map(messages.flatMap(entry => entry.source ? [[entry.source.key, entry.source] as const] : [])).values()],
-      entries: messages.map(({ timestamp, message, level, tag, pid, source }) => ({ timestamp, message, level, tag, pid, ...(source ? { source } : {}) })),
+      entries: messages.map(({ timestamp, message, level, tag, pid, processName, source }) => ({ timestamp, message, level, tag, pid, processName, ...(source ? { source } : {}) })),
     };
     return { text: JSON.stringify(document, null, 2), mimeType: 'application/json;charset=utf-8', extension: 'json' };
   }
@@ -47,7 +47,7 @@ export function serializeLogExport(messages: readonly LogMessage[], device: Devi
     ...(device.webview ? { webview: device.webview } : {}),
     timestampSource: device.platform === 'android' || device.webview ? 'device' : 'host-receipt',
     // Explicit fields exclude UI selection keys and retain original message text.
-    entries: messages.map(({ timestamp, message, level, tag, pid }) => ({ timestamp, message, level, tag, pid })),
+    entries: messages.map(({ timestamp, message, level, tag, pid, processName }) => ({ timestamp, message, level, tag, pid, processName })),
   };
   return { text: JSON.stringify(document, null, 2), mimeType: 'application/json;charset=utf-8', extension: 'json' };
 }

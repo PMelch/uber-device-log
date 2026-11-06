@@ -1,8 +1,10 @@
+import { filterIosProcesses } from './ios-processes';
 import type { LogMessage } from './types';
 import { createLogSearch, type LogSearchMode } from './search';
 import { filterLogLevels, filterLogMetadata, logLevels, type LogLevel } from './log-view';
 
 export interface SourceFilter {
+  processName?: string;
   text: string;
   mode: LogSearchMode;
   tag: string;
@@ -27,7 +29,7 @@ export function filterSourceMessages<T extends LogMessage>(messages: T[], filter
   for (const [key, group] of groups) {
     const filter = filters[key]!;
     const platform = group[0]!.source!.webview ? 'android' : group[0]!.source!.platform;
-    const metadata = filterLogMetadata(group, platform, filter.tag, filter.pid);
+    const metadata = filterLogMetadata(platform === 'ios' ? filterIosProcesses(group, filter.processName, filter.pid) : group, platform, filter.tag, filter.pid);
     const levels = filterLogLevels(metadata, platform, filter.levels);
     const found = filter.text.trim() ? createLogSearch(levels)(filter.text, filter.mode) : levels;
     for (const message of found) matched.add(message);
@@ -45,7 +47,7 @@ export function createSourceFilterer() {
   return <T extends LogMessage>(messages: T[], filters: Record<string, SourceFilter>): T[] => {
     for (const key of caches.keys()) if (!filters[key]) caches.delete(key);
     for (const [key, filter] of Object.entries(filters)) {
-      const signature = JSON.stringify([filter.text, filter.mode, filter.tag, filter.pid, filter.levels]);
+      const signature = JSON.stringify([filter.text, filter.mode, filter.tag, filter.pid, filter.processName, filter.levels]);
       if (caches.get(key)?.signature !== signature) caches.set(key, { signature, matches: new WeakMap() });
     }
     const pending = new Map<string, T[]>();
@@ -62,7 +64,7 @@ export function createSourceFilterer() {
     for (const [key, group] of pending) {
       const filter = filters[key]!;
       const platform = group[0]!.source!.webview ? 'android' : group[0]!.source!.platform;
-      const candidates = filterLogLevels(filterLogMetadata(group, platform, filter.tag, filter.pid), platform, filter.levels);
+      const candidates = filterLogLevels(filterLogMetadata(platform === 'ios' ? filterIosProcesses(group, filter.processName, filter.pid) : group, platform, filter.tag, filter.pid), platform, filter.levels);
       const found = new Set(filter.text.trim() ? createLogSearch(candidates)(filter.text, filter.mode) : candidates);
       const cache = caches.get(key)!;
       for (const message of group) cache.matches.set(message, found.has(message));

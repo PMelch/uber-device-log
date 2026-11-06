@@ -432,3 +432,24 @@ Blueprint specification version. Install from the terminal with
 interface. Selections are stored in the selected project when launched with
 `--project`/`--flows`, otherwise globally. See [the bundle guide](docs/blueprint-bundles.md)
 for the format, conflicts, limits and installation examples.
+
+### iOS observed process filters
+
+Open a native iOS source’s **Filters → Advanced filters → Observed processes**.
+The searchable dialog uses the Android process picker layout, but lists up to
+1000 distinct names recognized in retained logs—not a running-process inventory.
+Selecting a name clears the PID filter and matches that exact name across app
+restarts. An optional exact PID (including zero) can narrow it further. Unknown
+headers remain visible when no process filter is set; no process is inferred from
+message bodies or continuation lines. iOS WebViews and Android filters are unchanged.
+
+Discovery uses the unfiltered live retention buffer, even while the view is paused.
+Clear empties observations; device changes and reopened source collectors follow
+the viewer’s buffer reset/replay behavior. A stopped capture retains observations
+while its logs remain retained; starting capture again resets the buffer. Filters remain until reset, as with other source
+filters. Only known legacy syslog and dated process[pid:thread] headers are parsed.
+Raw message text and host-receipt timestamps are preserved; JSON exports include
+optional processName and pid metadata, while text exports keep the original header.
+
+Synthetic browser verification: `node --import tsx scripts/test-ios-process-search.mjs`
+(after `npm run build`). No physical iOS device is required for this test.

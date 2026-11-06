@@ -1,6 +1,14 @@
 import type { Messages } from './en';
 export const ja = {
   appLoading: "読み込み中…",
+  iosProcessPid: "正確なPID（任意）",
+  iosProcessSearch: "プロセス名またはPID",
+  iosProcessFind: "観測されたプロセス",
+  iosProcessName: "プロセス名",
+  iosProcessHint: "保持されたログで観測された最大1000件の名前です。実行中のプロセス一覧ではありません。名前で選択するとPIDの変更後も一致します。",
+  iosProcessSelect: "名前を選択するとPIDフィルターを解除します",
+  iosProcessEmpty: "一致する観測済みプロセスはありません。ログをさらに取得してください。",
+  iosProcessApply: "プロセス {name} を使用",
   processFind: "PID を検索",
   processSearch: "パッケージ、プロセス名、または PID",
   processHint: "アプリを再起動すると PID が変わることがあります。",

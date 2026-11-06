@@ -3,8 +3,8 @@ import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue';
 import type { AndroidProcess } from '../../shared/types';
 import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
-const props = defineProps<{ deviceId: string; deviceName?: string; t: (key: MessageKey, params?: MessageParams) => string }>();
-const emit = defineEmits<{ select: [pid: string] }>();
+const props = defineProps<{ observed?: AndroidProcess[]; deviceId: string; deviceName?: string; t: (key: MessageKey, params?: MessageParams) => string }>();
+const emit = defineEmits<{ select: [pid: string]; selectName: [name: string] }>();
 const trigger = ref<HTMLButtonElement>(), panel = ref<HTMLDialogElement>(), search = ref<HTMLInputElement>();
 const visible = ref(false), busy = ref(false), failed = ref(false), query = ref('');
 const processes = ref<AndroidProcess[]>([]);
@@ -12,9 +12,11 @@ const id = useId();
 const results = ref<HTMLElement>();
 watch(query, () => { if (results.value) results.value.scrollTop = 0; });
 let request: AbortController | undefined;
+const available = computed(() => props.observed ?? processes.value);
+const ios = computed(() => props.observed !== undefined);
 const matches = computed(() => {
   const term = query.value.trim().toLowerCase();
-  return processes.value.filter(process => process.name.toLowerCase().includes(term) || String(process.pid).includes(term));
+  return available.value.filter(process => process.name.toLowerCase().includes(term) || String(process.pid).includes(term));
 });
 async function refresh() {
   request?.abort();
@@ -32,34 +34,35 @@ async function refresh() {
 async function open() {
   visible.value = true; query.value = '';
   await nextTick(); panel.value?.showModal(); search.value?.focus();
-  void refresh();
+  if (!ios.value) void refresh();
 }
 function close() {
   request?.abort(); panel.value?.close(); visible.value = false;
   trigger.value?.focus({ preventScroll: true });
 }
-function select(process: AndroidProcess) { emit('select', String(process.pid)); close(); }
+function select(process: AndroidProcess) { if (ios.value) emit('selectName', process.name); else emit('select', String(process.pid)); close(); }
+watch(() => props.deviceId, () => { if (visible.value) close(); });
 onUnmounted(() => request?.abort());
 </script>
 <template>
-  <button ref="trigger" type="button" class="precision-action" aria-haspopup="dialog" :aria-expanded="visible" @click="open">{{ t('processFind') }}</button>
+  <button ref="trigger" type="button" class="precision-action" aria-haspopup="dialog" :aria-expanded="visible" @click="open">{{ t(ios ? 'iosProcessFind' : 'processFind') }}</button>
   <dialog v-if="visible" ref="panel" class="process-dialog" :aria-labelledby="`${id}-title`" :aria-describedby="`${id}-hint ${id}-select`" @cancel.prevent.stop="close" @keydown.esc.prevent.stop="close">
     <header class="process-heading">
-      <div><h2 :id="`${id}-title`">{{ t('processFind') }}</h2><div class="process-device"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="5" y="2" width="10" height="16" rx="2"/><path d="M8 15h4"/></svg><span>{{ deviceName || deviceId }}</span><span aria-hidden="true">·</span><span>Android</span></div></div>
+      <div><h2 :id="`${id}-title`">{{ t(ios ? 'iosProcessFind' : 'processFind') }}</h2><div class="process-device"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="5" y="2" width="10" height="16" rx="2"/><path d="M8 15h4"/></svg><span>{{ deviceName || deviceId }}</span><span aria-hidden="true">·</span><span>{{ ios ? 'iOS' : 'Android' }}</span></div></div>
       <button type="button" class="process-icon-button process-close" :aria-label="t('close')" @click="close"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
     </header>
     <div class="process-tools">
-      <div class="process-search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg><input ref="search" v-model="query" type="search" :aria-label="t('processSearch')" :placeholder="t('processSearch')" autocomplete="off" spellcheck="false" /></div>
-      <button type="button" class="process-icon-button process-refresh" :disabled="busy" :aria-label="t('processRefresh')" :title="t('processRefresh')" @click="refresh"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 7a6.5 6.5 0 1 0 .4 5M16 3v4h-4"/></svg></button>
+      <div class="process-search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg><input ref="search" v-model="query" type="search" :aria-label="t(ios ? 'iosProcessSearch' : 'processSearch')" :placeholder="t(ios ? 'iosProcessSearch' : 'processSearch')" autocomplete="off" spellcheck="false" /></div>
+      <button v-if="!ios" type="button" class="process-icon-button process-refresh" :disabled="busy" :aria-label="t('processRefresh')" :title="t('processRefresh')" @click="refresh"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 7a6.5 6.5 0 1 0 .4 5M16 3v4h-4"/></svg></button>
     </div>
-    <div class="process-meta"><span role="status">{{ !busy && !failed ? t('processMatches', { count: matches.length, total: processes.length }) : '' }}</span><span :id="`${id}-select`">{{ t('processSelectHint') }}</span></div>
+    <div class="process-meta"><span role="status">{{ !busy && !failed ? t('processMatches', { count: matches.length, total: available.length }) : '' }}</span><span :id="`${id}-select`">{{ t(ios ? 'iosProcessSelect' : 'processSelectHint') }}</span></div>
     <div ref="results" class="process-results" :aria-busy="busy">
       <p v-if="busy" class="process-state" role="status">{{ t('processLoading') }}</p>
       <p v-else-if="failed" class="process-state" role="alert">{{ t('processUnavailable') }}</p>
-      <p v-else-if="!matches.length" class="process-state" role="status">{{ t('processEmpty') }}</p>
-      <ul v-else><li v-for="process in matches" :key="process.pid"><button type="button" class="process-row" :aria-label="t('processApply', { name: process.name, pid: String(process.pid) })" @click="select(process)"><span class="process-symbol" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m10 2 7 4v8l-7 4-7-4V6l7-4ZM3 6l7 4 7-4M10 10v8M6.5 4l7 4"/></svg></span><span class="process-name">{{ process.name }}</span><code>{{ process.pid }}</code><svg class="process-enter" viewBox="0 0 20 20" aria-hidden="true"><path d="M16 4v7H4m4-4-4 4 4 4"/></svg></button></li></ul>
+      <p v-else-if="!matches.length" class="process-state" role="status">{{ t(ios ? 'iosProcessEmpty' : 'processEmpty') }}</p>
+      <ul v-else><li v-for="process in matches" :key="ios ? process.name : process.pid"><button type="button" class="process-row" :aria-label="ios ? t('iosProcessApply', { name: process.name }) : t('processApply', { name: process.name, pid: String(process.pid) })" @click="select(process)"><span class="process-symbol" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m10 2 7 4v8l-7 4-7-4V6l7-4ZM3 6l7 4 7-4M10 10v8M6.5 4l7 4"/></svg></span><span class="process-name">{{ process.name }}</span><code>{{ process.pid }}</code><svg class="process-enter" viewBox="0 0 20 20" aria-hidden="true"><path d="M16 4v7H4m4-4-4 4 4 4"/></svg></button></li></ul>
     </div>
-    <footer><p :id="`${id}-hint`">{{ t('processHint') }}</p><button type="button" class="process-dismiss" @click="close"><kbd>Esc</kbd>{{ t('close') }}</button></footer>
+    <footer><p :id="`${id}-hint`">{{ t(ios ? 'iosProcessHint' : 'processHint') }}</p><button type="button" class="process-dismiss" @click="close"><kbd>Esc</kbd>{{ t('close') }}</button></footer>
   </dialog>
 </template>
 <style scoped>

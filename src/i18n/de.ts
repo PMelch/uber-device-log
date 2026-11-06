@@ -1,6 +1,14 @@
 import type { Messages } from './en';
 export const de = {
   appLoading: "Wird geladen…",
+  iosProcessPid: "Exakte PID (optional)",
+  iosProcessSearch: "Prozessname oder PID",
+  iosProcessFind: "Beobachtete Prozesse",
+  iosProcessName: "Prozessname",
+  iosProcessHint: "In gespeicherten Logs beobachtet (bis zu 1000 Namen), keine Liste laufender Prozesse. Die Namensauswahl folgt PID-Änderungen.",
+  iosProcessSelect: "Name auswählen; löscht den PID-Filter",
+  iosProcessEmpty: "Keine passenden beobachteten Prozesse. Weitere Logs erfassen.",
+  iosProcessApply: "Prozess {name} verwenden",
   processFind: "PID suchen",
   processSearch: "Paket, Prozessname oder PID",
   processHint: "Nach einem App-Neustart kann sich die PID ändern.",

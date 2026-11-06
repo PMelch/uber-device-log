@@ -39,6 +39,8 @@ export interface DeviceSetupIssue {
 }
 
 export interface LogMessage {
+  /** Process parsed from a recognized native iOS header; original message stays verbatim. */
+  processName?: string;
   /** Capture adapter/server truncated the original message; analysis is incomplete. */
   truncated?: boolean;
   source?: LogSourceMetadata;

@@ -1,0 +1,56 @@
+// Synthetic iOS syslog only; no real device evidence.
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+import { chromium } from 'playwright';
+import { translate } from '../src/i18n/index.ts';
+import { createSemanticFlowsFixture } from '../server/fixtures/semantic-flows-ui.mts';
+const fixture = await createSemanticFlowsFixture(false, 'ios');
+const server = await new Promise(resolve => { const listener = fixture.app.listen(0, '127.0.0.1', () => resolve(listener)); });
+const browser = await chromium.launch({ headless: true });
+const errors = [];
+try {
+  await mkdir('/tmp/ios-process-screenshots', { recursive: true });
+  for (const width of [1440, 390, 320]) for (const locale of ['en','de','es','fr','it','ja','zh-CN']) {
+    const page = await browser.newPage({ viewport: { width, height: width === 320 ? 640 : 900 } });
+    page.on('pageerror', e => errors.push(e.message));
+    await page.addInitScript(locale => { localStorage.setItem('uber-device-log.language', locale); localStorage.setItem('uber-device-log.lastDevice', 'ios:semantic-phone'); }, locale);
+    const t = key => translate(locale, key);
+    await page.goto('http://127.0.0.1:'+server.address().port);
+    await page.locator('.source-filters').first().waitFor();
+    await page.waitForFunction(async () => (await (await fetch('/fixture/state')).json()).native === 1);
+    const emit = (name,pid,text) => fixture.emitNative({ message: 'Nov 6 07:50:00 iPhone '+name+'['+pid+'] <Notice>: '+text });
+    emit('MyApp',0,'first'); emit('Other',2,'other');
+    await page.locator('.source-filters .overlay-trigger').first().click();
+    await page.locator('.source-advanced summary').click();
+    const trigger = page.getByRole('button', { name: t('iosProcessFind'), exact:true });
+    await trigger.click();
+    const dialog = page.getByRole('dialog');
+    await dialog.locator('li').nth(1).waitFor();
+    assert.equal(await dialog.getByRole('searchbox').evaluate(el => el === document.activeElement), true);
+    assert.equal(await dialog.locator('.process-refresh').count(), 0);
+    await dialog.getByRole('searchbox').fill('MyApp');
+    await dialog.locator('.process-row').click();
+    assert.equal(await page.locator('input[id$="-process"]').inputValue(), 'MyApp');
+    assert.equal(await page.locator('input[id$="-pid"]').inputValue(), '');
+    emit('MyApp',9,'restart'); emit('Background',3,'filtered-out-observation');
+    await trigger.click();
+    await dialog.locator('li').nth(2).waitFor();
+    assert.match(await dialog.innerText(), /Background/);
+    await dialog.getByRole('searchbox').fill('9');
+    assert.equal(await dialog.locator('li').count(), 1);
+    await dialog.getByRole('searchbox').fill('');
+    assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth), true);
+    assert.equal(await dialog.evaluate(el => el.scrollHeight <= el.clientHeight + 1), true);
+    await page.screenshot({path:'/tmp/ios-process-screenshots/'+locale+'-'+width+'.png'});
+    await page.keyboard.press('Escape');
+    assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name:t('clear'), exact:true }).click();
+    await page.locator('.source-filters .overlay-trigger').first().click();
+    await trigger.click();
+    assert.equal(await dialog.locator('li').count(), 0);
+    await page.close();
+  }
+  assert.deepEqual(errors, []);
+  console.log('iOS synthetic picker: 21 locale/viewport cases passed; screenshots /tmp/ios-process-screenshots');
+} finally { await browser.close(); await fixture.close(); await new Promise(resolve => server.close(resolve)); }

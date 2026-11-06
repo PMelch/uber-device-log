@@ -1,6 +1,14 @@
 import type { Messages } from './en';
 export const fr = {
   appLoading: "Chargement…",
+  iosProcessPid: "PID exact (facultatif)",
+  iosProcessSearch: "Nom du processus ou PID",
+  iosProcessFind: "Processus observés",
+  iosProcessName: "Nom du processus",
+  iosProcessHint: "Observés dans les journaux conservés (1000 noms maximum), pas les processus en cours. La sélection par nom suit les changements de PID.",
+  iosProcessSelect: "Choisir un nom ; efface le filtre PID",
+  iosProcessEmpty: "Aucun processus observé correspondant. Capturez davantage de journaux.",
+  iosProcessApply: "Utiliser le processus {name}",
   processFind: "Rechercher un PID",
   processSearch: "Paquet, nom du processus ou PID",
   processHint: "Le PID peut changer après le redémarrage de l’app.",

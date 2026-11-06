@@ -16,6 +16,7 @@ const statusBadge = ref<InstanceType<typeof FeatureStatusBadge>>();
 const consoleDescriptionId = useId();
 const consoleStatus = featureStatuses.javascriptConsole;
 const props = defineProps<{
+  observed?: import('../../shared/types').AndroidProcess[];
   source: LogSourceMetadata;
   deviceName?: string;
   modelValue: SourceFilter;
@@ -29,14 +30,15 @@ const invalidPid = computed(() => !isLogPidFilterValid(props.modelValue.pid));
 const nativeIos = computed(() => props.source.platform === 'ios' && !props.source.webview);
 const nativeAndroid = computed(() => props.source.platform === 'android' && !props.source.webview);
 const id = computed(() => `source-${encodeURIComponent(props.source.key)}`);
-const activeCount = computed(() => Number(!!props.modelValue.text) + Number(nativeAndroid.value && !!props.modelValue.tag) + Number(nativeAndroid.value && !!props.modelValue.pid) + Number(!nativeIos.value && props.modelValue.levels.length !== logLevels.length));
+const activeCount = computed(() => Number(!!props.modelValue.text) + Number(nativeAndroid.value && !!props.modelValue.tag) + Number((nativeAndroid.value || nativeIos.value) && !!props.modelValue.pid) + Number(nativeIos.value && !!props.modelValue.processName) + Number(!nativeIos.value && props.modelValue.levels.length !== logLevels.length));
 const active = computed(() => activeCount.value > 0);
 const summary = computed(() => {
   const filter = props.modelValue;
   const items: string[] = [];
   if (filter.text) items.push(props.t(filter.mode === 'fuzzy' ? 'filterSummaryFuzzy' : 'filterSummaryLiteral', { value: filter.text }));
+  if (nativeIos.value && filter.processName) items.push(filter.processName);
   if (nativeAndroid.value && filter.tag) items.push(props.t('filterSummaryTag', { value: filter.tag }));
-  if (nativeAndroid.value && filter.pid) items.push(props.t('filterSummaryPid', { value: filter.pid }));
+  if ((nativeAndroid.value || nativeIos.value) && filter.pid) items.push(props.t('filterSummaryPid', { value: filter.pid }));
   if (!nativeIos.value && filter.levels.length !== logLevels.length) {
     const levels = logLevels.filter(level => filter.levels.includes(level));
     items.unshift(levels.length ? props.t('filterSummaryLevels', { value: levels.map(props.levelLabel).join(', ') }) : props.t('filterSummaryNoLevels'));
@@ -74,14 +76,15 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
         <button v-if="modelValue.text" class="precision-searchclear" @click="update({ text: '' })">{{ t('clearFilter') }}</button>
       </div>
 
-    <details v-if="nativeAndroid" class="source-advanced">
+    <details v-if="nativeAndroid || nativeIos" class="source-advanced">
       <summary>{{ t('advancedSourceFilters') }}</summary>
       <div class="precision-metadata-filters source-metadata">
-      <div class="precision-field"><label :for="`${id}-tag`">{{ t('tagFilter') }}</label><input :id="`${id}-tag`" :value="modelValue.tag" :aria-describedby="`${id}-hint`" type="text" spellcheck="false" @input="update({ tag: input($event) })" @keydown.esc="update({ tag: '' })" /></div>
-      <div class="precision-field"><label :for="`${id}-pid`">{{ t('pidFilter') }}</label><div class="source-pid-control"><input :id="`${id}-pid`" :value="modelValue.pid" :aria-invalid="invalidPid" :aria-describedby="invalidPid ? `${id}-error ${id}-hint` : `${id}-hint`" type="text" inputmode="numeric" @input="update({ pid: input($event) })" @keydown.esc="update({ pid: '' })" />
-      <ProcessSearch :device-name="deviceName || displayName" :device-id="source.deviceId" :t="t" @select="update({ pid: $event })" />
+      <div v-if="nativeAndroid" class="precision-field"><label :for="`${id}-tag`">{{ t('tagFilter') }}</label><input :id="`${id}-tag`" :value="modelValue.tag" :aria-describedby="`${id}-hint`" type="text" spellcheck="false" @input="update({ tag: input($event) })" @keydown.esc="update({ tag: '' })" /></div>
+      <div v-if="nativeIos" class="precision-field"><label :for="`${id}-process`">{{ t('iosProcessName') }}</label><div class="source-pid-control"><input :id="`${id}-process`" :value="modelValue.processName || ''" type="text" spellcheck="false" @input="update({ processName: input($event) })" @keydown.esc="update({ processName: '' })" /><ProcessSearch :observed="observed ?? []" :device-name="deviceName || displayName" :device-id="source.deviceId" :t="t" @select-name="update({ processName: $event, pid: '' })" /></div></div>
+      <div class="precision-field"><label :for="`${id}-pid`">{{ t(nativeIos ? 'iosProcessPid' : 'pidFilter') }}</label><div class="source-pid-control"><input :id="`${id}-pid`" :value="modelValue.pid" :aria-invalid="invalidPid" :aria-describedby="invalidPid ? `${id}-error ${id}-hint` : `${id}-hint`" type="text" inputmode="numeric" @input="update({ pid: input($event) })" @keydown.esc="update({ pid: '' })" />
+      <ProcessSearch v-if="nativeAndroid" :device-name="deviceName || displayName" :device-id="source.deviceId" :t="t" @select="update({ pid: $event })" />
       </div></div>
-      <p :id="`${id}-hint`">{{ t('metadataFilterHint') }}</p>
+      <p :id="`${id}-hint`">{{ t(nativeIos ? 'iosProcessHint' : 'metadataFilterHint') }}</p>
       <p v-if="invalidPid" :id="`${id}-error`" class="precision-filter-error" role="status">{{ t('pidFilterInvalid') }}</p>
     </div>
     </details>
@@ -92,7 +95,7 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
       <span v-if="nativeIos" :id="`${id}-ios`" class="precision-ios-note">{{ t('iosNote') }}</span>
     </div>
       <footer class="source-filter-footer">
-      <button class="precision-action" :disabled="!active" @click="update({ text: '', tag: '', pid: '', levels: [...logLevels] })"><svg class="source-reset-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7a6.5 6.5 0 1 1-.4 5M4 3v4h4"/></svg><span>{{ t('resetLogFilters') }}</span></button>
+      <button class="precision-action" :disabled="!active" @click="update({ text: '', tag: '', pid: '', processName: '', levels: [...logLevels] })"><svg class="source-reset-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7a6.5 6.5 0 1 1-.4 5M4 3v4h4"/></svg><span>{{ t('resetLogFilters') }}</span></button>
       </footer>
         </template>
       </OverlayPanel>
