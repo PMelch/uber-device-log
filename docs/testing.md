@@ -231,7 +231,10 @@ keyboard focus restoration and stationary rows. Fixtures use synthetic page URLs
 
 Run `node scripts/test-log-details.mjs` after building (with the same browser
 overrides) to check hover-then-click, keyboard activation, touch and Escape focus
-restoration. The test waits beyond the preview dismissal timer.
+restoration. The test waits beyond the preview dismissal timer and streams synthetic
+iOS and Android SSE batches in both message orders at desktop and touch widths.
+Pinned snapshots must survive auto-follow scrolling and removal of their original
+virtualized row; wheel/touch scrolling and outside pointer input still dismiss them.
 
 ## Startup update check
 

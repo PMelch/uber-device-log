@@ -9,6 +9,10 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Fixed
+- Keep pinned log details open during live capture and automatic scrolling on
+  iOS and Android, even after the original row leaves the virtualized view.
+
 Added
 - Filter native iOS logs by observed process name across PID changes, with an
   optional exact PID. The Android-style searchable picker lists names from

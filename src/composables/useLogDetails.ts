@@ -30,7 +30,7 @@ export function useLogDetails(fallbackFocus: () => void) {
   function show(entry: DetailRecord['entry'], device: Device | undefined, element: HTMLElement, pin: boolean) {
     if (!device) return;
     cancelTimers();
-    if (pinned.value && !pin && trigger === element) return;
+    if (pinned.value && !pin) return;
     trigger = element;
     record.value = { entry: { ...entry }, device: { ...device } };
     pinned.value = pin;
@@ -86,6 +86,7 @@ export function useLogDetails(fallbackFocus: () => void) {
     if (target instanceof Element && !target.closest('.precision-log-detail, .precision-detail-trigger')) close();
   }
   function escape(event: KeyboardEvent) {
+    if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) scrolled(event);
     if (event.key === 'Escape' && record.value) {
       event.preventDefault();
       event.stopPropagation();
@@ -95,6 +96,9 @@ export function useLogDetails(fallbackFocus: () => void) {
   function scrolled(event: Event) {
     if (event.target instanceof Element && event.target.closest('.precision-log-detail')) return;
     hoverSuppressedByScroll = true;
+    // Auto-follow and virtualizer anchor corrections emit scroll too. A pinned
+    // snapshot outlives its row; only deliberate input should dismiss it.
+    if (event.type === 'scroll' && pinned.value) { cancelTimers(); return; }
     close(false, false);
   }
   onMounted(() => {

@@ -83,13 +83,13 @@ test('click opens a closed card and the next click closes it, including after po
     assert.equal(h.current(), undefined);
   } finally { h.unmount(); }
 });
-test('scroll dismisses focused and pinned cards and cancels pending previews; stationary scrolling cannot reopen them', t => {
+test('wheel dismisses focused and pinned cards and cancels pending previews; stationary scrolling cannot reopen them', t => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const h = mountController();
   try {
     h.button.focus();
     h.controller.pinCurrent();
-    h.win.dispatchEvent(new Event('scroll'));
+    h.win.dispatchEvent(new Event('wheel'));
     assert.equal(h.current(), undefined);
     const nextButton = new h.TestElement();
     const nextEntry = { ...entry, key: 2 };
@@ -134,5 +134,37 @@ test('scrolling long content inside the popover does not dismiss it', () => {
     Object.defineProperty(scroll, 'target', { value: panel });
     h.win.dispatchEvent(scroll);
     assert.equal(h.current()?.entry.key, 1);
+  } finally { h.unmount(); }
+});
+
+test('automatic stream scrolling and incidental hover cannot replace a pinned snapshot', t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const h = mountController();
+  try {
+    h.controller.toggle(h.click(), entry, device);
+    h.button.isConnected = false; // The virtualizer may recycle the original row.
+    h.win.dispatchEvent(new Event('scroll'));
+    assert.equal(h.current()?.entry.key, 1);
+    const nextButton = new h.TestElement();
+    h.controller.move(h.pointer('pointermove', nextButton, 1), { ...entry, key: 2 }, device);
+    t.mock.timers.tick(500);
+    assert.equal(h.current()?.entry.key, 1);
+    assert.equal(h.controller.pinned.value, true);
+    h.controller.close(true);
+    assert.equal(h.fallbackCalls(), 1);
+  } finally { h.unmount(); }
+});
+
+test('touch and keyboard scrolling still deliberately dismiss pinned details', () => {
+  const h = mountController();
+  try {
+    h.controller.toggle(h.click(), entry, device);
+    h.win.dispatchEvent(new Event('touchmove'));
+    assert.equal(h.current(), undefined);
+    h.controller.toggle(h.click(), entry, device);
+    const event = new Event('keydown');
+    Object.defineProperty(event, 'key', { value: 'PageDown' });
+    h.doc.dispatchEvent(event);
+    assert.equal(h.current(), undefined);
   } finally { h.unmount(); }
 });
