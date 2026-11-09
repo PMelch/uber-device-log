@@ -8,6 +8,9 @@ import { defaultSourceFilter, createSourceFilterer, mergeSourceMessages, type So
 import { createLogStreams, createLogBatcher, type StreamSource, type LogStream } from './log-streams';
 import WebViewOption from './components/WebViewOption.vue';
 import { webViewLabel } from './webview-label';
+import WebViewMessageSession from './components/WebViewMessageSession.vue';
+import FeatureStatusBadge from './components/FeatureStatusBadge.vue';
+import { featureStatuses } from './feature-status';
 import JavaScriptConsole from './components/JavaScriptConsole.vue';
 import SourceFilters from './components/SourceFilters.vue';
 import { rangeKeys, selectedEntries } from '../shared/log-selection';
@@ -202,6 +205,30 @@ watch(showSourceColumn, async () => {
   if (following.value && !paused.value) scrollToLatest();
 });
 const selectedSources = computed(() => sourceOptions.value.filter(source => includedKeys.value.includes(source.key)));
+const singleWebView = computed(() => {
+  const [source] = selectedSources.value;
+  return selectedSources.value.length === 1 && source?.device.webview && source.device.state === 'connected' ? source : undefined;
+});
+const logMode = ref<'raw' | 'postMessage'>('raw');
+const messageSessionOpened = ref(false);
+const contextTarget = ref<HTMLElement>();
+watch(() => singleWebView.value?.key, () => {
+  logMode.value = 'raw';
+  messageSessionOpened.value = false;
+});
+let rawViewAnchor: ReturnType<typeof scrollAnchor>;
+watch(logMode, async mode => {
+  details.close();
+  if (mode === 'postMessage') {
+    rawViewAnchor = following.value ? undefined : scrollAnchor();
+    messageSessionOpened.value = true;
+    return;
+  }
+  await nextTick();
+  if (following.value && !paused.value) scrollToLatest();
+  else restoreAnchor(rawViewAnchor);
+  rawViewAnchor = undefined;
+});
 function metadata(source: StreamSource): LogSourceMetadata {
   const device = source.device;
   return { key: source.key, name: device.webview ? device.webview.title || device.webview.url || device.webview.id : device.name,
@@ -366,16 +393,17 @@ function restoreAnchor(anchor: ReturnType<typeof scrollAnchor>) {
 }
 async function commitLogs(batch: typeof messages.value) {
   const version = generation;
-  const anchor = !paused.value && !following.value ? scrollAnchor() : undefined;
+  const anchor = logMode.value === 'raw' && !paused.value && !following.value ? scrollAnchor() : undefined;
   messages.value = measurePerformance(() => mergeSourceMessages(messages.value, batch, bufferSize.value));
   if (paused.value) return;
   await nextTick();
-  if (disposed || paused.value || generation !== version) return;
+  if (disposed || paused.value || generation !== version || logMode.value !== 'raw') return;
   if (following.value) scrollToLatest();
   else restoreAnchor(anchor);
 }
 
 function onScroll() {
+  if (logMode.value !== 'raw') return;
   const element = viewport.value;
   if (element) following.value = newestPosition.value === 'top'
     ? element.scrollTop < 50
@@ -663,7 +691,7 @@ onUnmounted(() => {
           </div>
           <p v-show="activeTab === 'logs'" class="precision-source-hint">{{ t('combinedHint') }}</p>
           <template v-for="source in selectedSources" :key="source.key">
-            <SourceFilters v-show="activeTab === 'logs'" :observed="observedProcesses[source.key]" :source="metadata(source)" :device-name="source.device.name" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
+            <SourceFilters v-show="activeTab === 'logs' && logMode === 'raw'" :observed="observedProcesses[source.key]" :source="metadata(source)" :device-name="source.device.name" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
             <p v-if="sourceStates[source.key] && !sourceStates[source.key]!.live" class="precision-source-status" role="status">{{ sourceLabel(source) }} · {{ localizeMessage(sourceStates[source.key]!.message) }}</p>
           </template>
         </section>
@@ -672,6 +700,17 @@ onUnmounted(() => {
           <FlowWorkspace :snapshot="flows.snapshot.value" :instances="flows.instances.value" :loading="flows.loading.value" :gap-count="flows.gapCount.value" :active-sources="includedKeys.length" :locale="locale" @clear="flows.clear" @reload="flows.reload" />
         </div>
         <div id="workspace-logs" v-show="activeTab === 'logs'" role="tabpanel" aria-labelledby="workspace-tab-logs" class="precision-logs-panel">
+        <div v-if="singleWebView" class="webview-log-mode">
+          <div class="webview-mode-field">
+            <div class="webview-mode-label"><label for="webview-log-mode">{{ t('webviewLogMode') }}</label>
+              <FeatureStatusBadge v-if="logMode === 'postMessage'" :status="featureStatuses.postMessageLog" :t="t" />
+            </div>
+            <select id="webview-log-mode" v-model="logMode"><option value="raw">{{ t('rawLogs') }}</option><option value="postMessage">{{ t('messageTitle') }}</option></select>
+          </div>
+          <div ref="contextTarget" v-show="logMode === 'postMessage'" class="webview-context-target"></div>
+        </div>
+        <WebViewMessageSession v-if="singleWebView && messageSessionOpened && contextTarget" v-show="logMode === 'postMessage'" :key="singleWebView.key" :source="singleWebView" :locale="locale" :context-target="contextTarget" />
+        <div v-show="logMode === 'raw'" class="precision-logs-panel">
         <div class="precision-commandbar" :class="{ 'has-selection': selectionMode }">
           <div class="command-heading"><div class="command-title-row"><strong class="stream-title">{{ t(includedKeys.length > 1 ? 'combinedLogs' : selectedSources[0]?.device.webview ? 'webviewConsole' : 'logStream') }}</strong><span class="precision-live command-live" :data-active="capturing" :data-paused="paused" tabindex="0" :title="t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing')" :aria-label="t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing')"><span class="precision-dot" aria-hidden="true"></span><span class="command-live-label">{{ t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing') }}</span></span></div>
           <span class="command-context" :title="rangePending ? t('rangeHint') : selectionMode ? t('frozenHint') : paused ? t('newSincePauseHint') : undefined" :aria-live="selectionMode ? 'polite' : 'off'">{{ rangePending ? t('rangeEndCompact') : selectionMode ? t('selectionCountCompact', { count: selectedRows.length }) : paused ? t('newSincePause', { count: receivedSincePause }) : t('messageCount', { count: displayedMessages.length }) }}</span>
@@ -730,6 +769,7 @@ onUnmounted(() => {
         </div>
         <dialog v-if="copyFallback !== undefined" ref="copyDialog" class="precision-copy-fallback" :aria-label="t('clipboardFallback')" @cancel.prevent="closeCopy"><label for="copy-text">{{ t('clipboardFallback') }}</label><textarea id="copy-text" ref="copyText" :value="copyFallback" readonly @keydown.esc="closeCopy" /><button class="precision-action" @click="closeCopy">{{ t('close') }}</button></dialog>
         <div class="precision-bottom"><span>{{ t('retained', { count: visibleMessages.length, capacity: bufferSize }) }}</span><button v-if="!following && !paused" class="precision-action" @click="follow">{{ t('followLatest') }}</button><span v-else>{{ paused ? t(capturing ? 'frozenActive' : 'frozenStopped') : (newestPosition === 'top' ? '↑ ' : '↓ ') + t('followingNewest') }}</span></div>
+        </div>
         </div>
       </section>
       <section v-if="developmentBuild && performanceEnabled" ref="performancePanel" class="precision-performance" :class="{ 'is-scrollable': performanceOverflow }" :aria-label="t('performanceTitle')">

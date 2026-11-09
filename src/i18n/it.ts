@@ -1,5 +1,7 @@
 import type { Messages } from './en';
 export const it = {
+  webviewLogMode: "Vista del registro",
+  rawLogs: "Log grezzi",
   messageContext: "Contesto dei messaggi",
   messageTitle: "Registro postMessage",
   messageScope: "Messaggi Window/iframe consegnati dall’avvio della cattura. Quelli in uscita richiedono un mittente identificato e un destinatario osservato. I dati sono anteprime limitate. Bridge nativi e worker non vengono acquisiti.",

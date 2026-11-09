@@ -1,5 +1,7 @@
 import type { Messages } from './en';
 export const de = {
+  webviewLogMode: "Logansicht",
+  rawLogs: "Rohprotokoll",
   messageContext: "Nachrichtenkontext",
   messageTitle: "postMessage-Log",
   messageScope: "Zugestellte Window-/Iframe-Nachrichten ab Erfassungsstart. Ausgehend erfordert einen erkannten Absender und einen beobachteten Empfänger. Payloads sind begrenzte Vorschauen. Native Bridges und Worker werden nicht erfasst.",

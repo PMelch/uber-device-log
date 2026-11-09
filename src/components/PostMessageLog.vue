@@ -1,19 +1,43 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue';
-import type { ConsoleState } from '../../shared/console';
+import type { ConsoleContext, ConsoleState } from '../../shared/console';
 import type { MessageCapture, MessageRecord } from '../../shared/postmessage';
 import { translate, type Locale } from '../i18n';
 import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
+import { compactContextUrl } from '../webview-label';
 import FeatureStatusBadge from './FeatureStatusBadge.vue';
 import { featureStatuses } from '../feature-status';
-const props = defineProps<{ session: string; context: string; state: ConsoleState; locale: Locale }>();
+const props = defineProps<{ session: string; context: string; state: ConsoleState; locale: Locale; contextTarget?: HTMLElement }>();
 const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, key, params);
 const capture = ref<MessageCapture>({ active: false, revision: -1, contexts: [], unavailable: [], records: [], dropped: 0 });
 const records = ref<MessageRecord[]>([]), frozen = ref<MessageRecord[] | null>(null);
-const labels = ref<Record<string, string>>({});
+const retainedContexts = ref<ConsoleContext[]>([]);
 const viewContext = ref(props.context);
-const contexts = computed(() => ({ ...labels.value, ...Object.fromEntries(props.state.contexts.map(c => [c.key, `${c.name || (c.top ? 'top' : 'iframe')} · ${c.url || c.frame}`])) }));
+const contexts = computed(() => new Map([...retainedContexts.value, ...props.state.contexts].map(item => [item.key, item])));
+function contextLabel(item: ConsoleContext, full = false) {
+  const location = item.url || item.frame;
+  const name = item.name || (item.top ? 'top' : 'iframe');
+  if (full) return `${name} · ${location}`;
+  const shortLocation = compactContextUrl(location);
+  if (name === location) return shortLocation;
+  const shortName = /^[a-z][\w+.-]*:/i.test(name) ? compactContextUrl(name) : name;
+  return `${shortName} · ${shortLocation}`;
+}
+const displayLabels = computed(() => {
+  const labels = new Map<string, string>();
+  const seen = new Set<string>(), duplicates = new Set<string>();
+  for (const item of contexts.value.values()) {
+    const name = contextLabel(item);
+    labels.set(item.key, name);
+    if (seen.has(name)) duplicates.add(name);
+    seen.add(name);
+  }
+  for (const [key, name] of labels) {
+    if (duplicates.has(name)) labels.set(key, `${name} · ${key}`);
+  }
+  return labels;
+});
 watch(() => props.context, key => { if (key) viewContext.value = key; });
 const busy = ref(false), error = ref(false), lost = ref(0), query = ref(''), direction = ref('both');
 let disposed = false, generation = 0, stopping = false, pendingPoll: Promise<void> | undefined, timer: ReturnType<typeof setTimeout> | undefined;
@@ -22,7 +46,11 @@ const visible = computed(() => (frozen.value ?? records.value).filter(row => {
   return (direction.value === 'in' ? incoming : direction.value === 'out' ? outgoing : incoming || outgoing)
     && `${row.origin} ${row.data}`.toLowerCase().includes(query.value.toLowerCase());
 }));
-const label = (key: string | null) => key ? contexts.value[key] ?? key : t('messageUnknown');
+function label(key: string | null, full = false) {
+  const item = key && contexts.value.get(key);
+  if (!item) return key || t('messageUnknown');
+  return full ? contextLabel(item, true) : displayLabels.value.get(item.key)!;
+}
 async function request(method: string) {
   const response = await fetch(`/api/console/${props.session}/messages`, { method,
     ...(method === 'POST' ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: props.state.revision }) } : {}) });
@@ -52,7 +80,7 @@ async function start() {
     const next = await request('POST');
     if (disposed || !next) return;
     capture.value = next; records.value = []; frozen.value = null; lost.value = 0;
-    labels.value = Object.fromEntries(props.state.contexts.map(c => [c.key, `${c.name || (c.top ? 'top' : 'iframe')} · ${c.url || c.frame}`]));
+    retainedContexts.value = [...props.state.contexts];
     if (next.active) tick();
   } catch { if (!disposed) error.value = true; }
   finally { busy.value = false; }
@@ -72,16 +100,23 @@ async function stop() {
 }
 function clear() { records.value = []; if (frozen.value) frozen.value = []; lost.value = 0; }
 function save() {
-  const blob = new Blob([JSON.stringify(visible.value.map(row => ({ ...row, sourceLabel: label(row.source), receiverLabel: label(row.receiver) })), null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(visible.value.map(row => ({ ...row, sourceLabel: label(row.source, true), receiverLabel: label(row.receiver, true) })), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'postmessage.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-onUnmounted(() => { disposed = true; clearTimeout(timer); void fetch(`/api/console/${props.session}/messages`, { method: 'DELETE', keepalive: true }).catch(() => {}); });
+onUnmounted(() => { disposed = true; clearTimeout(timer); if (props.session) void fetch(`/api/console/${props.session}/messages`, { method: 'DELETE', keepalive: true }).catch(() => {}); });
 </script>
 <template>
   <section class="message-log" :aria-label="t('messageTitle')">
     <h3>{{ t('messageTitle') }} <FeatureStatusBadge :status="featureStatuses.postMessageLog" :t="t" /></h3>
     <p>{{ t('messageScope') }}</p>
-    <label>{{ t('messageContext') }}<select v-model="viewContext"><option value="" disabled>{{ t('consoleChoose') }}</option><option v-for="(name, key) in contexts" :key="key" :value="key">{{ name }}</option></select></label>
+    <Teleport :to="contextTarget ?? 'body'" :disabled="!contextTarget">
+      <label class="message-context">{{ t('messageContext') }}
+        <select v-model="viewContext" :disabled="!contexts.size" :title="viewContext ? label(viewContext, true) : undefined">
+          <option value="" disabled>{{ t('consoleChoose') }}</option>
+          <option v-for="item in contexts.values()" :key="item.key" :value="item.key" :title="contextLabel(item, true)">{{ displayLabels.get(item.key) }}</option>
+        </select>
+      </label>
+    </Teleport>
     <div class="actions">
       <button :disabled="busy || !session || !state.connected || (!capture.active && !state.contexts.some(c => c.key === viewContext))" @click="capture.active ? stop() : start()">{{ t(capture.active ? 'messageStop' : 'messageStart') }}</button>
       <button :disabled="!records.length" :aria-pressed="!!frozen" @click="frozen = frozen ? null : [...records]">{{ t(frozen ? 'messageResume' : 'messagePause') }}</button>
@@ -97,7 +132,7 @@ onUnmounted(() => { disposed = true; clearTimeout(timer); void fetch(`/api/conso
     <p v-if="!visible.length">{{ t('messageEmpty') }}</p>
     <article v-for="row in visible" :key="row.id">
       <div>{{ new Date(row.time).toLocaleTimeString(locale) }} · {{ t(row.receiver === viewContext ? 'messageIncoming' : 'messageOutgoing') }}</div>
-      <div>{{ label(row.source) }} → {{ label(row.receiver) }}</div><code>{{ row.origin }}</code>
+      <div><span :title="label(row.source, true)">{{ label(row.source) }}</span> → <span :title="label(row.receiver, true)">{{ label(row.receiver) }}</span></div><code>{{ row.origin }}</code>
       <details><summary>{{ t('messagePayload') }}</summary><pre>{{ row.data }}</pre></details>
     </article>
   </section>

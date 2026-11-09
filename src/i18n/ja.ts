@@ -1,5 +1,7 @@
 import type { Messages } from './en';
 export const ja = {
+  webviewLogMode: "ログ表示",
+  rawLogs: "生ログ",
   messageContext: "メッセージのコンテキスト",
   messageTitle: "postMessage ログ",
   messageScope: "記録開始後に配信された Window/iframe メッセージを表示します。送信の表示には、送信元の特定と受信先の監視が必要です。ペイロードは制限付きプレビューです。ネイティブブリッジと Worker は記録されません。",

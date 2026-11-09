@@ -1,5 +1,7 @@
 import type { Messages } from './en';
 export const fr = {
+  webviewLogMode: "Vue du journal",
+  rawLogs: "Journaux bruts",
   messageContext: "Contexte des messages",
   messageTitle: "Journal postMessage",
   messageScope: "Messages Window/iframe reçus depuis le début de la capture. Les messages sortants nécessitent un expéditeur identifié et un destinataire observé. Les données sont des aperçus limités. Les ponts natifs et les workers ne sont pas capturés.",

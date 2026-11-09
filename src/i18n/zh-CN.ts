@@ -1,5 +1,7 @@
 import type { Messages } from './en';
 export const zhCN = {
+  webviewLogMode: "日志视图",
+  rawLogs: "原始日志",
   messageContext: "消息上下文",
   messageTitle: "postMessage 日志",
   messageScope: "显示开始记录后送达的 Window/iframe 消息。显示传出消息需要识别发送方并监视接收方。载荷仅提供有限预览。不记录原生桥接和 Worker 消息。",

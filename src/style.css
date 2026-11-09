@@ -509,3 +509,15 @@ body { margin: 0; }
 #precision-design [data-ios-token=warning] { color:var(--ios-warning); }
 #precision-design [data-ios-token=error] { color:var(--ios-error); }
 #precision-design [data-ios-token=fatal] { color:var(--ios-fatal); }
+
+#precision-design .webview-log-mode { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 30em); align-items: end; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--pl-line); }
+#precision-design .webview-log-mode label { display: grid; gap: 4px; min-width: 0; margin: 0; font-size: 12px; color: var(--pl-soft); }
+#precision-design .webview-log-mode select { max-width: 100%; min-width: 0; margin: 0; padding: 6px; font: inherit; color: var(--pl-text); background: var(--pl-panel); border: 1px solid var(--pl-line); border-radius: 6px; }
+#precision-design .webview-context-target { min-width: 0; }
+#precision-design .webview-mode-field { display: grid; min-width: 0; gap: 4px; }
+#precision-design .webview-mode-label { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+#precision-design .webview-message-session .message-log :is(button,input,select) { border: 1px solid var(--pl-line); background: var(--pl-panel); color: var(--pl-text); }
+#precision-design .webview-message-session .message-log p { margin: 8px 0; }
+@media(max-width:600px) {
+  #precision-design .webview-log-mode { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); padding: 8px 12px; }
+}

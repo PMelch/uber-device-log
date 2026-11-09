@@ -12,9 +12,10 @@ const captures = new Map();
 let next = 0, revision = 0, executions = [], sessions = 0;
 let connectionDelay = 0;
 let executionDelay = 0, clearDelay = 0;
+const frameUrl = 'https://pay.example.com/' + 'checkout/'.repeat(40) + '?token=private-query#payment-step';
 const consoleState = () => ({ revision, connected: true, contexts: [
  { key: `top-${revision}`, name: '', url: 'https://app.example.com', frame: 'main', top: true, depth: 0 },
- { key: `frame-${revision}`, name: 'checkout', url: 'https://pay.example.com', frame: 'child', top: false, depth: 1 }
+ { key: `frame-${revision}`, name: 'checkout', url: frameUrl, frame: 'child', top: false, depth: 1 }
 ] });
 function deliver(response, count) {
   response.write(`event: logs\ndata: ${JSON.stringify(Array.from({ length: count }, () => {
@@ -91,9 +92,92 @@ try {
     if (mobile) await page.locator('.precision-device summary').click();
     await page.locator(mobile ? '.precision-device .webview-select' : '.device-sidebar-list .webview-select').first().click();
     if (mobile) await page.locator('.precision-device summary').click();
+    const main = page.locator('#workspace-logs');
+    const toolbar = main.locator('.webview-log-mode');
+    const mode = toolbar.locator('select').first();
+    const context = toolbar.locator('.message-context select');
+    const rawRows = main.locator('.precision-row');
+    await rawRows.first().waitFor();
+    assert.equal(await context.isVisible(), false);
+    const rawViewport = main.locator('.logs');
+    const firstVisibleRecord = () => rawViewport.evaluate(el => {
+      const top = el.getBoundingClientRect().top;
+      return [...el.querySelectorAll('[data-log-key]')].find(row => row.getBoundingClientRect().bottom > top)?.dataset.logKey;
+    });
+    let scrollAnchor;
+    if (width === 1440 && locale === 'en') {
+      await rawViewport.evaluate(el => { el.scrollTop = 1000; });
+      await main.locator('.precision-bottom button').waitFor();
+      scrollAnchor = await firstVisibleRecord();
+      assert.ok(scrollAnchor);
+    }
+    await mode.selectOption({ index: 1 });
+    await context.selectOption('frame-0');
+    const mainMonitor = main.locator('.message-log');
+    assert.equal(await rawRows.first().isVisible(), false);
+    const frameLabel = await context.locator('option:checked').innerText();
+    assert.ok(frameLabel.length < 150, frameLabel);
+    assert.doesNotMatch(frameLabel, /private-query|payment-step/);
+    await mainMonitor.locator('.actions button').first().click();
+    const row = mainMonitor.locator('article');
+    await row.waitFor();
+    assert.doesNotMatch(await row.innerText(), /private-query|payment-step/);
+    const direction = mainMonitor.locator('select').last();
+    await direction.selectOption('in');
+    await context.selectOption('top-0');
+    assert.equal(await row.count(), 0, 'context switch filters the incoming stream');
+    await context.selectOption('frame-0');
+    await row.waitFor();
+    const pendingExport = page.waitForEvent('download');
+    await mainMonitor.locator('.actions button').nth(3).click();
+    const exported = JSON.parse(await readFile(await (await pendingExport).path(), 'utf8'));
+    assert.ok(exported[0].receiverLabel.includes(frameUrl), 'JSON export keeps the full context URL');
+    await context.focus();
+    assert.ok(await context.evaluate(el => el === document.activeElement));
+    for (const element of [toolbar, context, mainMonitor]) {
+      const bounds = await element.boundingBox();
+      assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= width + 1,
+        JSON.stringify({ width, locale, bounds }));
+    }
+    const modeBounds = await mode.boundingBox();
+    const contextBounds = await context.boundingBox();
+    assert.ok(contextBounds.x >= modeBounds.x + modeBounds.width
+      && contextBounds.y < modeBounds.y + modeBounds.height
+      && modeBounds.y < contextBounds.y + contextBounds.height,
+      JSON.stringify({ width, locale, modeBounds, contextBounds }));
+    if (locale === 'de') await page.screenshot({ path: `/tmp/postmessage-main-${width}.png` });
+    if (scrollAnchor) {
+      for (const client of clients) deliver(client, 30);
+      await page.waitForFunction(() => document.querySelector('.command-context')?.textContent.includes('110'));
+    }
+    await mode.selectOption({ index: 0 });
+    await rawRows.first().waitFor();
+    if (scrollAnchor) {
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      assert.equal(await firstVisibleRecord(), scrollAnchor, 'new raw logs preserve the reading position in the background');
+    }
+    assert.equal(await context.isVisible(), false);
+    await mode.selectOption({ index: 1 });
+    await row.waitFor();
+    assert.equal(await context.inputValue(), 'frame-0');
+    assert.equal(await direction.inputValue(), 'in');
+    assert.equal(await row.count(), 1, 'returning to postMessage retains the captured record');
+    if (width === 1440 && locale === 'en') {
+      const nativeChoice = page.locator('.precision-source-choice').first();
+      await nativeChoice.click();
+      await rawRows.first().waitFor();
+      assert.equal(await toolbar.isVisible(), false, 'combined sources show raw logs');
+      await page.locator('.device-sidebar-item').first().click();
+      assert.equal(await toolbar.isVisible(), false, 'native logs have no WebView mode');
+      await page.locator('.device-sidebar-list .webview-select').nth(1).click();
+      await mode.waitFor();
+      assert.equal(await context.isVisible(), false, 'another WebView starts in raw mode');
+    } else {
+      await mode.selectOption({ index: 0 });
+    }
     await page.locator('.source-console-button').first().click();
     await page.locator('.console-mode button').nth(1).click();
-    const monitor = page.locator('.message-log'); await monitor.waitFor();
+    const monitor = page.locator('.js-console .message-log'); await monitor.waitFor();
     await monitor.locator('select').nth(0).selectOption('top-0');
     await monitor.locator('.actions button').nth(0).click();
     await monitor.locator('article').waitFor();
@@ -109,8 +193,8 @@ try {
     await monitor.locator('input').fill('');
     await monitor.locator('.actions button').nth(1).click();
     revision++;
-    await page.waitForFunction(() => document.querySelector('.message-log select option[value="top-1"]'));
-    await page.waitForFunction(() => document.querySelector('.message-log .actions button')?.disabled);
+    await page.waitForFunction(() => document.querySelector('.js-console .message-log select option[value="top-1"]'));
+    await page.waitForFunction(() => document.querySelector('.js-console .message-log .actions button')?.disabled);
     assert.equal(await monitor.locator('article').count(), 1, 'navigation preserves paused historical view');
     assert.equal(await monitor.locator('select').nth(0).inputValue(), 'top-0');
     const download = page.waitForEvent('download');
@@ -118,10 +202,10 @@ try {
     assert.equal((await download).suggestedFilename(), 'postmessage.json');
     if (locale === 'de') {
       await page.locator('#settings-language').evaluate(el => { el.value = 'ja'; el.dispatchEvent(new Event('change', { bubbles: true })); });
-      await page.waitForFunction(() => document.querySelector('.message-log h3')?.textContent.includes('ログ'));
+      await page.waitForFunction(() => document.querySelector('.js-console .message-log h3')?.textContent.includes('ログ'));
       assert.equal(await monitor.locator('article').count(), 1);
       await page.locator('#settings-language').evaluate(el => { el.value = 'de'; el.dispatchEvent(new Event('change', { bubbles: true })); });
-      await page.waitForFunction(() => document.querySelector('.message-log h3')?.textContent.includes('Log'));
+      await page.waitForFunction(() => document.querySelector('.js-console .message-log h3')?.textContent.includes('Log'));
     }
     const bounds = await monitor.boundingBox(); assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= width + 1, JSON.stringify({ width, locale, bounds }));
     assert.equal(await monitor.evaluate(el => el.scrollWidth <= el.clientWidth), true);
@@ -135,10 +219,25 @@ try {
     if (locale === 'de') {
       const before = await monitor.locator('[role="alert"]').innerText();
       await page.locator('#settings-language').evaluate(el => { el.value = 'ja'; el.dispatchEvent(new Event('change', { bubbles: true })); });
-      await page.waitForFunction(before => document.querySelector('.message-log [role="alert"]')?.textContent !== before, before);
+      await page.waitForFunction(before => document.querySelector('.js-console .message-log [role="alert"]')?.textContent !== before, before);
       await page.locator('#settings-theme').evaluate(el => { el.value = 'dark'; el.dispatchEvent(new Event('change', { bubbles: true })); });
       await page.screenshot({ path: `/tmp/postmessage-dark-${width}.png` });
     }
+    await page.unroute('**/api/console/*/messages');
+    await page.locator('.js-console header button').last().click();
+    await mode.selectOption({ index: 1 });
+    await context.selectOption('frame-1');
+    const startCapture = page.waitForResponse(response =>
+      response.request().method() === 'POST' && response.url().endsWith('/messages'));
+    await mainMonitor.locator('.actions button').first().click();
+    const sessionUrl = (await startCapture).url().replace(/\/messages$/, '');
+    await row.waitFor();
+    const released = page.waitForResponse(response =>
+      response.request().method() === 'DELETE' && response.url() === sessionUrl);
+    await page.locator('.precision-disconnect:visible').click();
+    await mainMonitor.waitFor({ state: 'detached' });
+    assert.ok((await released).ok(), 'disconnect releases the main console session');
+    assert.equal(await toolbar.isVisible(), false);
     await page.close();
   }
   assert.deepEqual(errors, []);

@@ -27,3 +27,14 @@ export function webViewLabel(view: WebView, siblings: WebView[] = []) {
     ? (samePath.filter(other => other.id.slice(0, 8) === view.id.slice(0, 8)).length > 1 ? view.id : view.id.slice(0, 8)) : '';
   return { name: own.name, subtitle: [own.domain !== own.name ? own.domain : '', path, id].filter(Boolean).join(' · ') };
 }
+
+export function compactContextUrl(value: string) {
+  let location = value.split(/[?#]/, 1)[0] ?? '';
+  try {
+    const url = new URL(value);
+    location = ['data:', 'javascript:', 'blob:'].includes(url.protocol)
+      ? url.protocol
+      : (url.host || url.protocol) + (url.pathname === '/' ? '' : url.pathname);
+  } catch { /* Frame identifiers and relative paths can also appear here. */ }
+  return location.length > 64 ? location.slice(0, 39) + '…' + location.slice(-24) : location;
+}

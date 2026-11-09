@@ -1,5 +1,7 @@
 import { notificationMessages } from '../../shared/notifications';
 export const en = {
+  webviewLogMode: "Log view",
+  rawLogs: "Raw logs",
   messageContext: "Message context",
   messageTitle: "postMessage log",
   messageScope: "Delivered Window/iframe messages after starting. Outgoing messages require an identified sender and an observed receiver. Payloads are limited previews. Native bridges and workers are not captured.",
