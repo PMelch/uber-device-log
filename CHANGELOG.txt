@@ -9,6 +9,9 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Changed
+- Use the new black terminal-style >Ü icon as the website favicon.
+
 Added
 - Alpha postMessage monitor for inspectable Android and iOS WebViews, with
   context and direction filters, bounded payload previews, capture coverage,
