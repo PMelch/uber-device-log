@@ -9,6 +9,9 @@ Version 0.4.0 has no Git tag; its source baseline is the npm gitHead e26c0c1.
 Unreleased
 ----------
 
+Changed
+- Use the new black terminal-style >Ü icon as the website favicon.
+
 Fixed
 - Keep pinned log details open during live capture and automatic scrolling on
   iOS and Android, even after the original row leaves the virtualized view.
