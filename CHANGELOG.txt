@@ -10,7 +10,9 @@ Unreleased
 ----------
 
 Changed
-- Use the new black terminal-style >Ü icon as the website favicon.
+- Use a clean terminal-style >Ü favicon with an underline and rounded black
+  background for the website and web interface, while preserving the icon
+  beside the web interface title.
 
 Fixed
 - Keep pinned log details open during live capture and automatic scrolling on
