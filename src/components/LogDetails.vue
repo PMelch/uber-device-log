@@ -27,6 +27,12 @@ const fields = computed(() => {
     [ios ? 'detailReceived' : 'detailTimestamp', props.record.entry.timestamp],
     ['detailDevice', props.record.device.name],
   ];
+  const message = props.record.entry.postMessage;
+  if (message) rows.push(
+    ['messageSender', message.sourceContext ? `${message.sourceContext.name || message.sourceContext.key} · ${message.sourceContext.url}` : message.source ?? undefined],
+    ['messageReceiver', message.receiverContext ? `${message.receiverContext.name || message.receiverContext.key} · ${message.receiverContext.url}` : message.receiver],
+    ['messageOrigin', message.origin],
+  );
   if (ios) rows.push(['detailDeviceTime', p.deviceTimestamp], ['detailHost', p.host], ['detailProcess', p.process], ['detailComponent', p.component]);
   else rows.push(['detailTag', p.tag]);
   rows.push(['detailPid', p.pid], ['detailLevel', p.level]);
@@ -61,6 +67,7 @@ function blur(event: FocusEvent) {
     </div>
     <div v-if="view === 'fields'" class="log-detail-content">
       <dl><template v-for="[label, value] in fields" :key="label"><dt>{{ t(label) }}</dt><dd>{{ value ?? t('detailUnavailable') }}</dd></template></dl>
+      <details v-if="record.entry.postMessage"><summary>{{ t('messagePayload') }}</summary><pre class="log-detail-raw">{{ record.entry.postMessage.data }}</pre></details>
       <p v-if="parsed.format === 'unrecognized'" class="log-detail-notice">{{ t('detailNoHeader') }}</p>
       <p v-if="parsed.deviceTimestamp" class="log-detail-notice">{{ t('detailTimeNote') }}</p>
       <section v-if="parsed.interpretation !== 'generic'" class="log-detail-explanation"><h3>{{ t('detailInterpretation') }}</h3><p>{{ t(interpretations[parsed.interpretation]) }}</p></section>

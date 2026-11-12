@@ -1,3 +1,4 @@
+import { MessageMonitor } from './postmessage.js';
 import { randomUUID } from 'node:crypto';
 import type { ConsoleProperties, ConsoleContext, ConsoleErrorCode, ConsoleResult, ConsoleState, ConsoleValue } from '../shared/console.js';
 
@@ -58,6 +59,17 @@ export class RuntimeConsole {
     return { children, total: list.length, revision, ...(offset + children.length < list.length ? { nextOffset: offset + children.length } : {}) };
   }
   constructor(private platform: 'android' | 'ios', private timeout = 8000) {}
+  createMessageMonitor(_owner: string) {
+    return new MessageMonitor(() => this.state(), async (key, revision, expression) => {
+      const context = this.contexts.get(key);
+      if (!context || revision !== this.revision) throw new ConsoleError('consoleStale');
+      const data = await this.request(context.target, 'Runtime.evaluate', { expression, returnByValue: true,
+        ...(context.uniqueId && this.platform === 'android' ? { uniqueContextId: context.uniqueId } : { contextId: context.id }) });
+      if (data.wasThrown || data.exceptionDetails || revision !== this.revision || !this.contexts.has(key)) throw new ConsoleError('consoleStale');
+      return data.result?.value;
+    });
+  }
+
   state(): ConsoleState {
     const contexts = [...this.contexts.values()].map(({ id: _id, target: _target, uniqueId: _uniqueId, ...context }) => {
       const frame = this.frames.get(context.frame);

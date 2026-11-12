@@ -309,6 +309,50 @@ already executing on the device. The server exposes only the operations above,
 not a general inspector protocol relay. External DevTools access uses the
 separate target-specific route below.
 
+## WebView postMessage monitor (Alpha)
+
+The JavaScript console includes an opt-in monitor for delivered Window/iframe
+messages. It injects a capture listener directly in each reachable page context
+(up to 64), without replacing postMessage or sending probe messages. Cross-origin
+frames are observed independently through the inspector; a cross-origin parent
+script does not need access to the child document. Physical Android/iOS device
+coverage still requires validation; this is not a promise that every frame is
+exposed by every WebView version.
+
+- `POST /api/console/:id/messages`: `{revision}` starts capture for that session.
+- `GET /api/console/:id/messages`: drains captured messages and returns
+  `{active, revision, contexts, unavailable, records, dropped}`. Context arrays
+  contain opaque context keys. Records contain `id`, device `time` in milliseconds,
+  `receiver`, nullable `source`, sender `origin` and a bounded `data` preview.
+- `DELETE /api/console/:id/messages`: detaches that session's listeners and
+  returns the final capture batch in the same shape as GET. Concurrent capture
+  operations can return `consoleBusy`; the viewer waits for its current poll.
+
+Incoming messages are observed at their destination. Outgoing messages are those
+whose sender WindowProxy can be mapped to an observed context in the same frame
+tree. Unknown senders remain unknown; origin alone is never used as identity.
+External windows, native bridges, workers, MessagePorts, messages before capture,
+non-delivered send attempts and contexts the inspector cannot access are excluded.
+Synthetic dispatchEvent messages are excluded. Sandboxed/opaque origins may read
+`null`. Frame-tree lookup is bounded to 256 nodes and depth 16.
+
+Queues retain 200 records per context; each drain returns at most 500 records,
+and the standalone console monitor retains 500 records. The main log uses its
+shared configurable retention buffer. Retention losses are counted. Payloads are
+bounded previews (depth 4, 50 fields per object, 200 visited values, string and
+character limits); they do not invoke getters/toJSON and are not full-fidelity
+structured-clone exports. The UI exports only displayed, filtered previews. In the main log, postMessage
+is an independent source alongside native and WebView logs; source checkboxes
+control visibility and do not stop an already-started capture. Its version 2
+JSON export marks source metadata with `kind: "postMessage"` and retains the
+original bounded record in each entry's `postMessage` field.
+Pause freezes the view while collection continues; clear empties the view.
+Navigation stops capture and requires explicit restart. Existing records and
+view-context choices remain available until a new capture is started or the
+panel is closed. Newly discovered contexts require a restart to join capture.
+Session closure stops listeners; a 30-second page lease also removes them if
+polling ceases. Polling renews leases once per second while the monitor is open.
+
 ## External Android inspector
 
 `POST /api/inspector` accepts `{platform:"android",id,socket,target}` as JSON.

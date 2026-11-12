@@ -14,13 +14,31 @@ Changed
   background for the website and web interface, while preserving the icon
   beside the web interface title.
 
-Fixed
-- Restore startup of the installed package under Node.js after adding iOS process
-  filtering.
-- Keep pinned log details open during live capture and automatic scrolling on
-  iOS and Android, even after the original row leaves the virtualized view.
+- Color recognized native iOS log headers with coordinated light/dark timestamp,
+  device, process, subsystem, PID and severity ink; preserve original text,
+  existing diagnostic rendering and unsupported formats without changing capture.
+- Make clearing the log viewer directly available through a compact trash icon
+  in the toolbar, including on mobile screens.
+- Refine source filter menus with separate search controls, grouped PID lookup,
+  aligned severity choices and a compact reset footer with a reset icon.
+- Show the shorter npx and bunx TUI commands without an extra argument separator
+  in the website, README and CLI help. Both forms remain supported.
 
 Added
+- Alpha postMessage monitor for inspectable Android and iOS WebViews, with
+  context and direction filters, bounded payload previews, capture coverage,
+  paused viewing, search and JSON export of displayed messages. Device logs, WebView console output and postMessage events can be shown
+  together in the main log using independent source checkboxes. Hiding a source
+  keeps its capture running; shared pause, search, selection and export apply
+  to the main log. JSON exports preserve structured message payloads.
+  All discovered WebViews offer a postMessage source immediately, without
+  requiring their console logs to be selected first. Context and direction
+  filters and capture controls live in the source filter popup, with the
+  selected context summarized in the compact source row. PostMessage sources
+  omit severity filters because Window messages have no standard severity.
+  Context selectors show the same indented frame hierarchy as the JavaScript
+  console, preserving tree order as new frames are discovered.
+
 - Filter native iOS logs by observed process name across PID changes, with an
   optional exact PID. The Android-style searchable picker lists names from
   retained logs, not running processes; original syslog text stays unchanged.
@@ -33,16 +51,11 @@ Added
   and system process names containing spaces. The compact search dialog keeps
   search and actions visible while large process lists scroll independently.
 
-Changed
-- Color recognized native iOS log headers with coordinated light/dark timestamp,
-  device, process, subsystem, PID and severity ink; preserve original text,
-  existing diagnostic rendering and unsupported formats without changing capture.
-- Make clearing the log viewer directly available through a compact trash icon
-  in the toolbar, including on mobile screens.
-- Refine source filter menus with separate search controls, grouped PID lookup,
-  aligned severity choices and a compact reset footer with a reset icon.
-- Show the shorter npx and bunx TUI commands without an extra argument separator
-  in the website, README and CLI help. Both forms remain supported.
+Fixed
+- Restore startup of the installed package under Node.js after adding iOS process
+  filtering.
+- Keep pinned log details open during live capture and automatic scrolling on
+  iOS and Android, even after the original row leaves the virtualized view.
 
 0.11.1 - 2026-11-04
 -------------------

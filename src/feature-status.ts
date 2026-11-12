@@ -8,6 +8,7 @@ export const featureStatusCopy = {
 } as const satisfies Record<FeatureStatus, { label: MessageKey; description: MessageKey }>;
 
 /** Set a feature to undefined when stable; every associated badge disappears. */
-export const featureStatuses: Record<'javascriptConsole', FeatureStatus | undefined> = {
+export const featureStatuses: Record<'javascriptConsole' | 'postMessageLog', FeatureStatus | undefined> = {
   javascriptConsole: 'alpha',
+  postMessageLog: 'alpha',
 };

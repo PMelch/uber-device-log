@@ -82,7 +82,7 @@ export function logDetailsJson(entry: LogMessage, platform: Platform, parsed: Pa
   return JSON.stringify({
     platform,
     timestampSource: platform === 'ios' && parsed.format !== 'webview-console' ? 'host-receipt' : 'device',
-    original: { timestamp, message, level, tag, pid },
+    original: { timestamp, message, level, tag, pid, ...(entry.postMessage ? { postMessage: entry.postMessage } : {}) },
     parsed,
   }, null, 2);
 }

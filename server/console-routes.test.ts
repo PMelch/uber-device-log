@@ -32,6 +32,15 @@ test('console API validates discovered targets, JSON-only writes, private tokens
     const second = await (await post('', { platform: 'android', id: 'phone', socket: 'socket', target: 'page' })).json();
     const denied = await (await post(`/${second.id}/properties`, { handle: evaluation.value.handle, revision: runtime.revision })).json();
     assert.equal(denied.code, 'consoleStale');
+    assert.equal((await post(`/unknown/messages`, { revision: runtime.revision })).status, 409);
+    assert.equal((await post(`/${session.id}/messages`, { revision: -1 })).status, 409);
+    assert.equal((await fetch(base + `/${session.id}/messages`, { method: 'POST', body: '{}' })).status, 415);
+    assert.equal((await post(`/${session.id}/messages`, { revision: runtime.revision })).status, 200);
+    const messageState = await (await fetch(base + `/${session.id}/messages`)).json();
+    assert.equal(messageState.active, false); // Mock target did not accept installation.
+    assert.equal(messageState.unavailable.length, 1);
+    const stopped = await fetch(base + `/${session.id}/messages`, { method: 'DELETE' });
+    assert.equal(stopped.status, 200); assert.equal((await stopped.json()).active, false);
     assert.equal((await fetch(base + '/' + session.id + '/results', { method: 'DELETE' })).status, 204);
     const cleared = await (await post(`/${session.id}/properties`, { handle: evaluation.value.handle, revision: runtime.revision })).json();
     assert.equal(cleared.code, 'consoleStale');
