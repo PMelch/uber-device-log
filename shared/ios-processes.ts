@@ -1,5 +1,5 @@
 import type { LogMessage, AndroidProcess } from './types';
-import { isLogPidFilterValid } from './log-view';
+import { isLogPidFilterValid } from './log-view.js';
 
 /** Known anchored envelopes only. Never consume/modify the original message. */
 export function parseIosProcess(message: string): Pick<LogMessage, 'processName' | 'pid'> | undefined {
