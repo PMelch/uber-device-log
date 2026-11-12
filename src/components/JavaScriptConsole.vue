@@ -5,7 +5,7 @@ import type { LogSource } from '../../shared/types';
 import { translate, type Locale } from '../i18n';
 import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
-import { webViewLabel } from '../webview-label';
+import { webViewLabel, consoleContextTreeLabel } from '../webview-label';
 import { consoleRequest as request, useConsoleSession } from '../composables/useConsoleSession';
 import PostMessageLog from './PostMessageLog.vue';
 import ConsoleValue from './ConsoleValue.vue';
@@ -27,7 +27,7 @@ const target = computed(() => props.sources.find(s => s.key === selected.value))
 const { session, state, context, connecting, error, report, connect } = useConsoleSession(target);
 const ready = computed(() => !!session.value && !!context.value && state.value.connected && !busy.value && !connecting.value && !clearing.value);
 function location(url: string) { try { const parsed = new URL(url); return (parsed.host + parsed.pathname).slice(0, 100); } catch { return url.slice(0, 100); } }
-function scopeLabel(c: ConsoleState['contexts'][number]) { const label = c.top ? t('consoleTop') : `${c.name || 'iframe'} · ${location(c.url) || c.frame}`; return `${'\u00a0\u00a0\u00a0'.repeat(Math.min(c.depth ?? 0, 20))}${c.depth ? '↳ ' : ''}${label}`; }
+function scopeLabel(c: ConsoleState['contexts'][number]) { const label = c.top ? t('consoleTop') : `${c.name || 'iframe'} · ${location(c.url) || c.frame}`; return consoleContextTreeLabel(c, label); }
 async function execute() {
   if (!ready.value || !code.value.trim()) return;
   const token = session.value, expression = code.value, revision = state.value.revision;

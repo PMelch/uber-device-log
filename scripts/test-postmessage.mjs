@@ -11,11 +11,13 @@ const clients = new Set();
 const captures = new Map();
 let next = 0, revision = 0, executions = [], sessions = 0;
 let connectionDelay = 0;
+let webviewsVisible = true;
 let executionDelay = 0, clearDelay = 0;
 const frameUrl = 'https://pay.example.com/' + 'checkout/'.repeat(40) + '?token=private-query#payment-step';
 const consoleState = () => ({ revision, connected: true, contexts: [
  { key: `top-${revision}`, name: '', url: 'https://app.example.com', frame: 'main', top: true, depth: 0 },
- { key: `frame-${revision}`, name: 'checkout', url: frameUrl, frame: 'child', top: false, depth: 1 }
+ { key: `frame-${revision}`, name: 'checkout', url: frameUrl, frame: 'child', top: false, depth: 1 },
+ { key: `nested-${revision}`, name: 'nested', url: 'https://nested.example.com', frame: 'nested', top: false, depth: 2 }
 ] });
 function deliver(response, count) {
   response.write(`event: logs\ndata: ${JSON.stringify(Array.from({ length: count }, () => {
@@ -58,11 +60,11 @@ const server = createServer(async (request, response) => {
   }
   if (request.url === '/api/devices') {
     response.setHeader('Content-Type', 'application/json');
-    response.end(JSON.stringify({ devices: [{ id: 'fixture', name: 'Pixel fixture', platform: 'android', state: 'connected', webviews: [
+    response.end(JSON.stringify({ devices: [{ id: 'fixture', name: 'Pixel fixture', platform: 'android', state: 'connected', webviews: webviewsVisible ? [
       { id: 'page-a', socket: 'socket', title: 'Customer portal with a deliberately long title', url: 'https://app.example.com/account?token=secret#private' },
       { id: 'page-b', socket: 'socket', title: 'Customer portal with a deliberately long title', url: 'https://app.example.com/checkout' },
       { id: 'page-c', socket: 'socket', title: '', url: 'https://login.example.com/signin?long=hidden' }
-    ] }], warnings: [] })); return;
+    ] : [] }], warnings: [] })); return;
   }
   if (request.url.startsWith('/api/logs?')) {
     response.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' });
@@ -87,24 +89,66 @@ try {
     revision = 0;
     const page = await browser.newPage({ viewport: { width, height: 900 }, acceptDownloads: true });
     page.on('pageerror', e => errors.push(e.message));
-    await page.addInitScript(locale => localStorage.setItem('uber-device-log.language', locale), locale);
+    await page.addInitScript(locale => {
+      localStorage.setItem('uber-device-log.language', locale);
+      localStorage.setItem('uber-device-log.lastDevice', 'android:fixture');
+    }, locale);
     await page.goto(`http://127.0.0.1:${server.address().port}`);
+    await page.locator('.precision-source-choice').first().waitFor();
+    assert.equal(await page.locator('.precision-source-choice').filter({ hasText: 'postMessage' }).count(), 3, 'every discovered WebView offers postMessage before selecting console logs');
+    if (width === 1440 && locale === 'en') {
+      const retainedChoice = page.locator('.precision-source-choice').filter({ hasText: 'postMessage' }).first();
+      await retainedChoice.click();
+      await page.locator('.precision-row').filter({ hasText: 'hello-cross-origin' }).waitFor();
+      webviewsVisible = false;
+      await page.locator('.device-sidebar-list .webview-select').first().waitFor({ state: 'detached' });
+      assert.equal(await page.locator('.precision-source-choice').filter({ hasText: 'postMessage' }).count(), 1, 'postMessage-only capture remains selectable after its WebView disappears');
+      await retainedChoice.click();
+      await page.locator('.precision-row').filter({ hasText: 'hello-cross-origin' }).waitFor({ state: 'detached' });
+      await retainedChoice.click();
+      await page.locator('.precision-row').filter({ hasText: 'hello-cross-origin' }).waitFor();
+      webviewsVisible = true;
+      await page.reload();
+    }
     const mobile = width < 700;
     if (mobile) await page.locator('.precision-device summary').click();
     await page.locator(mobile ? '.precision-device .webview-select' : '.device-sidebar-list .webview-select').first().click();
     if (mobile) await page.locator('.precision-device summary').click();
     const main = page.locator('#workspace-logs');
     const choices = page.locator('.precision-source-choice');
-    const messageChoice = choices.filter({ hasText: 'postMessage' }).locator('input');
+    const messageChoice = choices.filter({ hasText: 'postMessage' }).first().locator('input');
     const webviewChoice = choices.nth(1).locator('input');
     const nativeChoice = choices.first().locator('input');
     const setChoice = async (input, checked) => { if (await input.isChecked() !== checked) await input.locator('..').click(); };
     const rawRows = main.locator('.precision-row');
     await rawRows.first().waitFor();
     await setChoice(messageChoice, true);
-    const mainMonitor = main.locator('.message-log');
+    const messageFilters = page.locator('.source-filters').filter({ hasText: 'postMessage' });
+    const mainMonitor = messageFilters.locator('.message-log');
     const row = rawRows.filter({ hasText: 'hello-cross-origin' });
     await row.waitFor();
+    assert.equal(await main.locator('.message-log:visible').count(), 0, 'capture controls do not occupy main-log space');
+    await messageFilters.locator('.overlay-trigger').click();
+    assert.equal(await messageFilters.locator('.source-levels').count(), 0, 'postMessage has no severity filter');
+    const contextFilter = messageFilters.locator('.source-message-filters select').first();
+    const contextOptions = await contextFilter.locator('option').allTextContents();
+    assert.match(contextOptions[1], /^top/);
+    assert.match(contextOptions[2], /^\u00a0{3}↳ checkout/);
+    assert.match(contextOptions[3], /^\u00a0{6}↳ nested/);
+    await contextFilter.selectOption('top-0');
+    await messageFilters.locator('.source-message-filters select').nth(1).selectOption('in');
+    await row.waitFor({ state: 'detached' });
+    await messageFilters.locator('.source-message-filters select').nth(1).selectOption('out');
+    await row.waitFor();
+    assert.match(await messageFilters.locator('.source-filter-summary').innerText(), /top/);
+    const filterPanel = messageFilters.locator('.source-filter-panel');
+    const filterBounds = await filterPanel.boundingBox();
+    assert.ok(filterBounds && filterBounds.x >= 0 && filterBounds.x + filterBounds.width <= width + 1);
+    assert.equal(await filterPanel.evaluate(el => el.scrollWidth <= el.clientWidth), true);
+    if (locale === 'de') await page.screenshot({ path: `/tmp/postmessage-filters-${width}.png`, animations: 'disabled' });
+    await contextFilter.press('Escape');
+    assert.equal(await messageFilters.locator('.overlay-trigger').evaluate(el => el === document.activeElement), true);
+    assert.equal(await mainMonitor.isVisible(), false);
     assert.ok(await rawRows.count() > 1, 'messages and raw logs share the main viewport');
     await setChoice(nativeChoice, true);
     assert.equal(await webviewChoice.isChecked(), true);
@@ -135,7 +179,7 @@ try {
     assert.equal(exported.entries[0].postMessage.receiverContext.url, frameUrl);
     await messageChoice.focus();
     assert.ok(await messageChoice.evaluate(el => el === document.activeElement));
-    for (const element of [page.locator('.precision-source-choices'), mainMonitor]) {
+    for (const element of [page.locator('.precision-source-choices'), messageFilters]) {
       const bounds = await element.boundingBox();
       assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= width + 1, JSON.stringify({ width, locale, bounds }));
     }
@@ -191,6 +235,7 @@ try {
     }
     await page.unroute('**/api/console/*/messages');
     await page.locator('.js-console header button').last().click();
+    await messageFilters.locator('.overlay-trigger').click();
     const startCapture = page.waitForResponse(response => response.request().method() === 'POST' && response.url().endsWith('/messages'));
     await mainMonitor.locator('.actions button').first().click();
     const sessionUrl = (await startCapture).url().replace(/\/messages$/, '');
@@ -203,6 +248,13 @@ try {
     await setChoice(messageChoice, false);
     await setChoice(messageChoice, true);
     assert.equal(await messageChoice.isChecked(), true, 'retained sources can be hidden and restored after disconnect');
+    if (width === 1440 && locale === 'en') {
+      revision++;
+      await page.locator('.device-sidebar-list .webview-select').first().click();
+      await setChoice(messageChoice, true);
+      await row.waitFor({ timeout: 5000 });
+      assert.equal(await messageFilters.locator('.source-message-filters select').first().inputValue(), '', 'fresh capture clears session-specific context filters');
+    }
     await page.close();
   }
   assert.deepEqual(errors, []);

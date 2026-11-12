@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const ja = {
   webviewLogMode: "ログ表示",
   rawLogs: "生ログ",
+  messageAllContexts: "すべてのコンテキスト",
   messageContext: "メッセージのコンテキスト",
   messageTitle: "postMessage ログ",
   messageSender: "送信元",

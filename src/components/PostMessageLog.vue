@@ -5,7 +5,7 @@ import type { MessageCapture, MessageRecord, MessageLogRecord } from '../../shar
 import { translate, type Locale } from '../i18n';
 import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
-import { compactContextUrl } from '../webview-label';
+import { consoleContextLabel as contextLabel, consoleContextLabels, consoleContextTreeLabel, retainConsoleContexts } from '../webview-label';
 import FeatureStatusBadge from './FeatureStatusBadge.vue';
 import { featureStatuses } from '../feature-status';
 const props = defineProps<{ session: string; context: string; state: ConsoleState; locale: Locale; contextTarget?: HTMLElement; integrated?: boolean }>();
@@ -15,30 +15,8 @@ const capture = ref<MessageCapture>({ active: false, revision: -1, contexts: [],
 const records = ref<MessageRecord[]>([]), frozen = ref<MessageRecord[] | null>(null);
 const retainedContexts = ref<ConsoleContext[]>([]);
 const viewContext = ref(props.context);
-const contexts = computed(() => new Map([...retainedContexts.value, ...props.state.contexts].map(item => [item.key, item])));
-function contextLabel(item: ConsoleContext, full = false) {
-  const location = item.url || item.frame;
-  const name = item.name || (item.top ? 'top' : 'iframe');
-  if (full) return `${name} · ${location}`;
-  const shortLocation = compactContextUrl(location);
-  if (name === location) return shortLocation;
-  const shortName = /^[a-z][\w+.-]*:/i.test(name) ? compactContextUrl(name) : name;
-  return `${shortName} · ${shortLocation}`;
-}
-const displayLabels = computed(() => {
-  const labels = new Map<string, string>();
-  const seen = new Set<string>(), duplicates = new Set<string>();
-  for (const item of contexts.value.values()) {
-    const name = contextLabel(item);
-    labels.set(item.key, name);
-    if (seen.has(name)) duplicates.add(name);
-    seen.add(name);
-  }
-  for (const [key, name] of labels) {
-    if (duplicates.has(name)) labels.set(key, `${name} · ${key}`);
-  }
-  return labels;
-});
+const contexts = computed(() => new Map(retainConsoleContexts(retainedContexts.value, props.state.contexts).map(item => [item.key, item])));
+const displayLabels = computed(() => consoleContextLabels([...contexts.value.values()]));
 watch(() => props.context, key => { if (key) viewContext.value = key; });
 const busy = ref(false), error = ref(false), lost = ref(0), query = ref(''), direction = ref('both');
 let disposed = false, generation = 0, stopping = false, pendingPoll: Promise<void> | undefined, timer: ReturnType<typeof setTimeout> | undefined;
@@ -117,14 +95,14 @@ watch(() => capture.value.active && capture.value.revision === props.state.revis
 onUnmounted(() => { disposed = true; clearTimeout(timer); if (props.session) void fetch(`/api/console/${props.session}/messages`, { method: 'DELETE', keepalive: true }).catch(() => {}); });
 </script>
 <template>
-  <section class="message-log" :aria-label="t('messageTitle')">
-    <h3>{{ t('messageTitle') }} <FeatureStatusBadge :status="featureStatuses.postMessageLog" :t="t" /></h3>
+  <section class="message-log" :class="{ integrated }" :aria-label="t('messageTitle')">
+    <h3 v-if="!integrated">{{ t('messageTitle') }} <FeatureStatusBadge :status="featureStatuses.postMessageLog" :t="t" /></h3>
     <p>{{ t('messageScope') }}</p>
     <Teleport v-if="!integrated" :to="contextTarget ?? 'body'" :disabled="!contextTarget">
       <label class="message-context">{{ t('messageContext') }}
         <select v-model="viewContext" :disabled="!contexts.size" :title="viewContext ? label(viewContext, true) : undefined">
           <option value="" disabled>{{ t('consoleChoose') }}</option>
-          <option v-for="item in contexts.values()" :key="item.key" :value="item.key" :title="contextLabel(item, true)">{{ displayLabels.get(item.key) }}</option>
+          <option v-for="item in contexts.values()" :key="item.key" :value="item.key" :title="contextLabel(item, true)">{{ consoleContextTreeLabel(item, displayLabels.get(item.key)!) }}</option>
         </select>
       </label>
     </Teleport>
@@ -152,6 +130,7 @@ onUnmounted(() => { disposed = true; clearTimeout(timer); if (props.session) voi
 </template>
 <style scoped>
 .message-log { padding: 16px 20px; overflow: auto; flex: 1; min-height: 0; font-size: 12px; }
+.message-log.integrated { padding: 0; overflow: visible; }
 h3 { display: flex; align-items: center; gap: 6px; margin: 0; }p { color: var(--pl-soft); overflow-wrap: anywhere; }
 .actions { display: flex; flex-wrap: wrap; gap: 6px; }button,input,select { font: inherit; color: var(--pl-text); background: var(--pl-panel); border: 1px solid var(--pl-line); border-radius: 6px; padding: 8px; }button { cursor: pointer; }button:disabled { opacity: .5; cursor: default; }
 label { display: block; margin: 8px 0; }input,select { display: block; width: 100%; margin-top: 4px; min-width: 0; }article { border-top: 1px solid var(--pl-line); padding: 10px 0; overflow-wrap: anywhere; }pre { white-space: pre-wrap; overflow-wrap: anywhere; }summary { cursor: pointer; padding: 6px 0; }

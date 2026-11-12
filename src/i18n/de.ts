@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const de = {
   webviewLogMode: "Logansicht",
   rawLogs: "Rohprotokoll",
+  messageAllContexts: "Alle Kontexte",
   messageContext: "Nachrichtenkontext",
   messageTitle: "postMessage-Log",
   messageSender: "Absender",

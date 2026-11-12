@@ -7,7 +7,7 @@ import { logLevel } from '../shared/log-view';
 import { defaultSourceFilter, createSourceFilterer, mergeSourceMessages, type SourceFilter } from '../shared/log-sources';
 import { createLogStreams, createLogBatcher, type StreamSource, type LogStream } from './log-streams';
 import WebViewOption from './components/WebViewOption.vue';
-import { compactContextUrl, webViewLabel } from './webview-label';
+import { compactContextUrl, webViewLabel, retainConsoleContexts } from './webview-label';
 import WebViewMessageSession from './components/WebViewMessageSession.vue';
 import FeatureStatusBadge from './components/FeatureStatusBadge.vue';
 import { featureStatuses } from './feature-status';
@@ -199,8 +199,13 @@ const sourceOptions = computed<StreamSource[]>(() => {
     if (key.endsWith(':postMessage')) continue;
     if (!options.some(option => option.key === key) && capturedSources.value[key]) options.push({key, device:{...capturedSources.value[key]!, state:'disconnected'}});
   }
-  const messageOptions = options.filter(option => option.device.webview && (captureKeys.value.includes(option.key) || includedKeys.value.includes(option.key) || captureKeys.value.includes(`${option.key}:postMessage`) || includedKeys.value.includes(`${option.key}:postMessage`)))
+  const messageOptions = options.filter(option => option.device.webview)
     .map(option => ({ ...option, key: `${option.key}:postMessage`, kind: 'postMessage' as const }));
+  for (const key of new Set([...includedKeys.value, ...captureKeys.value])) {
+    if (key.endsWith(':postMessage') && !messageOptions.some(option => option.key === key) && capturedSources.value[key]) {
+      messageOptions.push({ key, kind: 'postMessage', device: { ...capturedSources.value[key]!, state: 'disconnected' } });
+    }
+  }
   return [...options, ...messageOptions];
 });
 const showSourceColumn = computed(() => includedKeys.value.length > 1);
@@ -210,6 +215,14 @@ watch(showSourceColumn, async () => {
   if (following.value && !paused.value) scrollToLatest();
 });
 const selectedSources = computed(() => sourceOptions.value.filter(source => includedKeys.value.includes(source.key)));
+const messageControls = shallowRef<Record<string, HTMLElement | undefined>>({});
+const messageContexts = shallowRef<Record<string, import('../shared/console').ConsoleContext[]>>({});
+function setMessageControls(key: string, target: HTMLElement | undefined) {
+  if (messageControls.value[key] !== target) messageControls.value = { ...messageControls.value, [key]: target };
+}
+function rememberMessageContexts(key: string, contexts: import('../shared/console').ConsoleContext[]) {
+  messageContexts.value = { ...messageContexts.value, [key]: retainConsoleContexts(messageContexts.value[key] ?? [], contexts) };
+}
 const messageSources = computed(() => currentDevice.value ? sourceOptions.value.filter(source => source.kind === 'postMessage' && captureKeys.value.includes(source.key) && source.device.state === 'connected') : []);
 function receiveMessages(source: StreamSource, records: import('../shared/postmessage').MessageLogRecord[]) {
   receiveLogs(source, records.map(postMessage => ({
@@ -348,6 +361,8 @@ function start() {
   messages.value = [];
   pausedMessages.value = undefined;
   capturedSources.value = {};
+  messageContexts.value = {};
+  sourceFilters.value = Object.fromEntries(Object.entries(sourceFilters.value).map(([key, filter]) => [key, { ...filter, messageContext: '', messageDirection: 'both' }]));
   sourceStates.value = {};
   following.value = true;
   status.value = uiMessage('connecting');
@@ -680,7 +695,7 @@ onUnmounted(() => {
           </div>
           <p v-show="activeTab === 'logs'" class="precision-source-hint">{{ t('combinedHint') }}</p>
           <template v-for="source in selectedSources" :key="source.key">
-            <SourceFilters v-show="activeTab === 'logs'" :observed="observedProcesses[source.key]" :source="metadata(source)" :device-name="source.device.name" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
+            <SourceFilters v-show="activeTab === 'logs'" :message-contexts="messageContexts[source.key]" @capture-target="setMessageControls(source.key, $event)" :observed="observedProcesses[source.key]" :source="metadata(source)" :device-name="source.device.name" @console="consoleSource = source.key" :model-value="sourceFilters[source.key] ?? defaultSourceFilter()" :t="t" :level-label="levelLabel" @update:model-value="sourceFilters[source.key] = $event" />
             <p v-if="sourceStates[source.key] && !sourceStates[source.key]!.live" class="precision-source-status" role="status">{{ sourceLabel(source) }} · {{ localizeMessage(sourceStates[source.key]!.message) }}</p>
           </template>
         </section>
@@ -689,7 +704,7 @@ onUnmounted(() => {
           <FlowWorkspace :snapshot="flows.snapshot.value" :instances="flows.instances.value" :loading="flows.loading.value" :gap-count="flows.gapCount.value" :active-sources="includedKeys.length" :locale="locale" @clear="flows.clear" @reload="flows.reload" />
         </div>
         <div id="workspace-logs" v-show="activeTab === 'logs'" role="tabpanel" aria-labelledby="workspace-tab-logs" class="precision-logs-panel">
-        <WebViewMessageSession v-for="source in messageSources" v-show="includedKeys.includes(source.key)" :key="`${captureEpoch}:${source.key}`" :source="source" :locale="locale" @records="receiveMessages(source, $event)" @active="messageActive(source, $event)" />
+        <WebViewMessageSession v-for="source in messageSources" :controls-target="messageControls[source.key]" @contexts="rememberMessageContexts(source.key, $event)" :key="`${captureEpoch}:${source.key}`" :source="source" :locale="locale" @records="receiveMessages(source, $event)" @active="messageActive(source, $event)" />
         <div class="precision-logs-panel">
         <div class="precision-commandbar" :class="{ 'has-selection': selectionMode }">
           <div class="command-heading"><div class="command-title-row"><strong class="stream-title">{{ t(includedKeys.length > 1 ? 'combinedLogs' : selectedSources[0]?.kind ? 'messageTitle' : selectedSources[0]?.device.webview ? 'webviewConsole' : 'logStream') }}</strong><span class="precision-live command-live" :data-active="capturing" :data-paused="paused" tabindex="0" :title="t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing')" :aria-label="t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing')"><span class="precision-dot" aria-hidden="true"></span><span class="command-live-label">{{ t(paused ? (capturing ? 'pausedActive' : 'pausedStopped') : capturing ? 'liveCapture' : 'notCapturing') }}</span></span></div>

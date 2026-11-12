@@ -19,6 +19,13 @@ Added
   together in the main log using independent source checkboxes. Hiding a source
   keeps its capture running; shared pause, search, selection and export apply
   to the main log. JSON exports preserve structured message payloads.
+  All discovered WebViews offer a postMessage source immediately, without
+  requiring their console logs to be selected first. Context and direction
+  filters and capture controls live in the source filter popup, with the
+  selected context summarized in the compact source row. PostMessage sources
+  omit severity filters because Window messages have no standard severity.
+  Context selectors show the same indented frame hierarchy as the JavaScript
+  console, preserving tree order as new frames are discovered.
 
 Fixed
 - Keep pinned log details open during live capture and automatic scrolling on

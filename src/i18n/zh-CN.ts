@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const zhCN = {
   webviewLogMode: "日志视图",
   rawLogs: "原始日志",
+  messageAllContexts: "所有上下文",
   messageContext: "消息上下文",
   messageTitle: "postMessage 日志",
   messageSender: "发送方",

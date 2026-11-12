@@ -14,6 +14,7 @@ const detail = { detail: 'Original technical diagnostic or HTTP status; retain v
 export const translationContext = {
   webviewLogMode: c("Main log toolbar for a single WebView.", "Label for switching the displayed log between raw WebView console output and captured postMessage traffic."),
   rawLogs: c("WebView log mode selector.", "Option to show the ordinary stream of WebView console log entries."),
+  messageAllContexts: c("PostMessage source filter popup and compact source-row summary.", "Unrestricted context filter: show messages involving any captured Window or iframe. Short option and summary chip; no placeholders."),
   messageContext: c("postMessage monitor context selector.", "Choose the context whose incoming/outgoing messages to display. Retained contexts remain selectable after navigation; this does not select a context for JavaScript execution."),
   messageTitle: c("postMessage monitor in the WebView main log and JavaScript console.", "Entry button and panel heading. Window postMessage monitor; keep postMessage verbatim."),
   messageSender: c("Main log postMessage detail fields.", "Label for the sending Window/frame identity captured with the event; unknown senders have no resolved context. Frame names, keys and URLs remain verbatim."),

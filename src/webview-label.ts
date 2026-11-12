@@ -1,3 +1,4 @@
+import type { ConsoleContext } from '../shared/console';
 import type { WebView } from '../shared/types';
 
 function parts(view: WebView) {
@@ -37,4 +38,40 @@ export function compactContextUrl(value: string) {
       : (url.host || url.protocol) + (url.pathname === '/' ? '' : url.pathname);
   } catch { /* Frame identifiers and relative paths can also appear here. */ }
   return location.length > 64 ? location.slice(0, 39) + '…' + location.slice(-24) : location;
+}
+
+export function consoleContextLabel(item: ConsoleContext, full = false) {
+  const location = item.url || item.frame;
+  const name = item.name || (item.top ? 'top' : 'iframe');
+  if (full) return `${name} · ${location}`;
+  const shortLocation = compactContextUrl(location);
+  if (name === location) return shortLocation;
+  const shortName = /^[a-z][\w+.-]*:/i.test(name) ? compactContextUrl(name) : name;
+  return `${shortName} · ${shortLocation}`;
+}
+
+export function consoleContextLabels(contexts: ConsoleContext[]) {
+  const labels = new Map<string, string>();
+  const seen = new Set<string>(), duplicates = new Set<string>();
+  for (const item of contexts) {
+    const name = consoleContextLabel(item);
+    labels.set(item.key, name);
+    if (seen.has(name)) duplicates.add(name);
+    seen.add(name);
+  }
+  for (const [key, name] of labels) {
+    if (duplicates.has(name)) labels.set(key, `${name} · ${key}`);
+  }
+  return labels;
+}
+
+/** Preserve the server's frame-tree order; keep departed contexts selectable afterwards. */
+export function retainConsoleContexts(previous: ConsoleContext[], current: ConsoleContext[]) {
+  const keys = new Set(current.map(context => context.key));
+  return [...current, ...previous.filter(context => !keys.has(context.key))];
+}
+
+export function consoleContextTreeLabel(context: ConsoleContext, label: string) {
+  const depth = Math.max(0, Math.min(context.depth ?? 0, 20));
+  return `${'\u00a0\u00a0\u00a0'.repeat(depth)}${depth ? '↳ ' : ''}${label}`;
 }

@@ -2,6 +2,7 @@ import { notificationMessages } from '../../shared/notifications';
 export const en = {
   webviewLogMode: "Log view",
   rawLogs: "Raw logs",
+  messageAllContexts: "All contexts",
   messageContext: "Message context",
   messageTitle: "postMessage log",
   messageSender: "Sender",

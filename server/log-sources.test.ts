@@ -28,3 +28,18 @@ test('merge sorts delayed deliveries by time, keys break ties, capacity retains 
   assert.deepEqual(mergeSourceMessages(rows, [], 0), []);
   assert.deepEqual(rows.map(row => row.key), [1, 2, 3]);
 });
+
+test('postMessage context and direction filter retained records and invalidate cached matches', async () => {
+  const { createSourceFilterer } = await import('../shared/log-sources');
+  const source = { ...web, key: 'messages', kind: 'postMessage' as const };
+  const incoming = { ...rows[1]!, source, postMessage: { id: 1, time: 1, source: 'top', receiver: 'frame', origin: '', data: 'hello' } };
+  const outgoing = { ...incoming, key: 4, postMessage: { ...incoming.postMessage, id: 2, source: 'frame', receiver: 'top' } };
+  for (const filter of [filterSourceMessages, createSourceFilterer()]) {
+    const records = [incoming, outgoing];
+    assert.deepEqual(filter(records, { messages: { ...defaultSourceFilter(), messageContext: 'frame', messageDirection: 'in' } }), [incoming]);
+    assert.deepEqual(filter(records, { messages: { ...defaultSourceFilter(), messageContext: 'frame', messageDirection: 'out' } }), [outgoing]);
+    assert.deepEqual(filter(records, { messages: { ...defaultSourceFilter(), messageContext: 'missing' } }), []);
+    assert.deepEqual(filter(records, { messages: defaultSourceFilter() }), records);
+    assert.deepEqual(filter(records, { messages: { ...defaultSourceFilter(), levels: [] } }), records);
+  }
+});

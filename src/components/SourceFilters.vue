@@ -8,7 +8,7 @@ import { isLogPidFilterValid, logLevels, type LogLevel } from '../../shared/log-
 import type { MessageParams } from '../../shared/notifications';
 import type { MessageKey } from '../i18n/en';
 import PrecisionMenu from './PrecisionMenu.vue';
-import { webViewLabel } from '../webview-label';
+import { consoleContextLabels, consoleContextTreeLabel, webViewLabel } from '../webview-label';
 import OverlayPanel from './OverlayPanel.vue';
 import InspectorAction from './InspectorAction.vue';
 import ProcessSearch from './ProcessSearch.vue';
@@ -16,6 +16,7 @@ const statusBadge = ref<InstanceType<typeof FeatureStatusBadge>>();
 const consoleDescriptionId = useId();
 const consoleStatus = featureStatuses.javascriptConsole;
 const props = defineProps<{
+  messageContexts?: import('../../shared/console').ConsoleContext[];
   observed?: import('../../shared/types').AndroidProcess[];
   source: LogSourceMetadata;
   deviceName?: string;
@@ -24,13 +25,17 @@ const props = defineProps<{
   levelLabel: (level: string) => string;
 }>();
 const displayName = computed(() => props.source.kind === 'postMessage' ? props.t('messageTitle') : props.source.webview ? webViewLabel(props.source.webview).name || props.t('webviewConsole') : props.source.name.replace(/^model:\s*/, ''));
-const emit = defineEmits<{ 'update:modelValue': [value: SourceFilter]; 'console': [] }>();
+const emit = defineEmits<{ 'update:modelValue': [value: SourceFilter]; 'console': []; 'captureTarget': [target: HTMLElement | undefined] }>();
 const update = (patch: Partial<SourceFilter>) => emit('update:modelValue', { ...props.modelValue, ...patch });
 const invalidPid = computed(() => !isLogPidFilterValid(props.modelValue.pid));
 const nativeIos = computed(() => props.source.platform === 'ios' && !props.source.webview);
+const supportsLevels = computed(() => !nativeIos.value && props.source.kind !== 'postMessage');
 const nativeAndroid = computed(() => props.source.platform === 'android' && !props.source.webview);
 const id = computed(() => `source-${encodeURIComponent(props.source.key)}`);
-const activeCount = computed(() => Number(!!props.modelValue.text) + Number(nativeAndroid.value && !!props.modelValue.tag) + Number((nativeAndroid.value || nativeIos.value) && !!props.modelValue.pid) + Number(nativeIos.value && !!props.modelValue.processName) + Number(!nativeIos.value && props.modelValue.levels.length !== logLevels.length));
+const messageLabels = computed(() => consoleContextLabels(props.messageContexts ?? []));
+const messageContextLabel = (key: string) => messageLabels.value.get(key) ?? key;
+function captureTarget(element: unknown) { emit('captureTarget', element instanceof HTMLElement ? element : undefined); }
+const activeCount = computed(() => Number(props.source.kind === 'postMessage' && !!props.modelValue.messageContext) + Number(!!props.modelValue.text) + Number(nativeAndroid.value && !!props.modelValue.tag) + Number((nativeAndroid.value || nativeIos.value) && !!props.modelValue.pid) + Number(nativeIos.value && !!props.modelValue.processName) + Number(supportsLevels.value && props.modelValue.levels.length !== logLevels.length));
 const active = computed(() => activeCount.value > 0);
 const summary = computed(() => {
   const filter = props.modelValue;
@@ -39,11 +44,15 @@ const summary = computed(() => {
   if (nativeIos.value && filter.processName) items.push(filter.processName);
   if (nativeAndroid.value && filter.tag) items.push(props.t('filterSummaryTag', { value: filter.tag }));
   if ((nativeAndroid.value || nativeIos.value) && filter.pid) items.push(props.t('filterSummaryPid', { value: filter.pid }));
-  if (!nativeIos.value && filter.levels.length !== logLevels.length) {
+  if (supportsLevels.value && filter.levels.length !== logLevels.length) {
     const levels = logLevels.filter(level => filter.levels.includes(level));
     items.unshift(levels.length ? props.t('filterSummaryLevels', { value: levels.map(props.levelLabel).join(', ') }) : props.t('filterSummaryNoLevels'));
   }
-  if (!nativeIos.value && filter.levels.length === logLevels.length) items.unshift(props.t('filterSummaryAllLevels'));
+  if (supportsLevels.value && filter.levels.length === logLevels.length) items.unshift(props.t('filterSummaryAllLevels'));
+  if (props.source.kind === 'postMessage') {
+    items.unshift(filter.messageContext ? messageContextLabel(filter.messageContext) : props.t('messageAllContexts'));
+    if (filter.messageContext) items.push(props.t(filter.messageDirection === 'in' ? 'messageIncoming' : filter.messageDirection === 'out' ? 'messageOutgoing' : 'messageBoth'));
+  }
   return items;
 });
 function toggle(level: LogLevel) {
@@ -56,6 +65,7 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
   <section class="source-filters" :aria-label="t('sourceFilterPanel', { source: displayName })">
     <div class="source-filter-main">
       <span class="source-filter-name" :title="displayName"><span class="precision-platform" :class="source.webview ? 'precision-web' : `precision-${source.platform}`" aria-hidden="true"></span><span class="source-filter-title">{{ displayName }}</span></span>
+      <FeatureStatusBadge v-if="source.kind === 'postMessage'" :status="featureStatuses.postMessageLog" :t="t" />
       <span v-if="summary.length" class="source-filter-summary" role="group" :title="summary.join(' · ')" :aria-label="summary.join(' · ')"><span v-for="item in summary" :key="item" class="source-filter-chip" aria-hidden="true">{{ item }}</span></span>
       <button v-if="source.webview && !source.kind" class="source-console-button" :aria-label="consoleStatus ? t('featureStatusLabel', { feature: t('consoleTitle'), status: t(featureStatusCopy[consoleStatus].label) }) : t('consoleTitle')" :aria-describedby="consoleStatus ? consoleDescriptionId : undefined" @keydown.esc.stop.prevent="statusBadge?.hide()" @focus="statusBadge?.show()" @blur="statusBadge?.hide()" @pointerenter="statusBadge?.show()" @pointerleave="statusBadge?.hide()" @click="statusBadge?.hide(); emit('console')"><span aria-hidden="true">&gt;_</span><FeatureStatusBadge ref="statusBadge" :status="consoleStatus" :t="t" passive :description-id="consoleDescriptionId" /></button>
       <InspectorAction v-if="source.webview && !source.kind" :source="source" :device-name="deviceName" :t="t" compact />
@@ -63,6 +73,17 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
         <template #trigger><span :class="{ 'source-filter-active': active }">{{ active ? t('activeFilters', { count: activeCount }) : t('filters') }}</span><span aria-hidden="true">⌄</span></template>
         <template #default="{ close }">
         <header class="overlay-heading"><strong>{{ t('sourceFilterPanel', { source: displayName }) }}</strong><button type="button" class="precision-action" :aria-label="t('closeFilters')" @click="close(true)">×</button></header>
+      <div v-if="source.kind === 'postMessage'" class="source-message-filters">
+        <label :for="`${id}-context`">{{ t('messageContext') }}</label>
+        <select :id="`${id}-context`" :value="modelValue.messageContext || ''" @change="update({ messageContext: input($event) })">
+          <option value="">{{ t('messageAllContexts') }}</option>
+          <option v-for="context in messageContexts" :key="context.key" :value="context.key" :title="context.url">{{ consoleContextTreeLabel(context, messageContextLabel(context.key)) }}</option>
+        </select>
+        <label :for="`${id}-direction`">{{ t('messageDirection') }}</label>
+        <select :id="`${id}-direction`" :value="modelValue.messageDirection || 'both'" :disabled="!modelValue.messageContext" @change="update({ messageDirection: input($event) as 'both' | 'in' | 'out' })">
+          <option value="both">{{ t('messageBoth') }}</option><option value="in">{{ t('messageIncoming') }}</option><option value="out">{{ t('messageOutgoing') }}</option>
+        </select>
+      </div>
       <div class="precision-searchbar source-search">
         <svg class="source-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg>
         <input :value="modelValue.text" type="search" :aria-label="t('sourceFilter', { source: displayName })" :placeholder="t('searchPlaceholder')" @input="update({ text: input($event) })" @keydown.esc="update({ text: '' })" />
@@ -88,14 +109,15 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
       <p v-if="invalidPid" :id="`${id}-error`" class="precision-filter-error" role="status">{{ t('pidFilterInvalid') }}</p>
     </div>
     </details>
-    <div v-if="!nativeIos" class="precision-severitybar source-levels" role="group" :aria-label="t('sourceLevels', { source: displayName })">
+    <div v-if="supportsLevels" class="precision-severitybar source-levels" role="group" :aria-label="t('sourceLevels', { source: displayName })">
       <span class="precision-severitylabel">{{ t('levels') }}</span>
       <button class="precision-severity" :aria-pressed="modelValue.levels.length === logLevels.length" @click="update({ levels: [...logLevels] })">{{ t('all') }}</button>
       <button v-for="level in logLevels" :key="level" class="precision-severity" :data-severity="level" :aria-pressed="modelValue.levels.includes(level)" @click="toggle(level)"><span class="precision-check">✓</span>{{ levelLabel(level) }}</button>
     </div>
       <footer class="source-filter-footer">
-      <button class="precision-action" :disabled="!active" @click="update({ text: '', tag: '', pid: '', processName: '', levels: [...logLevels] })"><svg class="source-reset-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7a6.5 6.5 0 1 1-.4 5M4 3v4h4"/></svg><span>{{ t('resetLogFilters') }}</span></button>
+      <button class="precision-action" :disabled="!active" @click="update({ text: '', tag: '', pid: '', processName: '', messageContext: '', messageDirection: 'both', levels: [...logLevels] })"><svg class="source-reset-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7a6.5 6.5 0 1 1-.4 5M4 3v4h4"/></svg><span>{{ t('resetLogFilters') }}</span></button>
       </footer>
+      <div v-if="source.kind === 'postMessage'" :ref="captureTarget" class="source-message-capture"></div>
         </template>
       </OverlayPanel>
     </div>
@@ -103,6 +125,11 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
 </template>
 
 <style scoped>
+.source-message-filters { display: grid; gap: 6px; margin-bottom: 14px; }
+.source-message-filters label { font-size: 12px; color: var(--pl-soft); }
+.source-message-filters select { width: 100%; min-width: 0; padding: 8px; color: var(--pl-text); background: var(--pl-panel); border: 1px solid var(--pl-line); border-radius: 7px; }
+.source-message-capture { margin-top: 12px; border-top: 1px solid var(--pl-line); }
+
 #precision-design .source-console-button { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 36px; height: 36px; padding: 0 7px; border: 1px solid var(--pl-line); border-radius: 7px; background: var(--pl-panel); color: var(--pl-accent); font: 600 14px monospace; cursor: pointer; }
 #precision-design .source-filters { margin: 6px 8px; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--pl-text) 22%, var(--pl-panel)); border-radius: 9px; background: color-mix(in srgb, var(--pl-text) 6%, var(--pl-panel)); box-shadow: 0 1px 2px #0000000a; min-width: 0; }
 .source-filter-main { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 48px; }

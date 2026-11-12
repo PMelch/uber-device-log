@@ -2,6 +2,7 @@ import type { Messages } from './en';
 export const it = {
   webviewLogMode: "Vista del registro",
   rawLogs: "Log grezzi",
+  messageAllContexts: "Tutti i contesti",
   messageContext: "Contesto dei messaggi",
   messageTitle: "Registro postMessage",
   messageSender: "Mittente",
