@@ -4,6 +4,9 @@ export const es = {
   rawLogs: "Registros sin procesar",
   messageContext: "Contexto de mensajes",
   messageTitle: "Registro postMessage",
+  messageSender: "Remitente",
+  messageReceiver: "Destinatario",
+  messageOrigin: "Origen del remitente",
   messageScope: "Mensajes de Window/iframe entregados desde el inicio de la captura. Los salientes requieren un remitente identificado y un receptor observado. Los datos son vistas previas limitadas. No se capturan puentes nativos ni workers.",
   messageStart: "Iniciar captura",
   messageStop: "Detener captura",
@@ -372,7 +375,7 @@ export const es = {
   sourcesLive: "Fuentes activas: {count}",
   noSources: "Selecciona una fuente para iniciar la captura.",
   sourceDeviceLogs: "Registros del dispositivo",
-  combinedHint: "Mensajes de las fuentes seleccionadas, ordenados por marca de tiempo.",
+  combinedHint: "Mensajes de las fuentes seleccionadas, ordenados por marca de tiempo. La captura continúa al ocultar una fuente.",
   selectionHint: "Arrastra sobre el mensaje para seleccionar texto. Usa las casillas o Mayús-clic para seleccionar entradas completas. En pantallas táctiles, toca primero Seleccionar.",
 
   webviewConsole: "Consola de WebView",

@@ -4,6 +4,9 @@ export const zhCN = {
   rawLogs: "原始日志",
   messageContext: "消息上下文",
   messageTitle: "postMessage 日志",
+  messageSender: "发送方",
+  messageReceiver: "接收方",
+  messageOrigin: "发送方源",
   messageScope: "显示开始记录后送达的 Window/iframe 消息。显示传出消息需要识别发送方并监视接收方。载荷仅提供有限预览。不记录原生桥接和 Worker 消息。",
   messageStart: "开始记录",
   messageStop: "停止记录",
@@ -372,7 +375,7 @@ export const zhCN = {
   sourcesLive: "正在捕获的来源数：{count}",
   noSources: "选择来源以开始捕获。",
   sourceDeviceLogs: "设备日志",
-  combinedHint: "所选来源的消息，按时间戳排序。",
+  combinedHint: "按时间戳显示所选来源的消息。隐藏来源后仍会继续采集。",
   selectionHint: "拖动消息文本可选择文字。使用复选框或按住 Shift 单击可选择完整条目。在触摸屏上，请先点按“选择”。",
 
   webviewConsole: "WebView 控制台",

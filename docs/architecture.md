@@ -73,8 +73,7 @@ results are destroyed after their acquisition deadline.
 Closing an SSE response stops its collector, including a collector that resolves
 after the response has closed. SIGINT/SIGTERM stops active streams, closes Vite,
 and closes HTTP connections. A browser stream failure explicitly closes EventSource,
-preventing its built-in automatic reconnect. Reconnect or remove/re-add a source to
-retry; reconnecting can replay collector history and cannot guarantee gap-free capture.
+preventing its built-in automatic reconnect. Use Reconnect to retry; reconnecting can replay collector history and cannot guarantee gap-free capture.
 
 Appium's `_socketClient` and `_decoder`, USB entry points, and WebInspector wire
 fields are dependency-sensitive internals. Review both iOS adapters and the pool
@@ -108,9 +107,10 @@ scrolling and downloads. Keep these distinctions when changing its behavior:
 - Whole-entry selection and export use the complete filtered array, including
   offscreen records. Filter/capacity changes prune selected keys. Clearing selection
   leaves the snapshot frozen. Native text selection is a separate browser mechanism.
-- Re-enabling a source removes that source's previous live-buffer entries before
-  starting its collector, because history can replay. Picking a device or page in
-  the device picker, or reconnecting, starts a fresh view. Clear discards queued and
+- Source checkboxes control visibility independently of capture. The first check
+  starts capture; hiding and showing a source preserves its collector and retained
+  records, including after disconnect. Picking a device or page in the device
+  picker, or reconnecting, starts a fresh view. Clear discards queued and
   displayed records without clearing device logs or stopping capture.
 
 TanStack Vue Virtual renders nearby variable-height rows with stable UI keys and

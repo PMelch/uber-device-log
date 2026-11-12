@@ -1,7 +1,7 @@
 import type { Device, LogMessage } from '../shared/types';
 import type { UiMessage } from './i18n';
 export interface LogStream { addEventListener(type: string, callback: (event: { data: string }) => void): void; onerror: (() => void) | null; close(): void }
-export interface StreamSource { key: string; device: Device }
+export interface StreamSource { key: string; device: Device; kind?: 'postMessage' }
 
 /**
  * Reconcile one EventSource per enabled source without restarting unaffected ones.

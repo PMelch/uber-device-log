@@ -4,6 +4,9 @@ export const en = {
   rawLogs: "Raw logs",
   messageContext: "Message context",
   messageTitle: "postMessage log",
+  messageSender: "Sender",
+  messageReceiver: "Receiver",
+  messageOrigin: "Sender origin",
   messageScope: "Delivered Window/iframe messages after starting. Outgoing messages require an identified sender and an observed receiver. Payloads are limited previews. Native bridges and workers are not captured.",
   messageStart: "Start capture",
   messageStop: "Stop capture",
@@ -363,7 +366,7 @@ export const en = {
   sourcesLive: "Live sources: {count}",
   noSources: "Select a source to start capture.",
   sourceDeviceLogs: "Device logs",
-  combinedHint: "Messages from selected sources, ordered by timestamp.",
+  combinedHint: "Messages from selected sources, ordered by timestamp. Hiding a source keeps its capture running.",
   selectionHint: "Drag message text to select text. Use checkboxes or Shift-click to select whole entries. On touchscreens, tap Select first.",
 
   ...notificationMessages,

@@ -83,6 +83,7 @@ try {
   browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_EXECUTABLE });
   const errors = [];
   for (const width of [1440, 390, 320]) for (const locale of ['en','de','es','fr','it','ja','zh-CN']) {
+    console.log(`Checking main log ${width} ${locale}`);
     revision = 0;
     const page = await browser.newPage({ viewport: { width, height: 900 }, acceptDownloads: true });
     page.on('pageerror', e => errors.push(e.message));
@@ -93,88 +94,53 @@ try {
     await page.locator(mobile ? '.precision-device .webview-select' : '.device-sidebar-list .webview-select').first().click();
     if (mobile) await page.locator('.precision-device summary').click();
     const main = page.locator('#workspace-logs');
-    const toolbar = main.locator('.webview-log-mode');
-    const mode = toolbar.locator('select').first();
-    const context = toolbar.locator('.message-context select');
+    const choices = page.locator('.precision-source-choice');
+    const messageChoice = choices.filter({ hasText: 'postMessage' }).locator('input');
+    const webviewChoice = choices.nth(1).locator('input');
+    const nativeChoice = choices.first().locator('input');
+    const setChoice = async (input, checked) => { if (await input.isChecked() !== checked) await input.locator('..').click(); };
     const rawRows = main.locator('.precision-row');
     await rawRows.first().waitFor();
-    assert.equal(await context.isVisible(), false);
-    const rawViewport = main.locator('.logs');
-    const firstVisibleRecord = () => rawViewport.evaluate(el => {
-      const top = el.getBoundingClientRect().top;
-      return [...el.querySelectorAll('[data-log-key]')].find(row => row.getBoundingClientRect().bottom > top)?.dataset.logKey;
-    });
-    let scrollAnchor;
-    if (width === 1440 && locale === 'en') {
-      await rawViewport.evaluate(el => { el.scrollTop = 1000; });
-      await main.locator('.precision-bottom button').waitFor();
-      scrollAnchor = await firstVisibleRecord();
-      assert.ok(scrollAnchor);
-    }
-    await mode.selectOption({ index: 1 });
-    await context.selectOption('frame-0');
+    await setChoice(messageChoice, true);
     const mainMonitor = main.locator('.message-log');
-    assert.equal(await rawRows.first().isVisible(), false);
-    const frameLabel = await context.locator('option:checked').innerText();
-    assert.ok(frameLabel.length < 150, frameLabel);
-    assert.doesNotMatch(frameLabel, /private-query|payment-step/);
-    await mainMonitor.locator('.actions button').first().click();
-    const row = mainMonitor.locator('article');
+    const row = rawRows.filter({ hasText: 'hello-cross-origin' });
     await row.waitFor();
-    assert.doesNotMatch(await row.innerText(), /private-query|payment-step/);
-    const direction = mainMonitor.locator('select').last();
-    await direction.selectOption('in');
-    await context.selectOption('top-0');
-    assert.equal(await row.count(), 0, 'context switch filters the incoming stream');
-    await context.selectOption('frame-0');
+    assert.ok(await rawRows.count() > 1, 'messages and raw logs share the main viewport');
+    await setChoice(nativeChoice, true);
+    assert.equal(await webviewChoice.isChecked(), true);
+    assert.equal(await messageChoice.isChecked(), true);
+    const sessionCount = sessions;
+    await setChoice(messageChoice, false);
+    await row.waitFor({ state: 'detached' });
+    assert.equal(await mainMonitor.isVisible(), false);
+    const hiddenPoll = await page.waitForResponse(response => response.request().method() === 'GET' && response.url().endsWith('/messages'));
+    assert.equal((await hiddenPoll.json()).active, true, 'hidden capture keeps polling');
+    assert.equal(clients.size, 2, 'hiding sources does not restart or close raw streams');
+    await setChoice(webviewChoice, false);
+    await setChoice(messageChoice, true);
     await row.waitFor();
-    const pendingExport = page.waitForEvent('download');
-    await mainMonitor.locator('.actions button').nth(3).click();
-    const exported = JSON.parse(await readFile(await (await pendingExport).path(), 'utf8'));
-    assert.ok(exported[0].receiverLabel.includes(frameUrl), 'JSON export keeps the full context URL');
-    await context.focus();
-    assert.ok(await context.evaluate(el => el === document.activeElement));
-    for (const element of [toolbar, context, mainMonitor]) {
+    assert.equal(sessions, sessionCount, 'display toggles retain the capture session');
+    await setChoice(nativeChoice, false);
+    assert.equal(await rawRows.count(), 1, 'postMessage can be displayed on its own');
+    await main.locator('.precision-pause').click();
+    await main.locator('.precision-pause').click();
+    await main.locator('.precision-commandbar .overlay-trigger').click();
+    await page.locator('#command-export-format').selectOption('json');
+    const exportedDownload = page.waitForEvent('download');
+    await page.locator('.command-popover .command-group').first().locator('button').click();
+    const exported = JSON.parse(await readFile(await (await exportedDownload).path(), 'utf8'));
+    assert.equal(exported.entries.length, 1);
+    assert.equal(exported.entries[0].postMessage.receiver, 'frame-0');
+    assert.equal(exported.sources[0].kind, 'postMessage');
+    assert.equal(exported.entries[0].postMessage.receiverContext.url, frameUrl);
+    await messageChoice.focus();
+    assert.ok(await messageChoice.evaluate(el => el === document.activeElement));
+    for (const element of [page.locator('.precision-source-choices'), mainMonitor]) {
       const bounds = await element.boundingBox();
-      assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= width + 1,
-        JSON.stringify({ width, locale, bounds }));
+      assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= width + 1, JSON.stringify({ width, locale, bounds }));
     }
-    const modeBounds = await mode.boundingBox();
-    const contextBounds = await context.boundingBox();
-    assert.ok(contextBounds.x >= modeBounds.x + modeBounds.width
-      && contextBounds.y < modeBounds.y + modeBounds.height
-      && modeBounds.y < contextBounds.y + contextBounds.height,
-      JSON.stringify({ width, locale, modeBounds, contextBounds }));
     if (locale === 'de') await page.screenshot({ path: `/tmp/postmessage-main-${width}.png` });
-    if (scrollAnchor) {
-      for (const client of clients) deliver(client, 30);
-      await page.waitForFunction(() => document.querySelector('.command-context')?.textContent.includes('110'));
-    }
-    await mode.selectOption({ index: 0 });
-    await rawRows.first().waitFor();
-    if (scrollAnchor) {
-      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      assert.equal(await firstVisibleRecord(), scrollAnchor, 'new raw logs preserve the reading position in the background');
-    }
-    assert.equal(await context.isVisible(), false);
-    await mode.selectOption({ index: 1 });
-    await row.waitFor();
-    assert.equal(await context.inputValue(), 'frame-0');
-    assert.equal(await direction.inputValue(), 'in');
-    assert.equal(await row.count(), 1, 'returning to postMessage retains the captured record');
-    if (width === 1440 && locale === 'en') {
-      const nativeChoice = page.locator('.precision-source-choice').first();
-      await nativeChoice.click();
-      await rawRows.first().waitFor();
-      assert.equal(await toolbar.isVisible(), false, 'combined sources show raw logs');
-      await page.locator('.device-sidebar-item').first().click();
-      assert.equal(await toolbar.isVisible(), false, 'native logs have no WebView mode');
-      await page.locator('.device-sidebar-list .webview-select').nth(1).click();
-      await mode.waitFor();
-      assert.equal(await context.isVisible(), false, 'another WebView starts in raw mode');
-    } else {
-      await mode.selectOption({ index: 0 });
-    }
+    await setChoice(webviewChoice, true);
     await page.locator('.source-console-button').first().click();
     await page.locator('.console-mode button').nth(1).click();
     const monitor = page.locator('.js-console .message-log'); await monitor.waitFor();
@@ -225,19 +191,18 @@ try {
     }
     await page.unroute('**/api/console/*/messages');
     await page.locator('.js-console header button').last().click();
-    await mode.selectOption({ index: 1 });
-    await context.selectOption('frame-1');
-    const startCapture = page.waitForResponse(response =>
-      response.request().method() === 'POST' && response.url().endsWith('/messages'));
+    const startCapture = page.waitForResponse(response => response.request().method() === 'POST' && response.url().endsWith('/messages'));
     await mainMonitor.locator('.actions button').first().click();
     const sessionUrl = (await startCapture).url().replace(/\/messages$/, '');
-    await row.waitFor();
-    const released = page.waitForResponse(response =>
-      response.request().method() === 'DELETE' && response.url() === sessionUrl);
+    const released = page.waitForResponse(response => response.request().method() === 'DELETE' && response.url() === sessionUrl);
     await page.locator('.precision-disconnect:visible').click();
     await mainMonitor.waitFor({ state: 'detached' });
     assert.ok((await released).ok(), 'disconnect releases the main console session');
-    assert.equal(await toolbar.isVisible(), false);
+    assert.equal(await messageChoice.isChecked(), true, 'disconnected records retain postMessage source identity');
+    assert.equal(await page.locator('.source-filters').filter({ hasText: 'postMessage' }).locator('.source-console-button').count(), 0);
+    await setChoice(messageChoice, false);
+    await setChoice(messageChoice, true);
+    assert.equal(await messageChoice.isChecked(), true, 'retained sources can be hidden and restored after disconnect');
     await page.close();
   }
   assert.deepEqual(errors, []);

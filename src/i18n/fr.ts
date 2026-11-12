@@ -4,6 +4,9 @@ export const fr = {
   rawLogs: "Journaux bruts",
   messageContext: "Contexte des messages",
   messageTitle: "Journal postMessage",
+  messageSender: "Expéditeur",
+  messageReceiver: "Destinataire",
+  messageOrigin: "Origine de l’expéditeur",
   messageScope: "Messages Window/iframe reçus depuis le début de la capture. Les messages sortants nécessitent un expéditeur identifié et un destinataire observé. Les données sont des aperçus limités. Les ponts natifs et les workers ne sont pas capturés.",
   messageStart: "Démarrer la capture",
   messageStop: "Arrêter la capture",
@@ -372,7 +375,7 @@ export const fr = {
   sourcesLive: "Sources actives : {count}",
   noSources: "Sélectionnez une source pour démarrer la capture.",
   sourceDeviceLogs: "Journaux de l’appareil",
-  combinedHint: "Messages des sources sélectionnées, triés par horodatage.",
+  combinedHint: "Messages des sources sélectionnées, triés par horodatage. Masquer une source ne coupe pas sa capture.",
   selectionHint: "Faites glisser sur le message pour sélectionner du texte. Utilisez les cases à cocher ou Maj-clic pour sélectionner des entrées entières. Sur écran tactile, appuyez d’abord sur Sélectionner.",
 
   webviewConsole: "Console WebView",

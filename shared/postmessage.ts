@@ -14,3 +14,9 @@ export interface MessageCapture {
   records: MessageRecord[];
   dropped: number;
 }
+
+/** Frame identities retained by the main log even after the inspector session ends. */
+export interface MessageLogRecord extends MessageRecord {
+  sourceContext?: import('./console').ConsoleContext;
+  receiverContext?: import('./console').ConsoleContext;
+}

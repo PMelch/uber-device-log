@@ -23,7 +23,7 @@ const props = defineProps<{
   t: (key: MessageKey, params?: MessageParams) => string;
   levelLabel: (level: string) => string;
 }>();
-const displayName = computed(() => props.source.webview ? webViewLabel(props.source.webview).name || props.t('webviewConsole') : props.source.name.replace(/^model:\s*/, ''));
+const displayName = computed(() => props.source.kind === 'postMessage' ? props.t('messageTitle') : props.source.webview ? webViewLabel(props.source.webview).name || props.t('webviewConsole') : props.source.name.replace(/^model:\s*/, ''));
 const emit = defineEmits<{ 'update:modelValue': [value: SourceFilter]; 'console': [] }>();
 const update = (patch: Partial<SourceFilter>) => emit('update:modelValue', { ...props.modelValue, ...patch });
 const invalidPid = computed(() => !isLogPidFilterValid(props.modelValue.pid));
@@ -57,8 +57,8 @@ function input(event: Event) { return (event.target as HTMLInputElement).value; 
     <div class="source-filter-main">
       <span class="source-filter-name" :title="displayName"><span class="precision-platform" :class="source.webview ? 'precision-web' : `precision-${source.platform}`" aria-hidden="true"></span><span class="source-filter-title">{{ displayName }}</span></span>
       <span v-if="summary.length" class="source-filter-summary" role="group" :title="summary.join(' · ')" :aria-label="summary.join(' · ')"><span v-for="item in summary" :key="item" class="source-filter-chip" aria-hidden="true">{{ item }}</span></span>
-      <button v-if="source.webview" class="source-console-button" :aria-label="consoleStatus ? t('featureStatusLabel', { feature: t('consoleTitle'), status: t(featureStatusCopy[consoleStatus].label) }) : t('consoleTitle')" :aria-describedby="consoleStatus ? consoleDescriptionId : undefined" @keydown.esc.stop.prevent="statusBadge?.hide()" @focus="statusBadge?.show()" @blur="statusBadge?.hide()" @pointerenter="statusBadge?.show()" @pointerleave="statusBadge?.hide()" @click="statusBadge?.hide(); emit('console')"><span aria-hidden="true">&gt;_</span><FeatureStatusBadge ref="statusBadge" :status="consoleStatus" :t="t" passive :description-id="consoleDescriptionId" /></button>
-      <InspectorAction v-if="source.webview" :source="source" :device-name="deviceName" :t="t" compact />
+      <button v-if="source.webview && !source.kind" class="source-console-button" :aria-label="consoleStatus ? t('featureStatusLabel', { feature: t('consoleTitle'), status: t(featureStatusCopy[consoleStatus].label) }) : t('consoleTitle')" :aria-describedby="consoleStatus ? consoleDescriptionId : undefined" @keydown.esc.stop.prevent="statusBadge?.hide()" @focus="statusBadge?.show()" @blur="statusBadge?.hide()" @pointerenter="statusBadge?.show()" @pointerleave="statusBadge?.hide()" @click="statusBadge?.hide(); emit('console')"><span aria-hidden="true">&gt;_</span><FeatureStatusBadge ref="statusBadge" :status="consoleStatus" :t="t" passive :description-id="consoleDescriptionId" /></button>
+      <InspectorAction v-if="source.webview && !source.kind" :source="source" :device-name="deviceName" :t="t" compact />
       <OverlayPanel panel-class="source-filter-panel" :label="t('sourceFilterPanel', { source: displayName })">
         <template #trigger><span :class="{ 'source-filter-active': active }">{{ active ? t('activeFilters', { count: activeCount }) : t('filters') }}</span><span aria-hidden="true">⌄</span></template>
         <template #default="{ close }">

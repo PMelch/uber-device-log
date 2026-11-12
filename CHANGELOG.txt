@@ -15,9 +15,10 @@ Changed
 Added
 - Alpha postMessage monitor for inspectable Android and iOS WebViews, with
   context and direction filters, bounded payload previews, capture coverage,
-  paused viewing, search and JSON export of displayed messages. A single WebView
-  can switch its main log between raw output and postMessage with an adjacent
-  context selector. Compact context URLs keep message rows readable.
+  paused viewing, search and JSON export of displayed messages. Device logs, WebView console output and postMessage events can be shown
+  together in the main log using independent source checkboxes. Hiding a source
+  keeps its capture running; shared pause, search, selection and export apply
+  to the main log. JSON exports preserve structured message payloads.
 
 Fixed
 - Keep pinned log details open during live capture and automatic scrolling on

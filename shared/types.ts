@@ -39,6 +39,7 @@ export interface DeviceSetupIssue {
 }
 
 export interface LogMessage {
+  postMessage?: import('./postmessage').MessageLogRecord;
   /** Process parsed from a recognized native iOS header; original message stays verbatim. */
   processName?: string;
   /** Capture adapter/server truncated the original message; analysis is incomplete. */
@@ -58,6 +59,7 @@ export interface LogSource {
 }
 
 export interface LogSourceMetadata {
+  kind?: 'postMessage';
   key: string;
   name: string;
   platform: Platform;

@@ -4,6 +4,9 @@ export const it = {
   rawLogs: "Log grezzi",
   messageContext: "Contesto dei messaggi",
   messageTitle: "Registro postMessage",
+  messageSender: "Mittente",
+  messageReceiver: "Destinatario",
+  messageOrigin: "Origine del mittente",
   messageScope: "Messaggi Window/iframe consegnati dall’avvio della cattura. Quelli in uscita richiedono un mittente identificato e un destinatario osservato. I dati sono anteprime limitate. Bridge nativi e worker non vengono acquisiti.",
   messageStart: "Avvia cattura",
   messageStop: "Interrompi cattura",
@@ -372,7 +375,7 @@ export const it = {
   sourcesLive: "Sorgenti attive: {count}",
   noSources: "Seleziona una sorgente per avviare l’acquisizione.",
   sourceDeviceLogs: "Log del dispositivo",
-  combinedHint: "Messaggi delle sorgenti selezionate, ordinati per data e ora.",
+  combinedHint: "Messaggi delle fonti selezionate, ordinati per data e ora. La cattura continua anche quando una fonte è nascosta.",
   selectionHint: "Trascina sul messaggio per selezionare il testo. Usa le caselle o Maiusc-clic per selezionare voci intere. Sugli schermi touch, tocca prima Seleziona.",
 
   webviewConsole: "Console WebView",

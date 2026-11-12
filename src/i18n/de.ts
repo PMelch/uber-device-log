@@ -4,6 +4,9 @@ export const de = {
   rawLogs: "Rohprotokoll",
   messageContext: "Nachrichtenkontext",
   messageTitle: "postMessage-Log",
+  messageSender: "Absender",
+  messageReceiver: "Empfänger",
+  messageOrigin: "Absender-Origin",
   messageScope: "Zugestellte Window-/Iframe-Nachrichten ab Erfassungsstart. Ausgehend erfordert einen erkannten Absender und einen beobachteten Empfänger. Payloads sind begrenzte Vorschauen. Native Bridges und Worker werden nicht erfasst.",
   messageStart: "Erfassung starten",
   messageStop: "Erfassung stoppen",
@@ -372,7 +375,7 @@ export const de = {
   sourcesLive: "Aktive Quellen: {count}",
   noSources: "Wähle eine Quelle, um die Erfassung zu starten.",
   sourceDeviceLogs: "Gerätelogs",
-  combinedHint: "Meldungen der ausgewählten Quellen, nach Zeitstempel sortiert.",
+  combinedHint: "Nachrichten ausgewählter Quellen, nach Zeitstempel sortiert. Ausgeblendete Quellen werden weiter erfasst.",
   selectionHint: "Ziehe über den Meldungstext, um Text zu markieren. Wähle ganze Einträge über Kontrollkästchen oder Umschalt-Klick aus. Tippe auf Touchscreens zuerst auf „Auswählen“.",
 
   webviewConsole: "WebView-Konsole",

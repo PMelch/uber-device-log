@@ -4,6 +4,9 @@ export const ja = {
   rawLogs: "生ログ",
   messageContext: "メッセージのコンテキスト",
   messageTitle: "postMessage ログ",
+  messageSender: "送信元",
+  messageReceiver: "受信先",
+  messageOrigin: "送信元のオリジン",
   messageScope: "記録開始後に配信された Window/iframe メッセージを表示します。送信の表示には、送信元の特定と受信先の監視が必要です。ペイロードは制限付きプレビューです。ネイティブブリッジと Worker は記録されません。",
   messageStart: "記録を開始",
   messageStop: "記録を停止",
@@ -372,7 +375,7 @@ export const ja = {
   sourcesLive: "取得中のソース数: {count}",
   noSources: "ソースを選択して取得を開始してください。",
   sourceDeviceLogs: "デバイスログ",
-  combinedHint: "選択したソースのメッセージをタイムスタンプ順に表示します。",
+  combinedHint: "選択したソースのメッセージをタイムスタンプ順に表示します。ソースを非表示にしてもキャプチャは続きます。",
   selectionHint: "メッセージをドラッグするとテキストを選択できます。チェックボックスまたは Shift キーを押しながらクリックすると、ログ全体を選択できます。タッチスクリーンでは、先に「選択」をタップしてください。",
 
   webviewConsole: "WebView コンソール",

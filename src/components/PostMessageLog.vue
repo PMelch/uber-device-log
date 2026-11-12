@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue';
 import type { ConsoleContext, ConsoleState } from '../../shared/console';
-import type { MessageCapture, MessageRecord } from '../../shared/postmessage';
+import type { MessageCapture, MessageRecord, MessageLogRecord } from '../../shared/postmessage';
 import { translate, type Locale } from '../i18n';
 import type { MessageKey } from '../i18n/en';
 import type { MessageParams } from '../../shared/notifications';
 import { compactContextUrl } from '../webview-label';
 import FeatureStatusBadge from './FeatureStatusBadge.vue';
 import { featureStatuses } from '../feature-status';
-const props = defineProps<{ session: string; context: string; state: ConsoleState; locale: Locale; contextTarget?: HTMLElement }>();
+const props = defineProps<{ session: string; context: string; state: ConsoleState; locale: Locale; contextTarget?: HTMLElement; integrated?: boolean }>();
+const emit = defineEmits<{ records: [records: MessageLogRecord[]]; active: [active: boolean] }>();
 const t = (key: MessageKey, params?: MessageParams) => translate(props.locale, key, params);
 const capture = ref<MessageCapture>({ active: false, revision: -1, contexts: [], unavailable: [], records: [], dropped: 0 });
 const records = ref<MessageRecord[]>([]), frozen = ref<MessageRecord[] | null>(null);
@@ -59,8 +60,13 @@ async function request(method: string) {
 }
 function apply(next: MessageCapture) {
   capture.value = next;
-  lost.value += next.dropped + Math.max(0, records.value.length + next.records.length - 500);
-  records.value = [...records.value, ...next.records].slice(-500);
+  if (props.integrated) emit('records', next.records.map(record => ({
+    ...record,
+    ...(record.source && contexts.value.has(record.source) ? { sourceContext: { ...contexts.value.get(record.source)! } } : {}),
+    ...(contexts.value.has(record.receiver) ? { receiverContext: { ...contexts.value.get(record.receiver)! } } : {}),
+  })));
+  lost.value += next.dropped + (props.integrated ? 0 : Math.max(0, records.value.length + next.records.length - 500));
+  if (!props.integrated) records.value = [...records.value, ...next.records].slice(-500);
 }
 function tick() { pendingPoll = poll(); }
 async function poll() {
@@ -103,13 +109,18 @@ function save() {
   const blob = new Blob([JSON.stringify(visible.value.map(row => ({ ...row, sourceLabel: label(row.source, true), receiverLabel: label(row.receiver, true) })), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'postmessage.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+let autoStarted = false;
+watch(() => [props.session, props.state.connected, props.state.contexts.length], () => {
+  if (props.integrated && !autoStarted && props.session && props.state.connected && props.state.contexts.length) { autoStarted = true; void start(); }
+}, { immediate: true });
+watch(() => capture.value.active && capture.value.revision === props.state.revision && props.state.connected, active => emit('active', active), { immediate: true });
 onUnmounted(() => { disposed = true; clearTimeout(timer); if (props.session) void fetch(`/api/console/${props.session}/messages`, { method: 'DELETE', keepalive: true }).catch(() => {}); });
 </script>
 <template>
   <section class="message-log" :aria-label="t('messageTitle')">
     <h3>{{ t('messageTitle') }} <FeatureStatusBadge :status="featureStatuses.postMessageLog" :t="t" /></h3>
     <p>{{ t('messageScope') }}</p>
-    <Teleport :to="contextTarget ?? 'body'" :disabled="!contextTarget">
+    <Teleport v-if="!integrated" :to="contextTarget ?? 'body'" :disabled="!contextTarget">
       <label class="message-context">{{ t('messageContext') }}
         <select v-model="viewContext" :disabled="!contexts.size" :title="viewContext ? label(viewContext, true) : undefined">
           <option value="" disabled>{{ t('consoleChoose') }}</option>
@@ -118,15 +129,16 @@ onUnmounted(() => { disposed = true; clearTimeout(timer); if (props.session) voi
       </label>
     </Teleport>
     <div class="actions">
-      <button :disabled="busy || !session || !state.connected || (!capture.active && !state.contexts.some(c => c.key === viewContext))" @click="capture.active ? stop() : start()">{{ t(capture.active ? 'messageStop' : 'messageStart') }}</button>
-      <button :disabled="!records.length" :aria-pressed="!!frozen" @click="frozen = frozen ? null : [...records]">{{ t(frozen ? 'messageResume' : 'messagePause') }}</button>
-      <button @click="clear">{{ t('messageClear') }}</button>
-      <button :disabled="!visible.length" @click="save">{{ t('messageSave') }}</button>
+      <button :disabled="busy || !session || !state.connected || (!capture.active && !(integrated ? state.contexts.length : state.contexts.some(c => c.key === viewContext)))" @click="capture.active ? stop() : start()">{{ t(capture.active ? 'messageStop' : 'messageStart') }}</button>
+      <button v-if="!integrated" :disabled="!records.length" :aria-pressed="!!frozen" @click="frozen = frozen ? null : [...records]">{{ t(frozen ? 'messageResume' : 'messagePause') }}</button>
+      <button v-if="!integrated" @click="clear">{{ t('messageClear') }}</button>
+      <button v-if="!integrated" :disabled="!visible.length" @click="save">{{ t('messageSave') }}</button>
     </div>
     <p role="status">{{ t(capture.active && capture.revision === state.revision ? 'messageActive' : 'messageStopped') }} · {{ t('messageCoverage', { count: capture.contexts.length.toLocaleString(locale), total: state.contexts.length.toLocaleString(locale) }) }}</p>
     <p v-if="capture.revision >= 0 && capture.revision !== state.revision">{{ t('messageNavigation') }}</p>
     <p v-if="lost">{{ t('messageDropped', { count: lost.toLocaleString(locale) }) }}</p>
     <p v-if="error" role="alert">{{ t('messageError') }}</p>
+    <template v-if="!integrated">
     <label>{{ t('messageDirection') }}<select v-model="direction"><option value="both">{{ t('messageBoth') }}</option><option value="in">{{ t('messageIncoming') }}</option><option value="out">{{ t('messageOutgoing') }}</option></select></label>
     <label>{{ t('messageSearch') }}<input v-model="query" type="search" /></label>
     <p v-if="!visible.length">{{ t('messageEmpty') }}</p>
@@ -135,6 +147,7 @@ onUnmounted(() => { disposed = true; clearTimeout(timer); if (props.session) voi
       <div><span :title="label(row.source, true)">{{ label(row.source) }}</span> → <span :title="label(row.receiver, true)">{{ label(row.receiver) }}</span></div><code>{{ row.origin }}</code>
       <details><summary>{{ t('messagePayload') }}</summary><pre>{{ row.data }}</pre></details>
     </article>
+    </template>
   </section>
 </template>
 <style scoped>

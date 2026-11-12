@@ -337,10 +337,15 @@ Synthetic dispatchEvent messages are excluded. Sandboxed/opaque origins may read
 `null`. Frame-tree lookup is bounded to 256 nodes and depth 16.
 
 Queues retain 200 records per context; each drain returns at most 500 records,
-and the viewer retains 500 records. Retention losses are counted. Payloads are
+and the standalone console monitor retains 500 records. The main log uses its
+shared configurable retention buffer. Retention losses are counted. Payloads are
 bounded previews (depth 4, 50 fields per object, 200 visited values, string and
 character limits); they do not invoke getters/toJSON and are not full-fidelity
-structured-clone exports. The UI exports only displayed, filtered previews.
+structured-clone exports. The UI exports only displayed, filtered previews. In the main log, postMessage
+is an independent source alongside native and WebView logs; source checkboxes
+control visibility and do not stop an already-started capture. Its version 2
+JSON export marks source metadata with `kind: "postMessage"` and retains the
+original bounded record in each entry's `postMessage` field.
 Pause freezes the view while collection continues; clear empties the view.
 Navigation stops capture and requires explicit restart. Existing records and
 view-context choices remain available until a new capture is started or the
